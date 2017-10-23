@@ -1,0 +1,8 @@
+prefix=/opt/ros/kinetic
+
+Name: bond
+Description: Description of bond
+Version: 1.7.19
+Cflags: -I/opt/ros/kinetic/include
+Libs: -L/opt/ros/kinetic/lib 
+Requires: message_runtime std_msgs

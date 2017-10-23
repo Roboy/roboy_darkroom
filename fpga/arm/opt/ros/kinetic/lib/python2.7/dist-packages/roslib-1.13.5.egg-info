@@ -1,0 +1,12 @@
+Metadata-Version: 1.1
+Name: roslib
+Version: 1.13.5
+Summary: Base dependencies and support libraries for ROS.
+    roslib contains many of the common data structures and tools that are shared across ROS client library implementations.
+Home-page: http://ros.org/wiki/roslib
+Author: Dirk Thomas
+Author-email: dthomas@osrfoundation.org
+License: BSD
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires: rospkg

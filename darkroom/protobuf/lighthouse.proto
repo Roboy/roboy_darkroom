@@ -1,0 +1,37 @@
+syntax="proto2";
+
+package DarkRoomProtobuf;
+
+message configObject{
+    // host-ip to which the mkr1000 should send UDPs
+    required uint32 ip = 1;
+    // port to which the mkr1000 should send logging
+    required int32  logging_port = 2;
+    required int32  sensor_port = 3;
+    required int32  imu_port = 4;
+}
+
+message trackedObjectConfig{
+    // mkr1000 IP
+    required uint32 ip = 1;
+    // port for commands
+    required int32  command_port = 2;
+}
+
+message loggingObject{
+    // logging message
+    optional string message = 1;
+}
+
+message commandObject{
+    // command
+    required int32 command = 1;
+}
+
+message imuObject{
+    // command
+    required int32 id = 1;
+    repeated float quaternion = 2;
+    repeated int32 acc = 3;
+    repeated float gravity = 4;
+}

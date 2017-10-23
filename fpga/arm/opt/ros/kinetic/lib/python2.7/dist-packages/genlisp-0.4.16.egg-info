@@ -1,0 +1,11 @@
+Metadata-Version: 1.1
+Name: genlisp
+Version: 0.4.16
+Summary: Common-Lisp ROS message and service generators.
+Home-page: http://www.ros.org/wiki/roslisp
+Author: Dirk Thomas <dthomas@osrfoundation.org>, Georg Bartels <georg.bartels@cs.uni-bremen.de>
+Author-email: bhaskara@willowgarage.com
+License: BSD
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires: genmsg

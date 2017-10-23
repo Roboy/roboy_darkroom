@@ -1,0 +1,8 @@
+prefix=/opt/ros/kinetic
+
+Name: roscpp
+Description: Description of roscpp
+Version: 1.12.7
+Cflags: -I/opt/ros/kinetic/include -I/usr/include
+Libs: -L/opt/ros/kinetic/lib -lroscpp -lpthread -l:/usr/lib/arm-linux-gnueabihf/libboost_signals.so -l:/usr/lib/arm-linux-gnueabihf/libboost_filesystem.so -l:/usr/lib/arm-linux-gnueabihf/libboost_system.so
+Requires: cpp_common message_runtime rosconsole roscpp_serialization roscpp_traits rosgraph_msgs rostime std_msgs xmlrpcpp

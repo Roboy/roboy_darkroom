@@ -1,0 +1,8 @@
+prefix=/opt/ros/kinetic
+
+Name: roslisp
+Description: Description of roslisp
+Version: 1.9.20
+Cflags: 
+Libs: -L/opt/ros/kinetic/lib 
+Requires: 

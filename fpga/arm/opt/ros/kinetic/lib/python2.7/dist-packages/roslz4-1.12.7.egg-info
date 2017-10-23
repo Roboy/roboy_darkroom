@@ -1,0 +1,12 @@
+Metadata-Version: 1.0
+Name: roslz4
+Version: 1.12.7
+Summary: A Python and C++ implementation of the LZ4 streaming format.  Large data
+    streams are split into blocks which are compressed using the very fast LZ4
+    compression algorithm.
+Home-page: UNKNOWN
+Author: Ben Charrow
+Author-email: bcharrow@seas.upenn.edu
+License: BSD
+Description: UNKNOWN
+Platform: UNKNOWN

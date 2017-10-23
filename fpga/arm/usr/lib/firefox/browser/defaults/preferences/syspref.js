@@ -1,0 +1,1 @@
+/etc/firefox/syspref.js

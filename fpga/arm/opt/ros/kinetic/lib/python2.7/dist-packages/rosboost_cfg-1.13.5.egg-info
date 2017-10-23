@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: rosboost_cfg
+Version: 1.13.5
+Summary: Contains scripts used by the rosboost-cfg tool for determining cflags/lflags/etc. of boost on your system
+Home-page: http://ros.org/wiki/rosboost_cfg
+Author: Dirk Thomas
+Author-email: dthomas@osrfoundation.org
+License: BSD
+Description: UNKNOWN
+Platform: UNKNOWN

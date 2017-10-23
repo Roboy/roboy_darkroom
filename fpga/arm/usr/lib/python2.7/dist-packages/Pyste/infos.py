@@ -1,0 +1,1 @@
+../../../../share/pyshared/Pyste/infos.py

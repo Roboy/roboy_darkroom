@@ -1,0 +1,19 @@
+# Copyright (c) 2010 Cisco Systems, Inc.  All rights reserved.
+#
+Name: Open MPI
+Description: Portable high-performance MPI implementation
+Version: 1.10.2
+URL: http://www.open-mpi.org/
+#
+prefix=/usr
+exec_prefix=${prefix}
+includedir=${prefix}/lib/openmpi/include
+libdir=${prefix}/lib/openmpi/lib
+#
+# Note that -lopen-pal and all the EXTRA_LIBS are only necessary when
+# static linking (they're pulled in by libopen-rte.so's implicit
+# dependencies), so only list these in Libs.private.
+#
+Libs: -L${libdir}     -Wl,-rpath -Wl,${libdir} -Wl,--enable-new-dtags -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi
+Libs.private: -ldl -libverbs -lutil -lm 
+Cflags: -I${libdir} -I${includedir} -I${includedir}/openmpi/opal/mca/event/libevent2021/libevent -I${includedir}/openmpi/opal/mca/event/libevent2021/libevent/include   -pthread 

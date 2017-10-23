@@ -1,0 +1,8 @@
+prefix=/opt/ros/kinetic
+
+Name: message_filters
+Description: Description of message_filters
+Version: 1.12.7
+Cflags: -I/opt/ros/kinetic/include
+Libs: -L/opt/ros/kinetic/lib -lmessage_filters
+Requires: roscpp xmlrpcpp rosconsole

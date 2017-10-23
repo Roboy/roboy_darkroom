@@ -1,0 +1,14 @@
+<library path="lib/libdarkroom_rqt">
+  <class name="RoboyDarkRoom" type="RoboyDarkRoom" base_class_type="rqt_gui_cpp::Plugin">
+    <description>
+      Motor status plugin
+    </description>
+    <qtgui>
+      <group>
+        <label>Roboy</label>
+      </group>
+      <label>darkroom</label>
+      <statustip>custom HTC vive lighthouse tracking</statustip>
+    </qtgui>
+  </class>
+</library>

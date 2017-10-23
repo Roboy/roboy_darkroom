@@ -1,0 +1,12 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib/arm-linux-gnueabihf
+includedir=${prefix}/include
+
+Name: hwloc
+Description: Hardware locality detection and management library
+Version: 1.11.2
+Requires.private: 
+Cflags: -I${includedir}
+Libs: -L${libdir} -lhwloc
+Libs.private: -lm   -lltdl  -lpthread -ldl

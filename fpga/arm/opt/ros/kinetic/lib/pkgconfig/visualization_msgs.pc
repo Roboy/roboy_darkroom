@@ -1,0 +1,8 @@
+prefix=/opt/ros/kinetic
+
+Name: visualization_msgs
+Description: Description of visualization_msgs
+Version: 1.12.5
+Cflags: -I/opt/ros/kinetic/include
+Libs: -L/opt/ros/kinetic/lib 
+Requires: geometry_msgs message_runtime std_msgs

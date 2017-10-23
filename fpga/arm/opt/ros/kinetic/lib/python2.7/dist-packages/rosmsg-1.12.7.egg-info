@@ -1,0 +1,21 @@
+Metadata-Version: 1.1
+Name: rosmsg
+Version: 1.12.7
+Summary: rosmsg contains two command-line tools: <tt>rosmsg</tt> and
+    <tt>rossrv</tt>. <tt>rosmsg</tt> is a command-line tool for
+    displaying information about <a href="http://www.ros.org/wiki/msg">RO...
+Home-page: http://ros.org/wiki/rosmsg
+Author: Dirk Thomas
+Author-email: dthomas@osrfoundation.org
+License: BSD
+Description: rosmsg contains two command-line tools: <tt>rosmsg</tt> and
+            <tt>rossrv</tt>. <tt>rosmsg</tt> is a command-line tool for
+            displaying information about <a href="http://www.ros.org/wiki/msg">ROS Message
+            types</a>. <tt>rossrv</tt> is a command-line tool for displaying
+            information about <a href="http://www.ros.org/wiki/srv">ROS
+            Service types</a>.
+Platform: UNKNOWN
+Requires: genmsg
+Requires: rosbag
+Requires: roslib
+Requires: rospkg

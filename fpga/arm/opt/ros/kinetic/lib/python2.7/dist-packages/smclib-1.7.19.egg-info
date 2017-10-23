@@ -1,0 +1,19 @@
+Metadata-Version: 1.0
+Name: smclib
+Version: 1.7.19
+Summary: The State Machine Compiler (SMC) from http://smc.sourceforge.net/
+    converts a language-independent description of a state machine
+    into the source code to support that state machine.
+
+    Thi...
+Home-page: http://smc.sourceforge.net/
+Author: Mikael Arguedas
+Author-email: mikael@osrfoundation.org
+License: Mozilla Public License Version 1.1
+Description: The State Machine Compiler (SMC) from http://smc.sourceforge.net/
+            converts a language-independent description of a state machine
+            into the source code to support that state machine.
+        
+            This package contains the libraries that a compiled state machine
+            depends on, but it does not contain the compiler itself.
+Platform: UNKNOWN

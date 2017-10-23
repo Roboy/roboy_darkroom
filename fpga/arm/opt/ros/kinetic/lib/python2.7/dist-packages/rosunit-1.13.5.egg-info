@@ -1,0 +1,11 @@
+Metadata-Version: 1.1
+Name: rosunit
+Version: 1.13.5
+Summary: Unit-testing package for ROS. This is a lower-level library for rostest and handles unit tests, whereas rostest handles integration tests.
+Home-page: http://ros.org/wiki/rosunit
+Author: Dirk Thomas
+Author-email: dthomas@osrfoundation.org
+License: BSD
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires: rospkg

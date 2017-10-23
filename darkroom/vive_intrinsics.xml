@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<calibration_time>"Mo 14 Nov 2016 21:01:06 CET"</calibration_time>
+<nr_of_frames>50</nr_of_frames>
+<image_width>480</image_width>
+<image_height>360</image_height>
+<board_width>11</board_width>
+<board_height>7</board_height>
+<square_size>91.</square_size>
+<fix_aspect_ratio>1.</fix_aspect_ratio>
+<!-- flags:  +fix_aspect_ratio +fix_principal_point +zero_tangent_dist -->
+<flags>14</flags>
+<camera_matrix type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>3</cols>
+  <dt>d</dt>
+  <data>
+    2.1873271231545678e+02 0. 240. 0. 2.1873271231545678e+02 180. 0. 0.
+    1.</data></camera_matrix>
+<distortion_coefficients type_id="opencv-matrix">
+  <rows>5</rows>
+  <cols>1</cols>
+  <dt>d</dt>
+  <data>
+    -2.4672824446873140e-01 5.4238906759525626e-02 0. 0.
+    -4.7750282528111181e-03</data></distortion_coefficients>
+<avg_reprojection_error>1.1551451744622960e+00</avg_reprojection_error>
+</opencv_storage>

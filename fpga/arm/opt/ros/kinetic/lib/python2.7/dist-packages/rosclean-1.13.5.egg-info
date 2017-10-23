@@ -1,0 +1,11 @@
+Metadata-Version: 1.1
+Name: rosclean
+Version: 1.13.5
+Summary: rosclean: cleanup filesystem resources (e.g. log files).
+Home-page: http://ros.org/wiki/rosclean
+Author: Dirk Thomas
+Author-email: dthomas@osrfoundation.org
+License: BSD
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires: rospkg

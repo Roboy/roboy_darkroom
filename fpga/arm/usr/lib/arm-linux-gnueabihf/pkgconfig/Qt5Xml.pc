@@ -1,0 +1,14 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib/arm-linux-gnueabihf
+includedir=${prefix}/include/arm-linux-gnueabihf/qt5
+
+
+Name: Qt5 Xml
+Description: Qt Xml module
+Version: 5.5.1
+Libs: -lQt5Xml 
+Libs.private:  -lQt5Core -lpthread   
+Cflags: -I${includedir}/QtXml -I${includedir}
+Requires: Qt5Core
+

@@ -1,0 +1,9 @@
+<library path="libdarkroom">
+  <class name="DarkRoom"
+         type="DarkRoom"
+         base_class_type="rviz::Panel">
+    <description>
+      A panel widget custom dark room lighthouse tracking
+    </description>
+  </class>
+</library>

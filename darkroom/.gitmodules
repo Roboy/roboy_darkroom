@@ -1,0 +1,3 @@
+[submodule "include/darkroom/mavmap"]
+	path = include/darkroom/mavmap
+	url = https://github.com/mavmap/mavmap

@@ -1,0 +1,15 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib/arm-linux-gnueabihf
+includedir=${prefix}/include/arm-linux-gnueabihf/qt5
+
+host_bins=${prefix}/lib/arm-linux-gnueabihf/qt5/bin
+qt_config=minimal-config small-config medium-config large-config full-config gtk2 gtkstyle fontconfig libudev evdev xkbcommon-evdev libinput xlib xrender xcb-plugin xcb-render xcb-glx xcb-xlib xcb-sm accessibility-atspi-bridge linuxfb kms c++11 accessibility egl egl_x11 eglfs opengl opengles2 shared qpa reduce_exports clock-gettime clock-monotonic posix_fallocate mremap getaddrinfo ipv6ifname getifaddrs inotify eventfd system-jpeg system-png png system-freetype system-harfbuzz system-zlib mtdev nis cups iconv glib dbus dbus-linked openssl libproxy xcb xinput2 alsa pulseaudio gstreamer-1.0 icu concurrent audio-backend release
+
+Name: Qt5 Core
+Description: Qt Core module
+Version: 5.5.1
+Libs: -lQt5Core 
+Libs.private: -lpthread -lz -licui18n -licuuc -licudata -lpcre16 -lm -ldl -lgthread-2.0 -pthread -lglib-2.0 -lrt  
+Cflags: -I${includedir}/QtCore -I${includedir}
+

@@ -1,0 +1,8 @@
+prefix=/opt/ros/kinetic
+
+Name: gencpp
+Description: Description of gencpp
+Version: 0.5.5
+Cflags: 
+Libs: -L/opt/ros/kinetic/lib 
+Requires: genmsg

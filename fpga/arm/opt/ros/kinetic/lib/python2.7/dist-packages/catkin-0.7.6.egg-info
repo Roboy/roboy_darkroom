@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: catkin
+Version: 0.7.6
+Summary: Low-level build system macros and infrastructure for ROS.
+Home-page: http://www.ros.org/wiki/catkin
+Author: Dirk Thomas
+Author-email: dthomas@osrfoundation.org
+License: BSD
+Description: UNKNOWN
+Platform: UNKNOWN

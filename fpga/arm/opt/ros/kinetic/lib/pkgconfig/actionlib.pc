@@ -1,0 +1,8 @@
+prefix=/opt/ros/kinetic
+
+Name: actionlib
+Description: Description of actionlib
+Version: 1.11.9
+Cflags: -I/opt/ros/kinetic/include -I/usr/include
+Libs: -L/opt/ros/kinetic/lib -lactionlib -l:/usr/lib/arm-linux-gnueabihf/libboost_thread.so -l:/usr/lib/arm-linux-gnueabihf/libboost_chrono.so -l:/usr/lib/arm-linux-gnueabihf/libboost_system.so -l:/usr/lib/arm-linux-gnueabihf/libboost_date_time.so -l:/usr/lib/arm-linux-gnueabihf/libboost_atomic.so -l:/usr/lib/arm-linux-gnueabihf/libpthread.so
+Requires: actionlib_msgs message_runtime roscpp std_msgs

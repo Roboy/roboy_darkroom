@@ -1,0 +1,14 @@
+Metadata-Version: 1.1
+Name: catkin-pkg-modules
+Version: 0.3.5
+Summary: catkin package library
+Home-page: http://wiki.ros.org/catkin_pkg
+Author: Dirk Thomas
+Author-email: dthomas@osrfoundation.org
+License: BSD
+Download-URL: http://download.ros.org/downloads/catkin_pkg/
+Description: Library for retrieving information about catkin packages.
+Keywords: catkin,ROS
+Platform: UNKNOWN
+Classifier: Programming Language :: Python
+Classifier: License :: OSI Approved :: BSD License

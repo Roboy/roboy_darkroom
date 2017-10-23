@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>darkroom_rqt</name>
+  <version>0.0.0</version>
+  <description>darkroom plugin for rqt</description>
+  <maintainer email="simon.trendel@tum.de">Simon Trendel</maintainer>
+  <license>BSD</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>roscpp</depend>
+  <depend>roslint</depend>
+  <depend>rqt_gui</depend>
+  <depend>rqt_gui_cpp</depend>
+  <depend>std_msgs</depend>
+  <depend>roboy_communication_middleware</depend>
+  <depend>darkroom</depend>
+
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+    <rqt_gui plugin="${prefix}/plugin.xml"/>
+  </export>
+</package>

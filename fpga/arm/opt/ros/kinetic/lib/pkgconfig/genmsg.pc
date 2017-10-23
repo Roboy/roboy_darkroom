@@ -1,0 +1,8 @@
+prefix=/opt/ros/kinetic
+
+Name: genmsg
+Description: Description of genmsg
+Version: 0.5.8
+Cflags: 
+Libs: -L/opt/ros/kinetic/lib 
+Requires: 

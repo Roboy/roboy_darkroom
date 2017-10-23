@@ -1,0 +1,16 @@
+Metadata-Version: 1.1
+Name: roscreate
+Version: 1.13.5
+Summary: roscreate contains a tool that assists in the creation of ROS filesystem resources.
+     It provides: <tt>roscreate-pkg</tt>, which creates a new package directory,
+     including the appropriate b...
+Home-page: http://ros.org/wiki/roscreate
+Author: Dirk Thomas
+Author-email: dthomas@osrfoundation.org
+License: BSD
+Description: roscreate contains a tool that assists in the creation of ROS filesystem resources.
+             It provides: <tt>roscreate-pkg</tt>, which creates a new package directory,
+             including the appropriate build and manifest files.
+Platform: UNKNOWN
+Requires: roslib
+Requires: rospkg

@@ -1,0 +1,8 @@
+prefix=/opt/ros/kinetic
+
+Name: cmake_modules
+Description: Description of cmake_modules
+Version: 0.4.1
+Cflags: 
+Libs: -L/opt/ros/kinetic/lib 
+Requires: 

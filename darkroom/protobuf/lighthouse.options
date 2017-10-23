@@ -1,0 +1,7 @@
+DarkRoomProtobuf.loggingObject.message         max_size:40
+DarkRoomProtobuf.imuObject.quaternion          max_size:1
+DarkRoomProtobuf.imuObject.quaternion          max_count:4
+DarkRoomProtobuf.imuObject.acc		       max_size:1
+DarkRoomProtobuf.imuObject.acc		       max_count:3
+DarkRoomProtobuf.imuObject.gravity	       max_size:1
+DarkRoomProtobuf.imuObject.gravity             max_count:3

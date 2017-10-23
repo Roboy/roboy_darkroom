@@ -1,0 +1,12 @@
+prefix=
+exec_prefix=${prefix}/usr
+libdir=/usr/lib/arm-linux-gnueabihf
+APR_MAJOR_VERSION=1
+includedir=/usr/include/apr-1.0
+
+Name: APR
+Description: The Apache Portable Runtime library
+Version: 1.5.2
+Libs: -L${libdir} -lapr-${APR_MAJOR_VERSION}
+Libs.private: -luuid -lrt -lcrypt  -lpthread -ldl
+Cflags:  -DLINUX -D_REENTRANT -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -I${includedir}

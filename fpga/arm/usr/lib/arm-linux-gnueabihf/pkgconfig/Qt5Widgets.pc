@@ -1,0 +1,14 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${prefix}/lib/arm-linux-gnueabihf
+includedir=${prefix}/include/arm-linux-gnueabihf/qt5
+
+
+Name: Qt5 Widgets
+Description: Qt Widgets module
+Version: 5.5.1
+Libs: -lQt5Widgets 
+Libs.private:  -lQt5Gui -lQt5Core -lpthread -lgobject-2.0 -lglib-2.0 -lXext -lX11 -lm -lGLESv2  
+Cflags: -I${includedir}/QtWidgets -I${includedir}
+Requires: Qt5Core Qt5Gui
+

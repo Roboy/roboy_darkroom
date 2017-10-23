@@ -1,0 +1,16 @@
+# magic has application/x-*, mime.types has application/*, so duplicate:
+application/x-rar; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="RAR Archive"; test=test -n "$DISPLAY" && test -e /usr/bin/unrar
+application/rar; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="RAR Archive"; test=test -n "$DISPLAY" && test -e /usr/bin/unrar
+application/x-arj; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="ARJ Archive"; test=test -n "$DISPLAY" && test -e /usr/bin/arj
+application/arj; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="ARJ Archive"; test=test -n "$DISPLAY" && test -e /usr/bin/arj
+application/x-zip; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="ZIP Archive"; test=test -n "$DISPLAY" && test -e /usr/bin/unzip
+application/zip; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="ZIP Archive"; test=test -n "$DISPLAY" && test -e /usr/bin/unzip
+application/x-redhat-package-manager; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="RPM Archive"; test=test -n "$DISPLAY" && test -f /usr/bin/rpm
+application/x-tar; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="TAR Archive"; test=test -n "$DISPLAY"
+application/x-gtar; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="TAR Archive"; test=test -n "$DISPLAY"
+application/x-ustar; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="TAR Archive"; test=test -n "$DISPLAY"
+application/x-gzip; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="GZ compressed file"; test=test -n "$DISPLAY"
+application/x-bzip2; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="BZIP2 compressed file"; test=test -n "$DISPLAY"
+application/x-lzma; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="LZMA compressed file"; test=test -n "$DISPLAY"
+application/x-xz; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="XZ compressed file"; test=test -n "$DISPLAY"
+application/x-xz-compressed-tar; /usr/bin/xarchiver -- '%s'; edit=/usr/bin/xarchiver -- '%s'; description="XZ compressed tar file"; test=test -n "$DISPLAY"
