@@ -111,6 +111,20 @@ public Q_SLOTS:
      * @param start bool
      */
     void startPoseEstimationParticleFilter();
+    /**
+     * Toggles epnp pose estimation thread
+     * @param start bool
+     */
+    void startPoseEstimationEPnP();
+    /**
+     * Toggles epnp pose estimation thread
+     * @param start bool
+     */
+    void startPoseEstimationP3P();
+    /**
+     * Loads an object (updateing calibrated sensor distances)
+     */
+    void loadObject();
 private:
     /**
          * Is regularily publishing the tf frames (lighthouse1, lighthouse2)

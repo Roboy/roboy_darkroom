@@ -445,7 +445,9 @@ bool LighthouseEstimator::poseEstimationEPnP(){
         sensors[id].get(0, pos);
         sensors[id].get(0, angles);
         rayFromLighthouseAngles(angles, ray);
-        PnP.add_correspondence(pos(0), pos(1), pos(2), ray(0) / ray(1), ray(2) / ray(1));
+        ROS_INFO("sensor %d\npos %f\t%f\t%f ray %f\t%f\t%f", id, pos[0], pos[1], pos[2],
+            ray[0], ray[1], ray[2]);
+        PnP.add_correspondence(pos[0], pos[1], pos[2], ray[0]/ray[2] , ray[1]/ray[2] );
     }
 
     double R_est[3][3], t_est[3];

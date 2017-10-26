@@ -71,6 +71,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
 
     text["broadcast_ip"] = widget_->findChild<QLineEdit *>("broadcast_ip");
     text["broadcast_port"] = widget_->findChild<QLineEdit *>("broadcast_port");
+    text["load_object"] = widget_->findChild<QLineEdit *>("load_object_text");
 
     slider["lighthouse1_x"] = widget_->findChild<QSlider *>("lighthouse1_x");
     slider["lighthouse1_y"] = widget_->findChild<QSlider *>("lighthouse1_y");
@@ -115,6 +116,9 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     button["simulate_roboy"] = widget_->findChild<QPushButton *>("simulate_roboy");
     button["connect_object"] = widget_->findChild<QPushButton *>("connect_object");
     button["clear_all"] = widget_->findChild<QPushButton *>("clear_all");
+    button["object_pose_estimation_epnp"] = widget_->findChild<QPushButton *>("object_pose_estimation_epnp");
+    button["object_pose_estimation_p3p"] = widget_->findChild<QPushButton *>("object_pose_estimation_p3p");
+    button["load_object"] = widget_->findChild<QPushButton *>("load_object");
 
     button["triangulate"]->setToolTip(
             "activates triangulation of lighthouse rays\n"
@@ -136,6 +140,9 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     button["connect_object"]->setToolTip("subscribe to DarkRoom sensory data via UDP message");
     button["simulate_roboy"]->setToolTip("simulate lighthouse data");
     button["clear_all"]->setToolTip("clears all visualization markers");
+    button["object_pose_estimation_epnp"]->setToolTip("estimates object pose using epnp");
+    button["object_pose_estimation_p3p"]->setToolTip("estimates object pose using p3p");
+    button["load_object"]->setToolTip("loads the given object yaml file");
 
     QObject::connect(slider["lighthouse1_x"], SIGNAL(valueChanged(int)), this, SLOT(resetLighthousePoses()));
     QObject::connect(slider["lighthouse1_y"], SIGNAL(valueChanged(int)), this, SLOT(resetLighthousePoses()));
@@ -195,6 +202,9 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(button["simulate_roboy"], SIGNAL(clicked()), this, SLOT(simulateRoboy()));
     QObject::connect(button["connect_object"], SIGNAL(clicked()), this, SLOT(connectObject()));
     QObject::connect(button["clear_all"], SIGNAL(clicked()), this, SLOT(clearAll()));
+    QObject::connect(button["object_pose_estimation_epnp"], SIGNAL(clicked()), this, SLOT(startPoseEstimationEPnP()));
+    QObject::connect(button["object_pose_estimation_p3p"], SIGNAL(clicked()), this, SLOT(startPoseEstimationP3P()));
+    QObject::connect(button["load_object"], SIGNAL(clicked()), this, SLOT(loadObject()));
 
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
     if (!ros::isInitialized()) {
@@ -253,6 +263,7 @@ void RoboyDarkRoom::saveSettings(qt_gui_cpp::Settings &plugin_settings,
     instance_settings.setValue("simulatedObject_pitch_lighthouse_2",
                                slider["simulatedObject_pitch_lighthouse_2"]->value());
     instance_settings.setValue("simulatedObject_yaw_lighthouse_2", slider["simulatedObject_yaw_lighthouse_2"]->value());
+    instance_settings.setValue("load_object", text["load_object"]->text());
 }
 
 void RoboyDarkRoom::restoreSettings(const qt_gui_cpp::Settings &plugin_settings,
@@ -297,6 +308,7 @@ void RoboyDarkRoom::restoreSettings(const qt_gui_cpp::Settings &plugin_settings,
             instance_settings.value("simulatedObject_pitch_lighthouse_2").toInt());
     slider["simulatedObject_yaw_lighthouse_2"]->setValue(
             instance_settings.value("simulatedObject_yaw_lighthouse_2").toInt());
+    text["load_object"]->setText( instance_settings.value("load_object").toString());
 }
 
 void RoboyDarkRoom::connectRoboy() {
@@ -584,6 +596,42 @@ void RoboyDarkRoom::startPoseEstimationParticleFilter() {
                         [this, i]() { this->trackedObjects[i]->poseEstimationParticleFilter(); }
                 ));
         trackedObjects[i]->particlefilter_thread->detach();
+    }
+}
+
+void RoboyDarkRoom::startPoseEstimationEPnP(){
+    ROS_DEBUG("object_pose_estimation_epnp clicked");
+    for (uint i = 0; i < trackedObjects.size(); i++) {
+        lock_guard<mutex>(trackedObjects[i]->mux);
+        ROS_INFO("starting epnp pose estimation thread");
+        trackedObjects[i]->particle_filtering = true;
+        trackedObjects[i]->particlefilter_thread = boost::shared_ptr<boost::thread>(
+                new boost::thread(
+                        [this, i]() { this->trackedObjects[i]->poseEstimationEPnP(); }
+                ));
+        trackedObjects[i]->particlefilter_thread->detach();
+    }
+}
+
+void RoboyDarkRoom::startPoseEstimationP3P(){
+    ROS_DEBUG("object_pose_estimation_p3p clicked");
+    for (uint i = 0; i < trackedObjects.size(); i++) {
+        lock_guard<mutex>(trackedObjects[i]->mux);
+        ROS_INFO("starting p3p pose estimation thread");
+        trackedObjects[i]->particle_filtering = true;
+        trackedObjects[i]->particlefilter_thread = boost::shared_ptr<boost::thread>(
+                new boost::thread(
+                        [this, i]() { this->trackedObjects[i]->poseEstimationP3P(); }
+                ));
+        trackedObjects[i]->particlefilter_thread->detach();
+    }
+}
+
+void RoboyDarkRoom::loadObject(){
+    ROS_DEBUG("load_object clicked");
+    for (uint i = 0; i < trackedObjects.size(); i++) {
+        lock_guard<mutex>(trackedObjects[i]->mux);
+        trackedObjects[i]->readConfig(trackedObjects[i]->path + "/" + text["load_object"]->text().toStdString());
     }
 }
 

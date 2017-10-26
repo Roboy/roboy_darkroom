@@ -87,12 +87,12 @@ public:
             imu_thread = nullptr, poseestimation_thread = nullptr, particlefilter_thread = nullptr, distance_thread_1 = nullptr,
             distance_thread_2 = nullptr;
     std::atomic<bool> receiveData, recording;
+    string path;
 private:
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     ros::Subscriber sensor_sub;
     int objectID = 0;
-    string path;
     string name = "bastiisdoff";
     string mesh = "pimmel";
     vector<Eigen::Vector3f> object;
