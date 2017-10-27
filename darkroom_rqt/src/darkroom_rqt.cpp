@@ -317,6 +317,7 @@ void RoboyDarkRoom::connectRoboy() {
     newObject->connectRoboy();
     trackedObjects[object_counter] = newObject;
     object_counter++;
+    resetObjectPoses();
 }
 
 void RoboyDarkRoom::simulateRoboy() {

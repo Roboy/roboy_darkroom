@@ -1,0 +1,8 @@
+name: bastiisdoff
+ObjectID: 0
+mesh: pimmel
+sensor_relative_locations:
+  - [16, 0.0, 0.0, 0.0]
+  - [18, 0.0, 0.242, 0.172]
+  - [20, 0.0, 0.0, 0.172]
+  - [22, 0.0, 0.242, 0.0]

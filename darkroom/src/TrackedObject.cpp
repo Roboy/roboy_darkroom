@@ -18,7 +18,7 @@ TrackedObject::TrackedObject() {
     if (const char *env_p = getenv("DARKROOM_CALIBRATED_OBJECTS")) {
         path = env_p;
         ROS_INFO_STREAM("using DARKROOM_CALIBRATED_OBJECTS: " << path);
-        readConfig(path  + "/" +  "protoType4.yaml");
+        readConfig(path  + "/" +  "protoType5.yaml");
     } else
         ROS_WARN("could not get DARKROOM_CALIBRATED_OBJECTS environmental variable");
 

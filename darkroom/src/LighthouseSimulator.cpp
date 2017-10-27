@@ -54,8 +54,9 @@ void LighthouseSimulator::PublishSensorData(){
             double elevation = 180.0-acos(sensor_pos[2]/distance)*180.0/M_PI;
             double azimuth = atan2(sensor_pos[1],sensor_pos[0])*180.0/M_PI;
 
+            uint32_t sensor_value;
             if(elevation>=0 && elevation<=180.0 && azimuth >=0 && azimuth <= 180.0){ // if the sensor is visible by lighthouse
-                uint32_t sensor_value;
+
                 if(!angle_switch){
                     uint32_t elevation_in_ticks = (uint32_t)(degreesToTicks(elevation));
                     sensor_value = (uint32_t)(id<<31|1<<30|true<<29|elevation_in_ticks&0x1fffffff);
@@ -67,8 +68,6 @@ void LighthouseSimulator::PublishSensorData(){
                     if(sensor.first == 0)
                         ROS_DEBUG_THROTTLE(1, "azimuth: %lf in ticks: %d", azimuth, azimuth_in_ticks);
                 }
-
-                msg.sensor_value.push_back(sensor_value);
                 Vector3d pos(sensor_pos[0],sensor_pos[1],sensor_pos[2]);
                 publishSphere(pos,(id==0?"lighthouse1":"lighthouse2"),"simulated_sensor_positions",
                               sensor.first+id*sensor_position.size()+6543, COLOR(0,1,0,1), 0.01);
@@ -77,6 +76,7 @@ void LighthouseSimulator::PublishSensorData(){
                 publishSphere(pos,(id==0?"lighthouse1":"lighthouse2"),"simulated_sensor_positions",
                               sensor.first+id*sensor_position.size()+7543, COLOR(1,0,0,1));
             }
+            msg.sensor_value.push_back(sensor_value);
 //            Vector3d origin(0,0,0);
 //            Vector3d dir(sensor_pos[0],sensor_pos[1],sensor_pos[2]);
 //            publishRay(origin, dir,(id==0?"lighthouse1":"lighthouse2"),"simulated_sensor_rays",

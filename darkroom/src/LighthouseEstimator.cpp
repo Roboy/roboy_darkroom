@@ -447,7 +447,9 @@ bool LighthouseEstimator::poseEstimationEPnP(){
         rayFromLighthouseAngles(angles, ray);
         ROS_INFO("sensor %d\npos %f\t%f\t%f ray %f\t%f\t%f", id, pos[0], pos[1], pos[2],
             ray[0], ray[1], ray[2]);
-        PnP.add_correspondence(pos[0], pos[1], pos[2], ray[0]/ray[2] , ray[1]/ray[2] );
+        Vector3d pos2(pos[0]/pos[1], 0, pos[2]/pos[1]);
+        PnP.add_correspondence(pos[0], -pos[2], -pos[1], pos[0]/pos[1] , -pos[2]/pos[1] );
+        publishSphere(pos2,"world", "projected points", rand(), COLOR(0,0,1,1),0.05);
     }
 
     double R_est[3][3], t_est[3];
