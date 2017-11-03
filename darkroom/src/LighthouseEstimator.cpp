@@ -21,6 +21,9 @@ LighthouseEstimator::LighthouseEstimator() {
     distances = false;
     rays = false;
     particle_filtering = false;
+
+    object_pose = VectorXd(6);
+    object_pose << 0, 0, 0, 0, 0, 0.001;
 }
 
 void LighthouseEstimator::calibrateRelativeSensorDistances(){
@@ -307,9 +310,14 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
         }
     }
 
-    ROS_WARN_STREAM(
-            "mean squared error " << error << " below threshold " << ERROR_THRESHOLD << " in " << iterations
-                                  << " iterations");
+    if(iterations<MAX_ITERATIONS)
+        ROS_WARN_STREAM(
+                "mean squared error " << error << " below threshold " << ERROR_THRESHOLD << " in " << iterations
+                                      << " iterations");
+    else
+        ROS_WARN_STREAM(
+                "maximal number of iterations reached, mean squared error " << error << " in " << iterations
+                                      << " iterations");
     return true;
 }
 
@@ -493,7 +501,7 @@ bool LighthouseEstimator::poseEstimationP3P(){
 //    publishTF(tf, "lighthouse1", "object_p3p");
 }
 
-bool LighthouseEstimator::poseEstimationSensorCloud(){
+bool LighthouseEstimator::lighthousePoseEstimationLeastSquares(){
     ros::Time start_time = ros::Time::now();
     while (!estimateSensorPositionsUsingRelativeDistances(LIGHTHOUSE_A, calibrated_sensors)) {
         ROS_INFO_THROTTLE(1,
@@ -520,7 +528,6 @@ bool LighthouseEstimator::poseEstimationSensorCloud(){
         number_of_sensors = calibrated_sensors.size();
 
     PoseEstimatorSensorCloud::PoseEstimator estimator(number_of_sensors);
-
 
     if (calibrated_sensors.empty()) {
         uint i = 0;
@@ -571,6 +578,44 @@ bool LighthouseEstimator::poseEstimationSensorCloud(){
     tf::transformTFToMsg(tf, msg.tf);
     lighthouse_pose_correction.publish(msg);
 
+}
+
+bool LighthouseEstimator::objectPoseEstimationLeastSquares(){
+    ros::Rate rate(1);
+    while(objectposeestimating) {
+        vector<int> active_sensors;
+        for (auto &sensor:calibrated_sensors) {
+            if (sensors[sensor].isActive(LIGHTHOUSE_A) && sensors[sensor].isActive(LIGHTHOUSE_B)) {
+                active_sensors.push_back(sensor);
+            }
+        }
+
+        PoseEstimatorSensorCloud::PoseEstimator estimator(active_sensors.size());
+        uint i = 0;
+        for (auto sensor:active_sensors) {
+            Vector3d position3d, relLocation1;
+            sensors[sensor].getPosition3D(position3d);
+            sensors[sensor].getRelativeLocation(relLocation1);
+            estimator.pos3D_A.block(0, i, 4, 1) << position3d(0), position3d(1), position3d(2), 1;
+            estimator.pos3D_B.block(0, i, 4, 1) << relLocation1(0), relLocation1(1), relLocation1(2), 1;
+            // cout << relLocation1 << endl;
+            i++;
+        }
+
+        NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator> *numDiff;
+        Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double> *lm;
+        numDiff = new NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>(estimator);
+        lm = new LevenbergMarquardt<NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double>(*numDiff);
+        lm->parameters.maxfev = MAX_ITERATIONS;
+        int ret = lm->minimize(object_pose);
+        ROS_INFO("PoseEstimationSensorCloud finished after %ld iterations, with an error of %f", lm->iter, lm->fnorm);
+
+        tf::Transform tf;
+        getTFtransform(object_pose, tf);
+
+        publishTF(tf, "world", "object");
+        rate.sleep();
+    }
 }
 
 bool LighthouseEstimator::poseEstimationSensorDistance(){
@@ -1006,6 +1051,3 @@ int LighthouseEstimator::getMessageID(int type, int sensor, bool lighthouse) {
             return rand();
     }
 }
-
-
-

@@ -104,7 +104,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     button["triangulate"] = widget_->findChild<QPushButton *>("triangulate");
     button["show_rays"] = widget_->findChild<QPushButton *>("show_rays");
     button["show_distances"] = widget_->findChild<QPushButton *>("show_distances");
-    button["pose_correction_sensor_cloud"] = widget_->findChild<QPushButton *>("pose_correction_sensor_cloud");
+    button["pose_correction_least_squares"] = widget_->findChild<QPushButton *>("pose_correction_least_squares");
     button["pose_correction_particle_filter"] = widget_->findChild<QPushButton *>("pose_correction_particle_filter");
     button["position_estimation_relativ_sensor_distances"] = widget_->findChild<QPushButton *>(
             "position_estimation_relativ_sensor_distances");
@@ -116,6 +116,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     button["simulate_roboy"] = widget_->findChild<QPushButton *>("simulate_roboy");
     button["connect_object"] = widget_->findChild<QPushButton *>("connect_object");
     button["clear_all"] = widget_->findChild<QPushButton *>("clear_all");
+    button["object_pose_estimation_least_squares"] = widget_->findChild<QPushButton *>("object_pose_estimation_least_squares");
     button["object_pose_estimation_epnp"] = widget_->findChild<QPushButton *>("object_pose_estimation_epnp");
     button["object_pose_estimation_p3p"] = widget_->findChild<QPushButton *>("object_pose_estimation_p3p");
     button["load_object"] = widget_->findChild<QPushButton *>("load_object");
@@ -125,7 +126,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
                     "to get the 3d Position of visible sensors");
     button["show_rays"]->setToolTip("enable to visualize the lighthouse rays");
     button["show_distances"]->setToolTip("enable to visualize the distances\nbetween triangulated sensor positions");
-    button["pose_correction_sensor_cloud"]->setToolTip(
+    button["pose_correction_least_squares"]->setToolTip(
             "use the known relative distances between\nsensors to estimate the distances to\neach lighthouse. "
                     "Then run a pose minimizer\nto match these sensor locations onto each other. ");
     button["position_estimation_relativ_sensor_distances"]->setToolTip(
@@ -140,6 +141,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     button["connect_object"]->setToolTip("subscribe to DarkRoom sensory data via UDP message");
     button["simulate_roboy"]->setToolTip("simulate lighthouse data");
     button["clear_all"]->setToolTip("clears all visualization markers");
+    button["object_pose_estimation_least_squares"]->setToolTip("estimates object pose using least squares minimizer");
     button["object_pose_estimation_epnp"]->setToolTip("estimates object pose using epnp");
     button["object_pose_estimation_p3p"]->setToolTip("estimates object pose using p3p");
     button["load_object"]->setToolTip("loads the given object yaml file");
@@ -187,7 +189,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(button["triangulate"], SIGNAL(clicked()), this, SLOT(startTriangulation()));
     QObject::connect(button["show_rays"], SIGNAL(clicked()), this, SLOT(showRays()));
     QObject::connect(button["show_distances"], SIGNAL(clicked()), this, SLOT(showDistances()));
-    QObject::connect(button["pose_correction_sensor_cloud"], SIGNAL(clicked()), this,
+    QObject::connect(button["pose_correction_least_squares"], SIGNAL(clicked()), this,
                      SLOT(startPoseEstimationSensorCloud()));
     QObject::connect(button["pose_correction_particle_filter"], SIGNAL(clicked()), this,
                      SLOT(startPoseEstimationParticleFilter()));
@@ -202,6 +204,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(button["simulate_roboy"], SIGNAL(clicked()), this, SLOT(simulateRoboy()));
     QObject::connect(button["connect_object"], SIGNAL(clicked()), this, SLOT(connectObject()));
     QObject::connect(button["clear_all"], SIGNAL(clicked()), this, SLOT(clearAll()));
+    QObject::connect(button["object_pose_estimation_least_squares"], SIGNAL(clicked()), this, SLOT(startObjectPoseEstimationSensorCloud()));
     QObject::connect(button["object_pose_estimation_epnp"], SIGNAL(clicked()), this, SLOT(startPoseEstimationEPnP()));
     QObject::connect(button["object_pose_estimation_p3p"], SIGNAL(clicked()), this, SLOT(startPoseEstimationP3P()));
     QObject::connect(button["load_object"], SIGNAL(clicked()), this, SLOT(loadObject()));
@@ -559,9 +562,23 @@ void RoboyDarkRoom::startPoseEstimationSensorCloud() {
         trackedObjects[i]->poseestimating = true;
         trackedObjects[i]->poseestimation_thread = boost::shared_ptr<boost::thread>(
                 new boost::thread([this, i]() {
-                    this->trackedObjects[i]->poseEstimationSensorCloud();
+                    this->trackedObjects[i]->lighthousePoseEstimationLeastSquares();
                 }));
         trackedObjects[i]->poseestimation_thread->detach();
+    }
+}
+
+void RoboyDarkRoom::startObjectPoseEstimationSensorCloud() {
+    ROS_DEBUG("object pose estimation clicked");
+    for (uint i = 0; i < trackedObjects.size(); i++) {
+        lock_guard<mutex>(trackedObjects[i]->mux);
+        ROS_INFO("starting pose estimation thread");
+        trackedObjects[i]->objectposeestimating = true;
+        trackedObjects[i]->objectposeestimation_thread = boost::shared_ptr<boost::thread>(
+                new boost::thread([this, i]() {
+                    this->trackedObjects[i]->objectPoseEstimationLeastSquares();
+                }));
+        trackedObjects[i]->objectposeestimation_thread->detach();
     }
 }
 

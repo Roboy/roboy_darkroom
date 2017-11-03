@@ -733,6 +733,9 @@
     </property>
    </widget>
    <widget class="QPushButton" name="pose_correction_particle_filter">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -745,7 +748,7 @@
      <string>pose correction (particle filter)</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pose_correction_sensor_cloud">
+   <widget class="QPushButton" name="pose_correction_least_squares">
     <property name="geometry">
      <rect>
       <x>10</x>
@@ -755,7 +758,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>pose correction (sensor cloud)</string>
+     <string>pose correction (least squares)</string>
     </property>
    </widget>
   </widget>
@@ -2125,10 +2128,13 @@
     <enum>QFrame::Raised</enum>
    </property>
    <widget class="QPushButton" name="object_pose_estimation_epnp">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>10</y>
+      <y>40</y>
       <width>261</width>
       <height>27</height>
      </rect>
@@ -2141,10 +2147,13 @@
     </property>
    </widget>
    <widget class="QPushButton" name="object_pose_estimation_p3p">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>40</y>
+      <y>70</y>
       <width>261</width>
       <height>27</height>
      </rect>
@@ -2157,7 +2166,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>70</y>
+      <y>100</y>
       <width>131</width>
       <height>27</height>
      </rect>
@@ -2170,13 +2179,32 @@
     <property name="geometry">
      <rect>
       <x>140</x>
-      <y>70</y>
+      <y>100</y>
       <width>131</width>
       <height>29</height>
      </rect>
     </property>
     <property name="text">
      <string>load object</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="object_pose_estimation_least_squares">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>261</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string extracomment="test"/>
+    </property>
+    <property name="text">
+     <string>object pose estimation (least squares)</string>
+    </property>
+    <property name="checkable">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>

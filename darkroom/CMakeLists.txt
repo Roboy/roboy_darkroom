@@ -61,7 +61,7 @@ add_library( LighthouseEstimator src/LighthouseEstimator.cpp  include/darkroom/m
         include/darkroom/epnp/epnp.cpp include/darkroom/mavmap/src/base3d/p3p.cc include/darkroom/mavmap/src/util/math.cc)
 add_dependencies(LighthouseEstimator roboy_communication_middleware_gencpp )
 target_link_libraries( LighthouseEstimator ${catkin_LIBRARIES} PoseEstimatorSensorCloud PoseEstimatorSensorDistance
-		PoseEstimatorSensorDistances Transform Triangulate)
+		PoseEstimatorSensorDistances Transform Triangulate )
 
 add_library( Sensor src/Sensor.cpp )
 target_link_libraries( Sensor ${catkin_LIBRARIES} )
@@ -76,7 +76,7 @@ target_link_libraries( TrackedObject ${yaml-cpp_LIBRARIES} ${catkin_LIBRARIES} $
 #==============================================================================
 install(TARGETS
         ParticleFilter
-        PoseEstimatorSensorCloud
+		PoseEstimatorSensorCloud
         PoseEstimatorSensorDistance
         PoseEstimatorSensorDistances
         Transform

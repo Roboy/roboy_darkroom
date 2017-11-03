@@ -36,7 +36,9 @@ public:
      * estimated for both lighthouses is minimized.
      * @return success
      */
-    bool poseEstimationSensorCloud();
+    bool lighthousePoseEstimationLeastSquares();
+
+    bool objectPoseEstimationLeastSquares();
 
     /**
     * Estimates the sensor distances of all active sensors (or a vector of specified sensor ids)
@@ -84,15 +86,18 @@ public:
 
     enum POSE_CORRECTION_TYPE{
         RELATIV = 0,
-        ABSOLUT = 1
+        ABSOLUT = 1,
+        OBJECT = 2
     };
 
     map<int, Sensor> sensors;
     vector<int> calibrated_sensors;
-    atomic<bool> tracking, calibrating, poseestimating, distances, rays, particle_filtering;
+    atomic<bool> tracking, calibrating, poseestimating, objectposeestimating,
+            distances, rays, particle_filtering;
     mutex mux;
 private:
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     ros::Publisher sensor_location_pub, lighthouse_pose_correction;
+    VectorXd object_pose;
 };

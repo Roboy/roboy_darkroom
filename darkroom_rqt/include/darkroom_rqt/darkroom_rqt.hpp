@@ -90,35 +90,38 @@ public Q_SLOTS:
 
     /**
      * Toggles calibration thread
-     * @param start bool
      */
     void startCalibrateRelativeSensorDistances();
 
     /**
      * Toggles poseestimation thread
-     * @param start bool
      */
     void startPoseEstimationSensorCloud();
 
     /**
+     * Toggles object poseestimation thread
+     */
+    void startObjectPoseEstimationSensorCloud();
+
+    /**
      * Toggles distance estimation thread
-     * @param start bool
      */
     void startEstimateSensorPositionsUsingRelativeDistances();
 
     /**
      * Toggles particle filter thread for pose correction
-     * @param start bool
      */
     void startPoseEstimationParticleFilter();
     /**
+     * Toggles least squares pose estimation thread
+     */
+    void startObjectPoseEstimationLeastSquares();
+    /**
      * Toggles epnp pose estimation thread
-     * @param start bool
      */
     void startPoseEstimationEPnP();
     /**
-     * Toggles epnp pose estimation thread
-     * @param start bool
+     * Toggles p3p pose estimation thread
      */
     void startPoseEstimationP3P();
     /**

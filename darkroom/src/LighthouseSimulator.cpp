@@ -16,13 +16,13 @@ LighthouseSimulator::LighthouseSimulator(int id):id(id){
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
-    sensor_position[0] << 0,    0,      0,      1;
-    sensor_position[1] << 0,    0,      0.2,    1;
-    sensor_position[2] << 0,    0.2,    0,      1;
-    sensor_position[3] << 0,    0.2,    0.2,    1;
-    sensor_position[4] << 0.2,  0,      0,      1;
-    sensor_position[5] << 0.2,  0,      0.2,    1;
-    sensor_position[6] << 0.2,  0.2,    0,      1;
+    sensor_position[0] << -0.2,    0,      0,      1;
+    sensor_position[1] << -0.2,    0.2,      0,    1;
+    sensor_position[2] << -0.2,    0,    0.2,      1;
+    sensor_position[3] << -0.2,    -0.2,    0,    1;
+    sensor_position[4] << -0.2,  0,      -0.2,      1;
+    sensor_position[5] << 0.2,  0,      0,    1;
+    sensor_position[6] << 0.2,  0,    0.2,      1;
     sensor_position[7] << 0.2,  0.2,    0.2,    1;
 
     class_counter++;
