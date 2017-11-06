@@ -50,6 +50,19 @@ namespace DarkRoom {
         return true;
     }
 
+    bool Transform::getTransform(const char *from, const char *to, tf::Transform &transform){
+        tf::StampedTransform trans;
+        try {
+            tf_listener.lookupTransform(to, from, ros::Time(0), trans);
+        }
+        catch (tf::TransformException ex) {
+            ROS_WARN("%s", ex.what());
+            return false;
+        }
+        transform = tf::Transform(trans);
+        return true;
+    }
+
     void Transform::getRTmatrix(Matrix4d &RT, VectorXd &pose){
         RT = Matrix4d::Identity();
         // construct quaternion (cf unit-sphere projection Terzakis paper)
@@ -58,6 +71,7 @@ namespace DarkRoom {
                       2.0 * pose(0) / (alpha_squared + 1),
                       2.0 * pose(1) / (alpha_squared + 1),
                       2.0 * pose(2) / (alpha_squared + 1));
+        q.normalize();
         // construct RT matrix
         RT.topLeftCorner(3, 3) = q.toRotationMatrix();
         RT.topRightCorner(3, 1) << pose(3), pose(4), pose(5);
@@ -72,14 +86,21 @@ namespace DarkRoom {
                       2.0 * x(0) / (alpha_squared + 1),
                       2.0 * x(1) / (alpha_squared + 1),
                       2.0 * x(2) / (alpha_squared + 1));
+        q.normalize();
         Matrix3d rot = q.toRotationMatrix();
-        tf::Quaternion quat;
         tf::Matrix3x3 rot_matrix(rot(0, 0), rot(0, 1), rot(0, 2),
                                  rot(1, 0), rot(1, 1), rot(1, 2),
                                  rot(2, 0), rot(2, 1), rot(2, 2));
 
-        rot_matrix.getRotation(quat);
-        tf.setRotation(quat);
+        tf.setBasis(rot_matrix);
+    }
+
+    void Transform::getTFtransform(Matrix4d &RT, tf::Transform &tf){
+        tf::Matrix3x3 rot_matrix(RT(0, 0), RT(0, 1), RT(0, 2),
+                                 RT(1, 0), RT(1, 1), RT(1, 2),
+                                 RT(2, 0), RT(2, 1), RT(2, 2));
+        tf.setBasis(rot_matrix);
+        tf.setOrigin(tf::Vector3(RT(0,3),RT(1,3),RT(2,3)));
     }
 
     void Transform::publishTF(tf::Transform &tf, const char *frame, const char *name){

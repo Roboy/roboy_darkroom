@@ -581,7 +581,7 @@ bool LighthouseEstimator::lighthousePoseEstimationLeastSquares(){
 }
 
 bool LighthouseEstimator::objectPoseEstimationLeastSquares(){
-    ros::Rate rate(1);
+    ros::Rate rate(60);
     while(objectposeestimating) {
         vector<int> active_sensors;
         for (auto &sensor:calibrated_sensors) {
@@ -598,22 +598,29 @@ bool LighthouseEstimator::objectPoseEstimationLeastSquares(){
             sensors[sensor].getRelativeLocation(relLocation1);
             estimator.pos3D_A.block(0, i, 4, 1) << position3d(0), position3d(1), position3d(2), 1;
             estimator.pos3D_B.block(0, i, 4, 1) << relLocation1(0), relLocation1(1), relLocation1(2), 1;
-            // cout << relLocation1 << endl;
             i++;
         }
+
+        Matrix4d RT_0, RT_correct, RT_object;
+        getTransform(LIGHTHOUSE_A, "world", RT_0);
+        estimator.pos3D_B = RT_0 * estimator.pos3D_B;
 
         NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator> *numDiff;
         Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double> *lm;
         numDiff = new NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>(estimator);
         lm = new LevenbergMarquardt<NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double>(*numDiff);
         lm->parameters.maxfev = MAX_ITERATIONS;
+        lm->parameters.xtol = 1e-10;
         int ret = lm->minimize(object_pose);
-        ROS_INFO("PoseEstimationSensorCloud finished after %ld iterations, with an error of %f", lm->iter, lm->fnorm);
+        ROS_INFO_THROTTLE(1,"object pose estimation finished after %ld iterations, with an error of %f", lm->iter, lm->fnorm);
+
+        getRTmatrix(RT_correct,object_pose);
+        RT_object = RT_correct*RT_0;
 
         tf::Transform tf;
-        getTFtransform(object_pose, tf);
-
+        getTFtransform(RT_object, tf);
         publishTF(tf, "world", "object");
+
         rate.sleep();
     }
 }

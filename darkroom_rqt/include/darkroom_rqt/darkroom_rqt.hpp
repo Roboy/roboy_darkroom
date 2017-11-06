@@ -10,6 +10,7 @@
 #include <QStringList>
 #include <darkroom/LighthouseSimulator.hpp>
 #include <darkroom/TrackedObject.hpp>
+#include <darkroom/Transform.hpp>
 #include <roboy_communication_middleware/LighthousePoseCorrection.h>
 #include <map>
 #include <QLineEdit>
@@ -21,7 +22,7 @@
 #endif
 
 class RoboyDarkRoom
-        : public rqt_gui_cpp::Plugin, rviz_visualization {
+        : public rqt_gui_cpp::Plugin, rviz_visualization, DarkRoom::Transform {
     Q_OBJECT
 public:
     RoboyDarkRoom();

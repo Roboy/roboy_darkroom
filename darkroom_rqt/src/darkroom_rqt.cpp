@@ -106,7 +106,8 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     button["simulate_roboy"] = widget_->findChild<QPushButton *>("simulate_roboy");
     button["connect_object"] = widget_->findChild<QPushButton *>("connect_object");
     button["clear_all"] = widget_->findChild<QPushButton *>("clear_all");
-    button["object_pose_estimation_least_squares"] = widget_->findChild<QPushButton *>("object_pose_estimation_least_squares");
+    button["object_pose_estimation_least_squares"] = widget_->findChild<QPushButton *>(
+            "object_pose_estimation_least_squares");
     button["load_object"] = widget_->findChild<QPushButton *>("load_object");
 
     button["triangulate"]->setToolTip(
@@ -148,7 +149,8 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(button["simulate_roboy"], SIGNAL(clicked()), this, SLOT(simulateRoboy()));
     QObject::connect(button["connect_object"], SIGNAL(clicked()), this, SLOT(connectObject()));
     QObject::connect(button["clear_all"], SIGNAL(clicked()), this, SLOT(clearAll()));
-    QObject::connect(button["object_pose_estimation_least_squares"], SIGNAL(clicked()), this, SLOT(startObjectPoseEstimationSensorCloud()));
+    QObject::connect(button["object_pose_estimation_least_squares"], SIGNAL(clicked()), this,
+                     SLOT(startObjectPoseEstimationSensorCloud()));
     QObject::connect(button["load_object"], SIGNAL(clicked()), this, SLOT(loadObject()));
 
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
@@ -172,12 +174,12 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     }
 
     interactive_marker_sub = nh->subscribe("/interactive_markers/feedback", 1,
-                                        &RoboyDarkRoom::interactiveMarkersFeedback, this);
+                                           &RoboyDarkRoom::interactiveMarkersFeedback, this);
 
-    make6DofMarker(false,visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D,lighthouse1.getOrigin(),
-                   true,0.1,"world", "lighthouse1","");
-    make6DofMarker(false,visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D,lighthouse2.getOrigin(),
-                   true,0.1,"world", "lighthouse2","");
+    make6DofMarker(false, visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D, lighthouse1.getOrigin(),
+                   true, 0.1, "world", "lighthouse1", "");
+    make6DofMarker(false, visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D, lighthouse2.getOrigin(),
+                   true, 0.1, "world", "lighthouse2", "");
 }
 
 void RoboyDarkRoom::shutdownPlugin() {
@@ -195,13 +197,13 @@ void RoboyDarkRoom::saveSettings(qt_gui_cpp::Settings &plugin_settings,
 
 void RoboyDarkRoom::restoreSettings(const qt_gui_cpp::Settings &plugin_settings,
                                     const qt_gui_cpp::Settings &instance_settings) {
-    text["load_object"]->setText( instance_settings.value("load_object").toString());
-    text["lighthouse1_x"]->setText( instance_settings.value("lighthouse1_x").toString());
-    text["lighthouse1_y"]->setText( instance_settings.value("lighthouse1_y").toString());
-    text["lighthouse1_z"]->setText( instance_settings.value("lighthouse1_z").toString());
-    text["lighthouse2_x"]->setText( instance_settings.value("lighthouse2_x").toString());
-    text["lighthouse2_y"]->setText( instance_settings.value("lighthouse2_y").toString());
-    text["lighthouse2_z"]->setText( instance_settings.value("lighthouse2_z").toString());
+    text["load_object"]->setText(instance_settings.value("load_object").toString());
+    text["lighthouse1_x"]->setText(instance_settings.value("lighthouse1_x").toString());
+    text["lighthouse1_y"]->setText(instance_settings.value("lighthouse1_y").toString());
+    text["lighthouse1_z"]->setText(instance_settings.value("lighthouse1_z").toString());
+    text["lighthouse2_x"]->setText(instance_settings.value("lighthouse2_x").toString());
+    text["lighthouse2_y"]->setText(instance_settings.value("lighthouse2_y").toString());
+    text["lighthouse2_z"]->setText(instance_settings.value("lighthouse2_z").toString());
 }
 
 void RoboyDarkRoom::connectRoboy() {
@@ -240,6 +242,9 @@ void RoboyDarkRoom::simulateRoboy() {
             new boost::thread(
                     [this]() { this->lighthouse_simulation[LIGHTHOUSE_B]->PublishSensorData(); }
             ));
+
+    make6DofMarker(false, visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D, tf::Vector3(0, 0, 0),
+                   true, 0.1, "world", "trackedObject", "");
 }
 
 void RoboyDarkRoom::connectObject() {
@@ -468,7 +473,7 @@ void RoboyDarkRoom::startPoseEstimationParticleFilter() {
     }
 }
 
-void RoboyDarkRoom::startPoseEstimationEPnP(){
+void RoboyDarkRoom::startPoseEstimationEPnP() {
     ROS_DEBUG("object_pose_estimation_epnp clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
         lock_guard<mutex>(trackedObjects[i]->mux);
@@ -482,7 +487,7 @@ void RoboyDarkRoom::startPoseEstimationEPnP(){
     }
 }
 
-void RoboyDarkRoom::startPoseEstimationP3P(){
+void RoboyDarkRoom::startPoseEstimationP3P() {
     ROS_DEBUG("object_pose_estimation_p3p clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
         lock_guard<mutex>(trackedObjects[i]->mux);
@@ -496,7 +501,7 @@ void RoboyDarkRoom::startPoseEstimationP3P(){
     }
 }
 
-void RoboyDarkRoom::loadObject(){
+void RoboyDarkRoom::loadObject() {
     ROS_DEBUG("load_object clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
         lock_guard<mutex>(trackedObjects[i]->mux);
@@ -512,8 +517,13 @@ void RoboyDarkRoom::transformPublisher() {
         tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse2, ros::Time::now(), "world", "lighthouse2"));
         for (auto &simulated:lighthouse_simulation) {
             tf_broadcaster.sendTransform(tf::StampedTransform(simulated.second->relative_object_pose, ros::Time::now(),
-                                                              (simulated.second->id==0?"lighthouse1":"lighthouse2"),
+                                                              (simulated.second->id == 0 ? "lighthouse1"
+                                                                                         : "lighthouse2"),
                                                               simulated.second->name.c_str()));
+        }
+        for (auto &object:trackedObjects) {
+            tf_broadcaster.sendTransform(tf::StampedTransform(object.second->pose, ros::Time::now(),
+                                                              "world", object.second->name.c_str()));
         }
         rate.sleep();
     }
@@ -535,22 +545,35 @@ void RoboyDarkRoom::correctPose(const roboy_communication_middleware::Lighthouse
     }
 }
 
-void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::InteractiveMarkerFeedback &msg){
-    tf::Vector3 position(msg.pose.position.x,msg.pose.position.y,msg.pose.position.z);
+void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::InteractiveMarkerFeedback &msg) {
+    tf::Vector3 position(msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
     tf::Quaternion orientation(msg.pose.orientation.x, msg.pose.orientation.y,
                                msg.pose.orientation.z, msg.pose.orientation.w);
-    if(strcmp(msg.marker_name.c_str(),"lighthouse1")==0){
+    if (strcmp(msg.marker_name.c_str(), "lighthouse1") == 0) {
         lighthouse1.setOrigin(position);
         lighthouse1.setRotation(orientation);
         text["lighthouse1_x"]->setText(QString::number(position.x()));
         text["lighthouse1_y"]->setText(QString::number(position.y()));
         text["lighthouse1_z"]->setText(QString::number(position.z()));
-    }else if(strcmp(msg.marker_name.c_str(),"lighthouse2")==0){
+    } else if (strcmp(msg.marker_name.c_str(), "lighthouse2") == 0) {
         lighthouse2.setOrigin(position);
         lighthouse2.setRotation(orientation);
         text["lighthouse2_x"]->setText(QString::number(position.x()));
         text["lighthouse2_y"]->setText(QString::number(position.y()));
         text["lighthouse2_z"]->setText(QString::number(position.z()));
+    } else if (strcmp(msg.marker_name.c_str(), "trackedObject") == 0) {
+        for (auto &object:trackedObjects) {
+            object.second->pose.setOrigin(position);
+            object.second->pose.setRotation(orientation);
+            for (auto &simulated:lighthouse_simulation) {
+                tf::Transform tf;
+                if (!getTransform(object.second->name.c_str(),
+                                  (simulated.second->id ? "lighthouse2" : "lighthouse1"), tf))
+                    continue;
+                simulated.second->relative_object_pose = tf;
+            }
+        }
+
     }
 }
 

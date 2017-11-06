@@ -16,6 +16,7 @@ namespace PoseEstimatorSensorCloud {
                       2.0 * x(0) / (alpha_squared + 1),
                       2.0 * x(1) / (alpha_squared + 1),
                       2.0 * x(2) / (alpha_squared + 1));
+        q.normalize();
         // construct RT matrix
         RT.topLeftCorner(3, 3) = q.toRotationMatrix();
         RT.topRightCorner(3, 1) << x(3), x(4), x(5);

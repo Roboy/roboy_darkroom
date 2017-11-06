@@ -94,7 +94,7 @@ void LighthouseSimulator::PublishSensorData(){
             }else{
                 Vector3d pos(sensor_pos[0],sensor_pos[1],sensor_pos[2]);
                 publishSphere(pos,(id==0?"lighthouse1":"lighthouse2"),"simulated_sensor_positions",
-                              sensor.first+id*sensor_position.size()+7543, COLOR(1,0,0,1));
+                              sensor.first+id*sensor_position.size()+7543, COLOR(1,0,0,1), 0.01, 1);
             }
             msg.sensor_value.push_back(sensor_value);
 //            Vector3d origin(0,0,0);

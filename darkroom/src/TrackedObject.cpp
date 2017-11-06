@@ -23,6 +23,8 @@ TrackedObject::TrackedObject() {
         ROS_WARN("could not get DARKROOM_CALIBRATED_OBJECTS environmental variable");
 
     trackeObjectInstance++;
+
+    pose.setRotation(tf::Quaternion(0,1,0,0));
 }
 
 TrackedObject::~TrackedObject() {
