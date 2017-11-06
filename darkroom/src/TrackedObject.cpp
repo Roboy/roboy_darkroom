@@ -18,7 +18,7 @@ TrackedObject::TrackedObject() {
     if (const char *env_p = getenv("DARKROOM_CALIBRATED_OBJECTS")) {
         path = env_p;
         ROS_INFO_STREAM("using DARKROOM_CALIBRATED_OBJECTS: " << path);
-        readConfig(path  + "/" +  "protoType3.yaml");
+        readConfig(path  + "/" +  "protoType3.yaml", objectID, name, mesh, calibrated_sensors, sensors);
     } else
         ROS_WARN("could not get DARKROOM_CALIBRATED_OBJECTS environmental variable");
 
@@ -99,27 +99,6 @@ bool TrackedObject::record(bool start) {
     }
 }
 
-bool TrackedObject::readConfig(string filepath) {
-    YAML::Node config = YAML::LoadFile(filepath);
-    objectID = config["ObjectID"].as<int>();
-    name = config["name"].as<string>();
-    mesh = config["mesh"].as<string>();
-    vector<vector<float>> relative_locations =
-            config["sensor_relative_locations"].as<vector<vector<float >>>();
-    sensors.clear();
-    calibrated_sensors.clear();
-    cout << "using calibrated sensors: ";
-    for (int i = 0; i < relative_locations.size(); i++) {
-        Vector3d relLocation(relative_locations[i][1], relative_locations[i][2], relative_locations[i][3]);
-        sensors[relative_locations[i][0]].setRelativeLocation(relLocation);
-        calibrated_sensors.push_back((int) relative_locations[i][0]);
-        cout << "\t" << calibrated_sensors.back();
-    }
-    cout << endl;
-
-    return true;
-}
-
 void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware::DarkRoom::ConstPtr &msg) {
     ROS_WARN_THROTTLE(5, "receiving sensor data");
     unsigned short timestamp = (unsigned short) (ros::Time::now().sec & 0xFF);
@@ -173,33 +152,4 @@ void TrackedObject::receiveSensorData(){
 //            cout << angles << endl;
         }
     }
-}
-
-bool TrackedObject::writeConfig(string filepath) {
-    std::ofstream fout(filepath);
-    if (!fout.is_open()) {
-        ROS_WARN_STREAM("Could not write config " << filepath);
-        return false;
-    }
-
-    YAML::Node config;
-    config["ObjectID"] = objectID;
-    config["name"] = name;
-    config["mesh"] = mesh;
-    for (auto &sensor : sensors) {
-        if (!sensor.second.sensorCalibrated())
-            continue;
-        YAML::Node node = YAML::Load("[0, 0, 0, 0]");
-        Vector3d relative_location;
-        sensor.second.getRelativeLocation(relative_location);
-        // first number is the sensor id
-        node[0] = sensor.first;
-        for (int i = 1; i <= 3; i++) {
-            node[i] = relative_location(i - 1);
-        }
-        config["sensor_relative_locations"].push_back(node);
-    }
-
-    fout << config;
-    return true;
 }

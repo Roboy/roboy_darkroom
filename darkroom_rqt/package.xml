@@ -13,6 +13,7 @@
   <depend>std_msgs</depend>
   <depend>roboy_communication_middleware</depend>
   <depend>darkroom</depend>
+  <depend>common_utilities</depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

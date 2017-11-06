@@ -7,14 +7,17 @@
 #include <mutex>
 #include <Eigen/Dense>
 #include <Eigen/Core>
+#include <thread>
 #include "darkroom/Transform.hpp"
+#include "darkroom/Sensor.hpp"
+#include "darkroom/Utilities.hpp"
 
 #define degreesToTicks(degrees) (degrees * 50.0 * 8333.0 / 180.0)
 
 using namespace std;
 using namespace Eigen;
 
-class LighthouseSimulator:public rviz_visualization, DarkRoom::Transform{
+class LighthouseSimulator:public rviz_visualization, DarkRoom::Transform, Utilities{
 public:
     /**
      * Constructor
@@ -23,9 +26,15 @@ public:
      */
     LighthouseSimulator(int id);
     ~LighthouseSimulator();
-
+    /**
+     * Publishes simulated ligthouse data
+     */
     void PublishSensorData();
 
+    int objectID;
+    string name, mesh;
+    map<int, Sensor> sensors;
+    vector<int> calibrated_sensors;
     boost::shared_ptr<boost::thread> sensor_thread;
     atomic<bool> sensor_publishing;
     mutex mux;

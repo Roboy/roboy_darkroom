@@ -6,15 +6,14 @@
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
 #include <map>
-#include <fstream>
 #include <deque>
 #include <thread>
 #include <mutex>
 #include <bitset>
-#include "yaml-cpp/yaml.h"
 #include <common_utilities/rviz_visualization.hpp>
 #include <common_utilities/UDPSocket.hpp>
 #include "darkroom/LighthouseEstimator.hpp"
+#include "darkroom/Utilities.hpp"
 
 // Converts degrees to radians.
 #define degreesToRadians(angleDegrees) (angleDegrees * M_PI / 180.0)
@@ -26,7 +25,7 @@
 
 using namespace std;
 
-class TrackedObject : public LighthouseEstimator {
+class TrackedObject : public LighthouseEstimator, Utilities {
 public:
     TrackedObject();
 
@@ -55,20 +54,6 @@ public:
      */
     bool record(bool start);
 
-    /**
-     * Reads a yaml tracked object file
-     * @param filepath to
-     * @return success
-     */
-    bool readConfig(string filepath);
-
-    /**
-     * Writes a tracked object to file
-     * @param filepath
-     * @return success
-     */
-    bool writeConfig(string filepath);
-
     static int trackeObjectInstance; //! a unique object instance (helps with unique rviz marker ids)
 private:
 
@@ -89,13 +74,14 @@ public:
             distance_thread_2 = nullptr;
     std::atomic<bool> receiveData, recording;
     string path;
+    tf::Transform pose;
+    int objectID = 0;
+    string name = "bastiisdoff";
+    string mesh = "pimmel";
 private:
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     ros::Subscriber sensor_sub;
-    int objectID = 0;
-    string name = "bastiisdoff";
-    string mesh = "pimmel";
     vector<Eigen::Vector3f> object;
     Vector3d origin;
     static bool m_switch;

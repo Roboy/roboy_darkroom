@@ -16,16 +16,26 @@ LighthouseSimulator::LighthouseSimulator(int id):id(id){
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
-    sensor_position[0] << -0.2,    0,      0,      1;
-    sensor_position[1] << -0.2,    0.2,      0,    1;
-    sensor_position[2] << -0.2,    0,    0.2,      1;
-    sensor_position[3] << -0.2,    -0.2,    0,    1;
-    sensor_position[4] << -0.2,  0,      -0.2,      1;
-    sensor_position[5] << 0.2,  0,      0,    1;
-    sensor_position[6] << 0.2,  0,    0.2,      1;
-    sensor_position[7] << 0.2,  0.2,    0.2,    1;
+    if (const char *env_p = getenv("DARKROOM_CALIBRATED_OBJECTS")) {
+        string path = env_p;
+        ROS_INFO_STREAM("using DARKROOM_CALIBRATED_OBJECTS: " << path);
+        readConfig(path  + "/" +  "protoType3.yaml", objectID, name, mesh, calibrated_sensors, sensors);
+    } else
+        ROS_WARN("could not get DARKROOM_CALIBRATED_OBJECTS environmental variable");
+
+    for(auto &sensor:sensors){
+        Vector3d rel_location;
+        sensor.second.getRelativeLocation(rel_location);
+        sensor_position[sensor.first] << rel_location[0], rel_location[1], rel_location[2], 1;
+    }
 
     class_counter++;
+
+    if(id==0){
+        tf::Vector3 origin(0,0,0);
+        make6DofMarker(false,visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D,origin,
+                       true,0.1,"world", "trackedObject","");
+    }
 }
 
 LighthouseSimulator::~LighthouseSimulator(){
@@ -40,8 +50,7 @@ void LighthouseSimulator::PublishSensorData(){
     bool angle_switch = false;
     while(sensor_publishing){
         Matrix4d RT_object2lighthouse;
-        if(!getTransform((id==0?"simulated_object_lighthouse1":"simulated_object_lighthouse2"),
-                         (id==0?"lighthouse1":"lighthouse2"),RT_object2lighthouse))
+        if(!getTransform(name.c_str(), (id==0?"lighthouse1":"lighthouse2"),RT_object2lighthouse))
             continue;
 
         Vector4d lighthouse_pos(0,0,0,1);

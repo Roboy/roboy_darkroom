@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>889</width>
+    <width>599</width>
     <height>562</height>
    </rect>
   </property>
@@ -38,9 +38,9 @@
    <property name="geometry">
     <rect>
      <x>310</x>
-     <y>200</y>
+     <y>110</y>
      <width>281</width>
-     <height>161</height>
+     <height>81</height>
     </rect>
    </property>
    <property name="frameShape">
@@ -70,35 +70,10 @@
      <string>lighthouse 2</string>
     </property>
    </widget>
-   <widget class="QSlider" name="lighthouse2_x">
-    <property name="geometry">
-     <rect>
-      <x>69</x>
-      <y>30</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-100</number>
-    </property>
-    <property name="maximum">
-     <number>100</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="value">
-     <number>40</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
    <widget class="QLabel" name="x_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>30</y>
       <width>51</width>
       <height>16</height>
@@ -119,8 +94,8 @@
    <widget class="QLabel" name="y_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>50</y>
+      <x>110</x>
+      <y>30</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -140,8 +115,8 @@
    <widget class="QLabel" name="z_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>70</y>
+      <x>200</x>
+      <y>30</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -161,8 +136,8 @@
    <widget class="QLabel" name="roll_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>90</y>
+      <x>10</x>
+      <y>50</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -182,8 +157,8 @@
    <widget class="QLabel" name="pitch_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>110</y>
+      <x>100</x>
+      <y>50</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -203,8 +178,8 @@
    <widget class="QLabel" name="yaw_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>130</y>
+      <x>190</x>
+      <y>50</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -221,122 +196,12 @@
      <string>yaw</string>
     </property>
    </widget>
-   <widget class="QSlider" name="lighthouse2_y">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>50</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-100</number>
-    </property>
-    <property name="maximum">
-     <number>100</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="lighthouse2_z">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>70</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-100</number>
-    </property>
-    <property name="maximum">
-     <number>100</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="lighthouse2_roll">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>90</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-90</number>
-    </property>
-    <property name="maximum">
-     <number>90</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="lighthouse2_pitch">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>110</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-90</number>
-    </property>
-    <property name="maximum">
-     <number>90</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="lighthouse2_yaw">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>130</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-90</number>
-    </property>
-    <property name="maximum">
-     <number>90</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
    <widget class="QLineEdit" name="lighthouse2_x_text">
     <property name="geometry">
      <rect>
-      <x>220</x>
+      <x>40</x>
       <y>30</y>
-      <width>41</width>
+      <width>51</width>
       <height>21</height>
      </rect>
     </property>
@@ -359,9 +224,9 @@
    <widget class="QLineEdit" name="lighthouse2_y_text">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>50</y>
-      <width>41</width>
+      <x>130</x>
+      <y>30</y>
+      <width>51</width>
       <height>21</height>
      </rect>
     </property>
@@ -385,8 +250,8 @@
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>70</y>
-      <width>41</width>
+      <y>30</y>
+      <width>51</width>
       <height>21</height>
      </rect>
     </property>
@@ -409,8 +274,8 @@
    <widget class="QLineEdit" name="lighthouse2_roll_text">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>90</y>
+      <x>50</x>
+      <y>50</y>
       <width>41</width>
       <height>21</height>
      </rect>
@@ -434,8 +299,8 @@
    <widget class="QLineEdit" name="lighthouse2_pitch_text">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>110</y>
+      <x>140</x>
+      <y>50</y>
       <width>41</width>
       <height>21</height>
      </rect>
@@ -459,8 +324,8 @@
    <widget class="QLineEdit" name="lighthouse2_yaw_text">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>130</y>
+      <x>230</x>
+      <y>50</y>
       <width>41</width>
       <height>21</height>
      </rect>
@@ -585,7 +450,7 @@
      <x>10</x>
      <y>170</y>
      <width>281</width>
-     <height>191</height>
+     <height>221</height>
     </rect>
    </property>
    <property name="frameShape">
@@ -617,7 +482,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>100</y>
+      <y>130</y>
       <width>261</width>
       <height>27</height>
      </rect>
@@ -633,7 +498,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>130</y>
+      <y>160</y>
       <width>261</width>
       <height>27</height>
      </rect>
@@ -646,7 +511,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>40</y>
+      <y>70</y>
       <width>261</width>
       <height>27</height>
      </rect>
@@ -662,7 +527,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>70</y>
+      <y>100</y>
       <width>261</width>
       <height>27</height>
      </rect>
@@ -678,7 +543,7 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>160</y>
+      <y>190</y>
       <width>261</width>
       <height>27</height>
      </rect>
@@ -687,14 +552,33 @@
      <string>clear all</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="object_pose_estimation_least_squares">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>40</y>
+      <width>261</width>
+      <height>27</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string extracomment="test"/>
+    </property>
+    <property name="text">
+     <string>object pose estimation (least squares)</string>
+    </property>
+    <property name="checkable">
+     <bool>true</bool>
+    </property>
+   </widget>
   </widget>
   <widget class="QFrame" name="frame_4">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>370</y>
+     <y>400</y>
      <width>281</width>
-     <height>141</height>
+     <height>111</height>
     </rect>
    </property>
    <property name="frameShape">
@@ -723,29 +607,13 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>100</y>
-      <width>261</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>calibrate relative distances</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pose_correction_particle_filter">
-    <property name="enabled">
-     <bool>false</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>10</x>
       <y>70</y>
       <width>261</width>
       <height>27</height>
      </rect>
     </property>
     <property name="text">
-     <string>pose correction (particle filter)</string>
+     <string>calibrate relative distances</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pose_correction_least_squares">
@@ -768,7 +636,7 @@
      <x>310</x>
      <y>30</y>
      <width>281</width>
-     <height>161</height>
+     <height>81</height>
     </rect>
    </property>
    <property name="frameShape">
@@ -798,35 +666,10 @@
      <string>lighthouse 1</string>
     </property>
    </widget>
-   <widget class="QSlider" name="lighthouse1_x">
-    <property name="geometry">
-     <rect>
-      <x>69</x>
-      <y>30</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-100</number>
-    </property>
-    <property name="maximum">
-     <number>100</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="value">
-     <number>0</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
    <widget class="QLabel" name="x_1">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>30</y>
       <width>51</width>
       <height>16</height>
@@ -847,9 +690,9 @@
    <widget class="QLabel" name="y_1">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>50</y>
-      <width>51</width>
+      <x>110</x>
+      <y>30</y>
+      <width>41</width>
       <height>16</height>
      </rect>
     </property>
@@ -868,9 +711,9 @@
    <widget class="QLabel" name="z_1">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>70</y>
-      <width>51</width>
+      <x>200</x>
+      <y>30</y>
+      <width>41</width>
       <height>16</height>
      </rect>
     </property>
@@ -889,8 +732,8 @@
    <widget class="QLabel" name="roll_1">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>90</y>
+      <x>10</x>
+      <y>50</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -910,8 +753,8 @@
    <widget class="QLabel" name="pitch_1">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>110</y>
+      <x>100</x>
+      <y>50</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -931,8 +774,8 @@
    <widget class="QLabel" name="yaw_1">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>130</y>
+      <x>190</x>
+      <y>50</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -949,122 +792,12 @@
      <string>yaw</string>
     </property>
    </widget>
-   <widget class="QSlider" name="lighthouse1_y">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>50</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-100</number>
-    </property>
-    <property name="maximum">
-     <number>100</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="lighthouse1_z">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>70</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-100</number>
-    </property>
-    <property name="maximum">
-     <number>100</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="lighthouse1_roll">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>90</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-90</number>
-    </property>
-    <property name="maximum">
-     <number>90</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="lighthouse1_pitch">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>110</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-90</number>
-    </property>
-    <property name="maximum">
-     <number>90</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="lighthouse1_yaw">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>130</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-90</number>
-    </property>
-    <property name="maximum">
-     <number>90</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
    <widget class="QLineEdit" name="lighthouse1_x_text">
     <property name="geometry">
      <rect>
-      <x>220</x>
+      <x>40</x>
       <y>30</y>
-      <width>41</width>
+      <width>51</width>
       <height>21</height>
      </rect>
     </property>
@@ -1087,9 +820,9 @@
    <widget class="QLineEdit" name="lighthouse1_y_text">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>50</y>
-      <width>41</width>
+      <x>130</x>
+      <y>30</y>
+      <width>51</width>
       <height>21</height>
      </rect>
     </property>
@@ -1113,8 +846,8 @@
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>70</y>
-      <width>41</width>
+      <y>30</y>
+      <width>51</width>
       <height>21</height>
      </rect>
     </property>
@@ -1137,8 +870,8 @@
    <widget class="QLineEdit" name="lighthouse1_roll_text">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>90</y>
+      <x>50</x>
+      <y>50</y>
       <width>41</width>
       <height>21</height>
      </rect>
@@ -1162,8 +895,8 @@
    <widget class="QLineEdit" name="lighthouse1_pitch_text">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>110</y>
+      <x>140</x>
+      <y>50</y>
       <width>41</width>
       <height>21</height>
      </rect>
@@ -1187,8 +920,8 @@
    <widget class="QLineEdit" name="lighthouse1_yaw_text">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>130</y>
+      <x>230</x>
+      <y>50</y>
       <width>41</width>
       <height>21</height>
      </rect>
@@ -1213,10 +946,10 @@
   <widget class="QFrame" name="frame_simulatedObject_lighthouse_1">
    <property name="geometry">
     <rect>
-     <x>600</x>
-     <y>30</y>
+     <x>310</x>
+     <y>340</y>
      <width>281</width>
-     <height>161</height>
+     <height>81</height>
     </rect>
    </property>
    <property name="frameShape">
@@ -1246,35 +979,10 @@
      <string>simulated object relative pose lighthouse 1</string>
     </property>
    </widget>
-   <widget class="QSlider" name="simulatedObject_x_lighthouse_1">
-    <property name="geometry">
-     <rect>
-      <x>69</x>
-      <y>30</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-100</number>
-    </property>
-    <property name="maximum">
-     <number>100</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="value">
-     <number>0</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
    <widget class="QLabel" name="x_simulatedObject_lighthouse_1">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>30</y>
       <width>51</width>
       <height>16</height>
@@ -1295,8 +1003,8 @@
    <widget class="QLabel" name="y_simulatedObject_lighthouse_1">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>50</y>
+      <x>100</x>
+      <y>30</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -1316,8 +1024,8 @@
    <widget class="QLabel" name="z_simulatedObject">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>70</y>
+      <x>190</x>
+      <y>30</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -1337,8 +1045,8 @@
    <widget class="QLabel" name="roll_simulatedObject_lighthouse_1">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>90</y>
+      <x>10</x>
+      <y>50</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -1358,8 +1066,8 @@
    <widget class="QLabel" name="pitch_simulatedObject_lighthouse_1">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>110</y>
+      <x>100</x>
+      <y>50</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -1379,8 +1087,8 @@
    <widget class="QLabel" name="yaw_simulatedObject_lighthouse_1">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>130</y>
+      <x>190</x>
+      <y>50</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -1397,125 +1105,12 @@
      <string>yaw</string>
     </property>
    </widget>
-   <widget class="QSlider" name="simulatedObject_y_lighthouse_1">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>50</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-100</number>
-    </property>
-    <property name="maximum">
-     <number>100</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="value">
-     <number>30</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="simulatedObject_z_lighthouse_1">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>70</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-100</number>
-    </property>
-    <property name="maximum">
-     <number>100</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="simulatedObject_roll_lighthouse_1">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>90</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-90</number>
-    </property>
-    <property name="maximum">
-     <number>90</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="simulatedObject_pitch_lighthouse_1">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>110</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-90</number>
-    </property>
-    <property name="maximum">
-     <number>90</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="simulatedObject_yaw_lighthouse_1">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>130</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-90</number>
-    </property>
-    <property name="maximum">
-     <number>90</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
    <widget class="QLineEdit" name="simulatedObject_x_text_lighthouse_1">
     <property name="geometry">
      <rect>
-      <x>220</x>
+      <x>40</x>
       <y>30</y>
-      <width>41</width>
+      <width>51</width>
       <height>21</height>
      </rect>
     </property>
@@ -1538,9 +1133,9 @@
    <widget class="QLineEdit" name="simulatedObject_y_text_lighthouse_1">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>50</y>
-      <width>41</width>
+      <x>130</x>
+      <y>30</y>
+      <width>51</width>
       <height>21</height>
      </rect>
     </property>
@@ -1564,8 +1159,8 @@
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>70</y>
-      <width>41</width>
+      <y>30</y>
+      <width>51</width>
       <height>21</height>
      </rect>
     </property>
@@ -1588,8 +1183,8 @@
    <widget class="QLineEdit" name="simulatedObject_roll_text_lighthouse_1">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>90</y>
+      <x>50</x>
+      <y>50</y>
       <width>41</width>
       <height>21</height>
      </rect>
@@ -1613,8 +1208,8 @@
    <widget class="QLineEdit" name="simulatedObject_pitch_text_lighthouse_1">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>110</y>
+      <x>140</x>
+      <y>50</y>
       <width>41</width>
       <height>21</height>
      </rect>
@@ -1638,8 +1233,8 @@
    <widget class="QLineEdit" name="simulatedObject_yaw_text_lighthouse_1">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>130</y>
+      <x>230</x>
+      <y>50</y>
       <width>41</width>
       <height>21</height>
      </rect>
@@ -1664,10 +1259,10 @@
   <widget class="QFrame" name="frame_simulatedObject_lighthouse_2">
    <property name="geometry">
     <rect>
-     <x>600</x>
-     <y>200</y>
+     <x>310</x>
+     <y>420</y>
      <width>281</width>
-     <height>161</height>
+     <height>81</height>
     </rect>
    </property>
    <property name="frameShape">
@@ -1697,35 +1292,10 @@
      <string>simulated object relative pose lighthouse 2</string>
     </property>
    </widget>
-   <widget class="QSlider" name="simulatedObject_x_lighthouse_2">
-    <property name="geometry">
-     <rect>
-      <x>69</x>
-      <y>30</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-100</number>
-    </property>
-    <property name="maximum">
-     <number>100</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="value">
-     <number>0</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
    <widget class="QLabel" name="x_simulatedObject_lighthouse_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>30</y>
       <width>51</width>
       <height>16</height>
@@ -1746,8 +1316,8 @@
    <widget class="QLabel" name="y_simulatedObject_lighthouse_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>50</y>
+      <x>100</x>
+      <y>30</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -1767,8 +1337,8 @@
    <widget class="QLabel" name="z_simulatedObject_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>70</y>
+      <x>190</x>
+      <y>30</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -1788,8 +1358,8 @@
    <widget class="QLabel" name="roll_simulatedObject_lighthouse_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>90</y>
+      <x>10</x>
+      <y>50</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -1809,8 +1379,8 @@
    <widget class="QLabel" name="pitch_simulatedObject_lighthouse_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>110</y>
+      <x>100</x>
+      <y>50</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -1830,8 +1400,8 @@
    <widget class="QLabel" name="yaw_simulatedObject_lighthouse_2">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>130</y>
+      <x>190</x>
+      <y>50</y>
       <width>51</width>
       <height>16</height>
      </rect>
@@ -1848,125 +1418,12 @@
      <string>yaw</string>
     </property>
    </widget>
-   <widget class="QSlider" name="simulatedObject_y_lighthouse_2">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>50</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-100</number>
-    </property>
-    <property name="maximum">
-     <number>100</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="value">
-     <number>20</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="simulatedObject_z_lighthouse_2">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>70</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-100</number>
-    </property>
-    <property name="maximum">
-     <number>100</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="simulatedObject_roll_lighthouse_2">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>90</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-90</number>
-    </property>
-    <property name="maximum">
-     <number>90</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="simulatedObject_pitch_lighthouse_2">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>110</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-90</number>
-    </property>
-    <property name="maximum">
-     <number>90</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
-   <widget class="QSlider" name="simulatedObject_yaw_lighthouse_2">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>130</y>
-      <width>141</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="minimum">
-     <number>-90</number>
-    </property>
-    <property name="maximum">
-     <number>90</number>
-    </property>
-    <property name="singleStep">
-     <number>1</number>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
    <widget class="QLineEdit" name="simulatedObject_x_text_lighthouse_2">
     <property name="geometry">
      <rect>
-      <x>220</x>
+      <x>40</x>
       <y>30</y>
-      <width>41</width>
+      <width>51</width>
       <height>21</height>
      </rect>
     </property>
@@ -1989,9 +1446,9 @@
    <widget class="QLineEdit" name="simulatedObject_y_text_lighthouse_2">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>50</y>
-      <width>41</width>
+      <x>130</x>
+      <y>30</y>
+      <width>51</width>
       <height>21</height>
      </rect>
     </property>
@@ -2015,8 +1472,8 @@
     <property name="geometry">
      <rect>
       <x>220</x>
-      <y>70</y>
-      <width>41</width>
+      <y>30</y>
+      <width>51</width>
       <height>21</height>
      </rect>
     </property>
@@ -2039,8 +1496,8 @@
    <widget class="QLineEdit" name="simulatedObject_roll_text_lighthouse_2">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>90</y>
+      <x>50</x>
+      <y>50</y>
       <width>41</width>
       <height>21</height>
      </rect>
@@ -2064,8 +1521,8 @@
    <widget class="QLineEdit" name="simulatedObject_pitch_text_lighthouse_2">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>110</y>
+      <x>140</x>
+      <y>50</y>
       <width>41</width>
       <height>21</height>
      </rect>
@@ -2089,8 +1546,8 @@
    <widget class="QLineEdit" name="simulatedObject_yaw_text_lighthouse_2">
     <property name="geometry">
      <rect>
-      <x>220</x>
-      <y>130</y>
+      <x>230</x>
+      <y>50</y>
       <width>41</width>
       <height>21</height>
      </rect>
@@ -2116,9 +1573,9 @@
    <property name="geometry">
     <rect>
      <x>310</x>
-     <y>370</y>
+     <y>510</y>
      <width>281</width>
-     <height>141</height>
+     <height>41</height>
     </rect>
    </property>
    <property name="frameShape">
@@ -2127,46 +1584,11 @@
    <property name="frameShadow">
     <enum>QFrame::Raised</enum>
    </property>
-   <widget class="QPushButton" name="object_pose_estimation_epnp">
-    <property name="enabled">
-     <bool>false</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>40</y>
-      <width>261</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="toolTip">
-     <string extracomment="test"/>
-    </property>
-    <property name="text">
-     <string>object pose estimation epnp</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="object_pose_estimation_p3p">
-    <property name="enabled">
-     <bool>false</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>70</y>
-      <width>261</width>
-      <height>27</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>object pose estimation p3p</string>
-    </property>
-   </widget>
    <widget class="QLineEdit" name="load_object_text">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>100</y>
+      <y>10</y>
       <width>131</width>
       <height>27</height>
      </rect>
@@ -2179,7 +1601,7 @@
     <property name="geometry">
      <rect>
       <x>140</x>
-      <y>100</y>
+      <y>10</y>
       <width>131</width>
       <height>29</height>
      </rect>
@@ -2188,25 +1610,642 @@
      <string>load object</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="object_pose_estimation_least_squares">
+  </widget>
+  <widget class="QFrame" name="frame_simulatedObject_lighthouse_3">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>190</y>
+     <width>281</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::StyledPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
+   </property>
+   <widget class="QLabel" name="object_header">
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>10</y>
-      <width>261</width>
-      <height>27</height>
+      <y>0</y>
+      <width>101</width>
+      <height>21</height>
      </rect>
     </property>
-    <property name="toolTip">
-     <string extracomment="test"/>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
     </property>
     <property name="text">
-     <string>object pose estimation (least squares)</string>
+     <string>object pose</string>
     </property>
-    <property name="checkable">
+   </widget>
+   <widget class="QLabel" name="x_object">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>51</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>x</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="y_object">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>20</y>
+      <width>51</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>y</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="z_object">
+    <property name="geometry">
+     <rect>
+      <x>190</x>
+      <y>20</y>
+      <width>51</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>z</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="roll_object">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>40</y>
+      <width>51</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>roll</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="pitch_object">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>40</y>
+      <width>51</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>pitch</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="yaw_object">
+    <property name="geometry">
+     <rect>
+      <x>190</x>
+      <y>40</y>
+      <width>51</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>yaw</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="object_x_text">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>20</y>
+      <width>51</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>7</pointsize>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="locale">
+     <locale language="German" country="Germany"/>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="readOnly">
      <bool>true</bool>
     </property>
    </widget>
+   <widget class="QLineEdit" name="object_y_text">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>20</y>
+      <width>51</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>7</pointsize>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="locale">
+     <locale language="German" country="Germany"/>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="object_z_text">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>20</y>
+      <width>51</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>7</pointsize>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="locale">
+     <locale language="German" country="Germany"/>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="object_roll_text">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>40</y>
+      <width>41</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>7</pointsize>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="locale">
+     <locale language="German" country="Germany"/>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="object_pitch">
+    <property name="geometry">
+     <rect>
+      <x>140</x>
+      <y>40</y>
+      <width>41</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>7</pointsize>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="locale">
+     <locale language="German" country="Germany"/>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="yaw_text">
+    <property name="geometry">
+     <rect>
+      <x>230</x>
+      <y>40</y>
+      <width>41</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>7</pointsize>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="locale">
+     <locale language="German" country="Germany"/>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QFrame" name="frame_object_pose_estimate">
+   <property name="geometry">
+    <rect>
+     <x>310</x>
+     <y>260</y>
+     <width>281</width>
+     <height>71</height>
+    </rect>
+   </property>
+   <property name="frameShape">
+    <enum>QFrame::StyledPanel</enum>
+   </property>
+   <property name="frameShadow">
+    <enum>QFrame::Raised</enum>
+   </property>
+   <widget class="QLabel" name="object_header_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>0</y>
+      <width>161</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>object pose estimate</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="x_object_pose_estimate">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>51</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>x</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="y_object_pose_estimate">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>20</y>
+      <width>51</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>y</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="z_object_pose_estimate_text">
+    <property name="geometry">
+     <rect>
+      <x>190</x>
+      <y>20</y>
+      <width>51</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>z</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="roll_object_pose_estimate">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>40</y>
+      <width>51</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>roll</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="pitch_object_pose_estimate">
+    <property name="geometry">
+     <rect>
+      <x>100</x>
+      <y>40</y>
+      <width>51</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>pitch</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="yaw_object_pose_estimate">
+    <property name="geometry">
+     <rect>
+      <x>190</x>
+      <y>40</y>
+      <width>51</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <italic>false</italic>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="text">
+     <string>yaw</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="object_pose_estimate_x_text">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>20</y>
+      <width>51</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>7</pointsize>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="locale">
+     <locale language="German" country="Germany"/>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="object_pose_estimate_y_text">
+    <property name="geometry">
+     <rect>
+      <x>130</x>
+      <y>20</y>
+      <width>51</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>7</pointsize>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="locale">
+     <locale language="German" country="Germany"/>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="object_pose_estimate_z_text">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>20</y>
+      <width>51</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>7</pointsize>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="locale">
+     <locale language="German" country="Germany"/>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="object_pose_estimate_roll_text">
+    <property name="geometry">
+     <rect>
+      <x>50</x>
+      <y>40</y>
+      <width>41</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>7</pointsize>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="locale">
+     <locale language="German" country="Germany"/>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="object_pose_estimate_pitch">
+    <property name="geometry">
+     <rect>
+      <x>140</x>
+      <y>40</y>
+      <width>41</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>7</pointsize>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="locale">
+     <locale language="German" country="Germany"/>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="object_pose_estimate_yaw_text">
+    <property name="geometry">
+     <rect>
+      <x>230</x>
+      <y>40</y>
+      <width>41</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>7</pointsize>
+      <italic>true</italic>
+     </font>
+    </property>
+    <property name="locale">
+     <locale language="German" country="Germany"/>
+    </property>
+    <property name="text">
+     <string>0</string>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QSpinBox" name="objectSelector">
+   <property name="geometry">
+    <rect>
+     <x>540</x>
+     <y>0</y>
+     <width>48</width>
+     <height>21</height>
+    </rect>
+   </property>
   </widget>
  </widget>
  <resources/>

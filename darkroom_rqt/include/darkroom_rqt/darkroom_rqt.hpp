@@ -15,11 +15,13 @@
 #include <QLineEdit>
 #include <QSlider>
 #include <QPushButton>
+#include <common_utilities/rviz_visualization.hpp>
+#include <visualization_msgs/InteractiveMarkerFeedback.h>
 
 #endif
 
 class RoboyDarkRoom
-        : public rqt_gui_cpp::Plugin {
+        : public rqt_gui_cpp::Plugin, rviz_visualization {
     Q_OBJECT
 public:
     RoboyDarkRoom();
@@ -130,8 +132,8 @@ public Q_SLOTS:
     void loadObject();
 private:
     /**
-         * Is regularily publishing the tf frames (lighthouse1, lighthouse2)
-         */
+     * Is regularily publishing the tf frames (lighthouse1, lighthouse2)
+     */
     void transformPublisher();
 
     /**
@@ -139,6 +141,12 @@ private:
      * @param msg
      */
     void correctPose(const roboy_communication_middleware::LighthousePoseCorrection &msg);
+
+    /**
+     * Callback for interactive markers
+     * @param msg
+     */
+    void interactiveMarkersFeedback(const visualization_msgs::InteractiveMarkerFeedback &msg);
 private:
     Ui::RoboyDarkRoom ui;
     QWidget *widget_;
@@ -150,10 +158,11 @@ private:
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     boost::shared_ptr<std::thread> transform_thread = nullptr;
-    ros::Subscriber pose_correction_sub;
+    ros::Subscriber pose_correction_sub, interactive_marker_sub;
     tf::TransformListener tf_listener;
     tf::TransformBroadcaster tf_broadcaster;
-    static tf::Transform lighthouse1, lighthouse2, tf_world, simulated_object_lighthouse1, simulated_object_lighthouse2;
+    static tf::Transform lighthouse1, lighthouse2, tf_world,
+            simulated_object_lighthouse1, simulated_object_lighthouse2;
     atomic<bool> publish_transform;
     int object_counter = 0;
     map<int, TrackedObjectPtr> trackedObjects;

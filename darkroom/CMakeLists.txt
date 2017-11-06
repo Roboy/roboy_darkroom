@@ -47,11 +47,17 @@ add_library( PoseEstimatorSensorDistance src/PoseEstimatorSensorDistance.cpp )
 
 add_library( PoseEstimatorSensorDistances src/PoseEstimatorSensorDistances.cpp )
 
+add_library( Sensor src/Sensor.cpp )
+target_link_libraries( Sensor ${catkin_LIBRARIES} )
+
 add_library( Transform src/Transform.cpp )
 target_link_libraries( Transform ${catkin_LIBRARIES} )
 
 add_library( Triangulate src/Triangulation.cpp )
 target_link_libraries( Triangulate ${catkin_LIBRARIES} )
+
+add_library( Utilities src/Utilities.cpp )
+target_link_libraries( Utilities ${catkin_LIBRARIES} )
 
 add_library( LighthouseSimulator src/LighthouseSimulator.cpp )
 add_dependencies(LighthouseSimulator roboy_communication_middleware_gencpp )
@@ -63,13 +69,10 @@ add_dependencies(LighthouseEstimator roboy_communication_middleware_gencpp )
 target_link_libraries( LighthouseEstimator ${catkin_LIBRARIES} PoseEstimatorSensorCloud PoseEstimatorSensorDistance
 		PoseEstimatorSensorDistances Transform Triangulate )
 
-add_library( Sensor src/Sensor.cpp )
-target_link_libraries( Sensor ${catkin_LIBRARIES} )
-
 add_library( TrackedObject src/TrackedObject.cpp )
 add_dependencies(TrackedObject roboy_communication_middleware_gencpp )
 target_link_libraries( TrackedObject ${yaml-cpp_LIBRARIES} ${catkin_LIBRARIES} ${OpenCV_LIBS}
-		Sensor LighthouseEstimator )
+		Sensor LighthouseEstimator Utilities )
 
 #==============================================================================
 # Installation
