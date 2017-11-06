@@ -565,7 +565,7 @@ bool LighthouseEstimator::lighthousePoseEstimationLeastSquares(){
     numDiff = new NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>(estimator);
     lm = new LevenbergMarquardt<NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double>(*numDiff);
     lm->parameters.maxfev = MAX_ITERATIONS;
-//    lm->parameters.xtol = 1.0e-10;
+    lm->parameters.xtol = 1.0e-10;
     int ret = lm->minimize(pose);
     ROS_INFO("PoseEstimationSensorCloud finished after %ld iterations, with an error of %f", lm->iter, lm->fnorm);
 

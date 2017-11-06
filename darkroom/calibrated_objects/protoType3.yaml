@@ -1,4 +1,4 @@
-name: bastiisdoff
+name: calibration_object
 ObjectID: 0
 mesh: pimmel
 sensor_relative_locations:
@@ -6,7 +6,3 @@ sensor_relative_locations:
   - [1, -0.2, 0.2, 0.0]
   - [2, -0.2, 0.0, 0.2]
   - [3, -0.2, -0.2, 0.0]
-  - [4, -0.2, 0.0, -0.2]
-  - [5, 0.2, 0.0, 0.0]
-  - [6, 0.2, 0.0, 0.2]
-  - [7, 0.2, 0.2, 0.2]

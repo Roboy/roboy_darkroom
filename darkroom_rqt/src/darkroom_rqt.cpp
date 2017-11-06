@@ -185,12 +185,23 @@ void RoboyDarkRoom::shutdownPlugin() {
 
 void RoboyDarkRoom::saveSettings(qt_gui_cpp::Settings &plugin_settings,
                                  qt_gui_cpp::Settings &instance_settings) const {
-    instance_settings.setValue("load_object", text["load_object"]->text());
+    instance_settings.setValue("lighthouse1_x", text["lighthouse1_x"]->text());
+    instance_settings.setValue("lighthouse1_y", text["lighthouse1_y"]->text());
+    instance_settings.setValue("lighthouse1_z", text["lighthouse1_z"]->text());
+    instance_settings.setValue("lighthouse2_x", text["lighthouse2_x"]->text());
+    instance_settings.setValue("lighthouse2_y", text["lighthouse2_y"]->text());
+    instance_settings.setValue("lighthouse2_z", text["lighthouse2_z"]->text());
 }
 
 void RoboyDarkRoom::restoreSettings(const qt_gui_cpp::Settings &plugin_settings,
                                     const qt_gui_cpp::Settings &instance_settings) {
     text["load_object"]->setText( instance_settings.value("load_object").toString());
+    text["lighthouse1_x"]->setText( instance_settings.value("lighthouse1_x").toString());
+    text["lighthouse1_y"]->setText( instance_settings.value("lighthouse1_y").toString());
+    text["lighthouse1_z"]->setText( instance_settings.value("lighthouse1_z").toString());
+    text["lighthouse2_x"]->setText( instance_settings.value("lighthouse2_x").toString());
+    text["lighthouse2_y"]->setText( instance_settings.value("lighthouse2_y").toString());
+    text["lighthouse2_z"]->setText( instance_settings.value("lighthouse2_z").toString());
 }
 
 void RoboyDarkRoom::connectRoboy() {
@@ -499,8 +510,10 @@ void RoboyDarkRoom::transformPublisher() {
         lock_guard<mutex> lock(mux);
         tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse1, ros::Time::now(), "world", "lighthouse1"));
         tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse2, ros::Time::now(), "world", "lighthouse2"));
-        for (auto &object:trackedObjects) {
-            tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse1, ros::Time::now(), "world", object.second->name.c_str()));
+        for (auto &simulated:lighthouse_simulation) {
+            tf_broadcaster.sendTransform(tf::StampedTransform(simulated.second->relative_object_pose, ros::Time::now(),
+                                                              (simulated.second->id==0?"lighthouse1":"lighthouse2"),
+                                                              simulated.second->name.c_str()));
         }
         rate.sleep();
     }
@@ -538,16 +551,6 @@ void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::Interac
         text["lighthouse2_x"]->setText(QString::number(position.x()));
         text["lighthouse2_y"]->setText(QString::number(position.y()));
         text["lighthouse2_z"]->setText(QString::number(position.z()));
-    }else{
-        for(auto &object:trackedObjects){
-            if(strcmp(msg.marker_name.c_str(),object.second->name.c_str())==0){
-                object.second->pose.setOrigin(position);
-                object.second->pose.setRotation(orientation);
-                text["object_x"]->setText(QString::number(position.x()));
-                text["object_y"]->setText(QString::number(position.y()));
-                text["object_z"]->setText(QString::number(position.z()));
-            }
-        }
     }
 }
 

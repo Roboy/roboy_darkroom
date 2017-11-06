@@ -13,6 +13,9 @@ LighthouseSimulator::LighthouseSimulator(int id):id(id){
     sensors_pub = nh->advertise<roboy_communication_middleware::DarkRoom>(
             "/roboy/middleware/DarkRoom/sensors", 1);
 
+    interactive_marker_sub = nh->subscribe("/interactive_markers/feedback", 1,
+                                           &LighthouseSimulator::interactiveMarkersFeedback, this);
+
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
@@ -20,8 +23,10 @@ LighthouseSimulator::LighthouseSimulator(int id):id(id){
         string path = env_p;
         ROS_INFO_STREAM("using DARKROOM_CALIBRATED_OBJECTS: " << path);
         readConfig(path  + "/" +  "protoType3.yaml", objectID, name, mesh, calibrated_sensors, sensors);
-    } else
-        ROS_WARN("could not get DARKROOM_CALIBRATED_OBJECTS environmental variable");
+    } else {
+        ROS_ERROR("could not get DARKROOM_CALIBRATED_OBJECTS environmental variable");
+        return;
+    }
 
     for(auto &sensor:sensors){
         Vector3d rel_location;
@@ -29,13 +34,19 @@ LighthouseSimulator::LighthouseSimulator(int id):id(id){
         sensor_position[sensor.first] << rel_location[0], rel_location[1], rel_location[2], 1;
     }
 
+    char str[100];
+    sprintf(str, "%s_simulated_%d", name.c_str(), id);
+
+    name = string(str);
+
     class_counter++;
 
-    if(id==0){
-        tf::Vector3 origin(0,0,0);
-        make6DofMarker(false,visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D,origin,
-                       true,0.1,"world", "trackedObject","");
-    }
+    tf::Vector3 origin(0,1,0);
+    make6DofMarker(false,visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D,origin,
+                   true,0.1,(id==0?"lighthouse1":"lighthouse2"), name.c_str(),"");
+    relative_object_pose.setOrigin(origin);
+    relative_object_pose.setRotation(tf::Quaternion(0,0,1,0));
+
 }
 
 LighthouseSimulator::~LighthouseSimulator(){
@@ -97,5 +108,15 @@ void LighthouseSimulator::PublishSensorData(){
             sensors_pub.publish(msg);
 
         rate.sleep();
+    }
+}
+
+void LighthouseSimulator::interactiveMarkersFeedback(const visualization_msgs::InteractiveMarkerFeedback &msg){
+    tf::Vector3 position(msg.pose.position.x,msg.pose.position.y,msg.pose.position.z);
+    tf::Quaternion orientation(msg.pose.orientation.x, msg.pose.orientation.y,
+                               msg.pose.orientation.z, msg.pose.orientation.w);
+    if(strcmp(msg.marker_name.c_str(),name.c_str())==0){
+        relative_object_pose.setOrigin(position);
+        relative_object_pose.setRotation(orientation);
     }
 }

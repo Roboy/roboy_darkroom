@@ -30,6 +30,11 @@ public:
      * Publishes simulated ligthouse data
      */
     void PublishSensorData();
+    /**
+     * Use feedback from interactive markers to update relative object pose
+     * @param msg
+     */
+    void interactiveMarkersFeedback(const visualization_msgs::InteractiveMarkerFeedback &msg);
 
     int objectID;
     string name, mesh;
@@ -38,12 +43,14 @@ public:
     boost::shared_ptr<boost::thread> sensor_thread;
     atomic<bool> sensor_publishing;
     mutex mux;
+    tf::Transform relative_object_pose;
+    int id;
 private:
     ros::NodeHandlePtr nh;
     ros::Publisher sensors_pub;
+    ros::Subscriber interactive_marker_sub;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     map<int, Vector4d> sensor_position;
     map<int, Vector2d> sensor_angle;
-    int id;
     static int class_counter;
 };
