@@ -18,7 +18,7 @@ TrackedObject::TrackedObject() {
     if (const char *env_p = getenv("DARKROOM_CALIBRATED_OBJECTS")) {
         path = env_p;
         ROS_INFO_STREAM("using DARKROOM_CALIBRATED_OBJECTS: " << path);
-        readConfig(path  + "/" +  "protoType3.yaml", objectID, name, mesh, calibrated_sensors, sensors);
+        readConfig(path  + "/" +  "protoType4.yaml", objectID, name, mesh, calibrated_sensors, sensors);
     } else
         ROS_WARN("could not get DARKROOM_CALIBRATED_OBJECTS environmental variable");
 
@@ -102,7 +102,7 @@ bool TrackedObject::record(bool start) {
 }
 
 void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware::DarkRoom::ConstPtr &msg) {
-    ROS_WARN_THROTTLE(5, "receiving sensor data");
+    ROS_WARN_THROTTLE(10, "receiving sensor data");
     unsigned short timestamp = (unsigned short) (ros::Time::now().sec & 0xFF);
     uint id = 0;
     for (uint32_t const &data:msg->sensor_value) {
@@ -126,8 +126,9 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware:
                      << "rotor:         " << rotor << endl
                      << "sweepDuration: " << sweepDuration << endl;
             }
-
-            sensors[id].update(lighthouse, rotor, timestamp, ticksToRadians(sweepDuration));
+            double angle = ticksToRadians(sweepDuration);
+            if(angle<M_PI-0.1) // the field of view is smaller than 180 degrees
+                sensors[id].update(lighthouse, rotor, timestamp, angle);
         }
         id++;
     }

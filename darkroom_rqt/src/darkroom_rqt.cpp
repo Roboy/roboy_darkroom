@@ -153,6 +153,9 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
                      SLOT(startObjectPoseEstimationSensorCloud()));
     QObject::connect(button["load_object"], SIGNAL(clicked()), this, SLOT(loadObject()));
 
+    QObject::connect(this, SIGNAL(newData()), this, SLOT(plotData()));
+
+
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
     if (!ros::isInitialized()) {
         int argc = 0;
@@ -162,6 +165,8 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
 
     pose_correction_sub = nh->subscribe("/roboy/middleware/DarkRoom/LighthousePoseCorrection", 1,
                                         &RoboyDarkRoom::correctPose, this);
+    sensor_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensors", 1, &RoboyDarkRoom::receiveSensorData, this);
+
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
@@ -180,6 +185,26 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
                    true, 0.1, "world", "lighthouse1", "");
     make6DofMarker(false, visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D, lighthouse2.getOrigin(),
                    true, 0.1, "world", "lighthouse2", "");
+
+    ui.horizontal_angle_lighthouse_1->addGraph();
+    ui.horizontal_angle_lighthouse_1->graph(0)->setPen(QPen(color_pallette[0]));
+    ui.horizontal_angle_lighthouse_1->yAxis->setLabel("degrees");
+    ui.horizontal_angle_lighthouse_1->yAxis->setRange(0, 180);
+
+    ui.horizontal_angle_lighthouse_2->addGraph();
+    ui.horizontal_angle_lighthouse_2->graph(0)->setPen(QPen(color_pallette[0]));
+    ui.horizontal_angle_lighthouse_2->yAxis->setLabel("degrees");
+    ui.horizontal_angle_lighthouse_2->yAxis->setRange(0, 180);
+
+    ui.vertical_angle_lighthouse_1->addGraph();
+    ui.vertical_angle_lighthouse_1->graph(0)->setPen(QPen(color_pallette[1]));
+    ui.vertical_angle_lighthouse_1->yAxis->setLabel("degrees");
+    ui.vertical_angle_lighthouse_1->yAxis->setRange(0, 180);
+
+    ui.vertical_angle_lighthouse_2->addGraph();
+    ui.vertical_angle_lighthouse_2->graph(0)->setPen(QPen(color_pallette[1]));
+    ui.vertical_angle_lighthouse_2->yAxis->setLabel("degrees");
+    ui.vertical_angle_lighthouse_2->yAxis->setRange(0, 180);
 }
 
 void RoboyDarkRoom::shutdownPlugin() {
@@ -445,15 +470,13 @@ void RoboyDarkRoom::startEstimateSensorPositionsUsingRelativeDistances() {
         ROS_INFO("starting relativ distance thread for lighthouse 1");
         trackedObjects[i]->distance_thread_1 = boost::shared_ptr<boost::thread>(
                 new boost::thread([this, i]() {
-                    this->trackedObjects[i]->estimateSensorPositionsUsingRelativeDistances(LIGHTHOUSE_A,
-                                                                                           trackedObjects[i]->calibrated_sensors);
+                    this->trackedObjects[i]->estimateSensorPositionsUsingRelativeDistances(LIGHTHOUSE_A);
                 }));
         trackedObjects[i]->distance_thread_1->detach();
         ROS_INFO("starting relativ distance thread for lighthouse 2");
         trackedObjects[i]->distance_thread_2 = boost::shared_ptr<boost::thread>(
                 new boost::thread([this, i]() {
-                    this->trackedObjects[i]->estimateSensorPositionsUsingRelativeDistances(LIGHTHOUSE_B,
-                                                                                           trackedObjects[i]->calibrated_sensors);
+                    this->trackedObjects[i]->estimateSensorPositionsUsingRelativeDistances(LIGHTHOUSE_B);
                 }));
         trackedObjects[i]->distance_thread_2->detach();
     }
@@ -575,6 +598,55 @@ void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::Interac
         }
 
     }
+}
+
+void RoboyDarkRoom::receiveSensorData(const roboy_communication_middleware::DarkRoom::ConstPtr &msg){
+    ROS_WARN_THROTTLE(10, "receiving sensor data");
+    uint id = 0;
+    uint lighthouse, rotor, sweepDuration;
+    for (uint32_t const &data:msg->sensor_value) {
+        if(ui.sensor_selector->value() == id) {
+            lighthouse = (data >> 31) & 0x1;
+            rotor = (data >> 30) & 0x1;
+            int valid = (data >> 29) & 0x1;
+            sweepDuration = (data & 0x1fffffff); // raw sensor duration is 50 ticks per microsecond
+            if (valid == 1) {
+                double angle = ticksToDegrees(sweepDuration);
+                if(rotor==0){
+                    horizontal_angle[lighthouse].push_back(angle);
+                    if(horizontal_angle[lighthouse].size()>values_in_plot)
+                        horizontal_angle[lighthouse].pop_front();
+                }else{
+                    vertical_angle[lighthouse].push_back(angle);
+                    if(vertical_angle[lighthouse].size()>values_in_plot)
+                        vertical_angle[lighthouse].pop_front();
+                }
+                time[rotor+lighthouse*2].push_back(message_counter[rotor+lighthouse*2]);
+                if(time[rotor+lighthouse*2].size()>values_in_plot)
+                    time[rotor+lighthouse*2].pop_front();
+
+                break;
+            }
+        }
+        id++;
+    }
+    if((message_counter[rotor+lighthouse*2]++)%10==0)
+        emit newData();
+}
+
+void RoboyDarkRoom::plotData() {
+    ui.horizontal_angle_lighthouse_1->graph(0)->setData(time[0], horizontal_angle[0]);
+    ui.horizontal_angle_lighthouse_2->graph(0)->setData(time[3], horizontal_angle[1]);
+    ui.vertical_angle_lighthouse_1->graph(0)->setData(time[1], vertical_angle[0]);
+    ui.vertical_angle_lighthouse_2->graph(0)->setData(time[2], vertical_angle[1]);
+    ui.horizontal_angle_lighthouse_1->xAxis->rescale();
+    ui.horizontal_angle_lighthouse_2->xAxis->rescale();
+    ui.vertical_angle_lighthouse_1->xAxis->rescale();
+    ui.vertical_angle_lighthouse_2->xAxis->rescale();
+    ui.horizontal_angle_lighthouse_1->replot();
+    ui.horizontal_angle_lighthouse_2->replot();
+    ui.vertical_angle_lighthouse_1->replot();
+    ui.vertical_angle_lighthouse_2->replot();
 }
 
 PLUGINLIB_DECLARE_CLASS(roboy_darkroom, RoboyDarkRoom, RoboyDarkRoom, rqt_gui_cpp::Plugin)

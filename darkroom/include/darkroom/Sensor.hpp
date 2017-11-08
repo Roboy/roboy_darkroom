@@ -130,10 +130,10 @@ public:
     void getRelativeLocation(Vector3d &relative_location);
 
     /**
-     * Indicates if the sensor was used in calibration
+     * Indicates if the sensors relative location is known
      * @return true/false
      */
-    bool sensorCalibrated();
+    bool isCalibrated();
 
     /**
      * pushes the sensors relative location on the tracked object

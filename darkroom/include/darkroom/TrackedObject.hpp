@@ -22,6 +22,7 @@
 
 #define uSecsToRadians(ticks) (degreesToRadians(ticks * 0.021600864))
 #define ticksToRadians(ticks) (degreesToRadians(ticks * 0.021600864 / 50.0))
+#define ticksToDegrees(ticks) ((ticks * 0.021600864 / 50.0))
 
 using namespace std;
 

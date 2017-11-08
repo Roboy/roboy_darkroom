@@ -32,6 +32,12 @@ public:
     LighthouseEstimator();
 
     /**
+     * This returns the sensors that are calibrated and visible by both lighthouses
+     * @param visible_sensors will be filled with sensor ids
+     */
+    void getVisibleCalibratedSensors(vector<int> &visible_sensors);
+
+    /**
      * Estimates the pose correction between ligthhouse 1 and 2, such that the squared distances between sensor positions
      * estimated for both lighthouses is minimized.
      * @return success

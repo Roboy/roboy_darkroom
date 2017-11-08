@@ -35,7 +35,7 @@ bool Utilities::writeConfig(string filepath, int &objectID, string &name, string
     config["name"] = name;
     config["mesh"] = mesh;
     for (auto &sensor : sensors) {
-        if (!sensor.second.sensorCalibrated())
+        if (!sensor.second.isCalibrated())
             continue;
         YAML::Node node = YAML::Load("[0, 0, 0, 0]");
         Vector3d relative_location;

@@ -86,7 +86,7 @@ void Sensor::getRelativeLocation(Vector3d &relative_location){
     relative_location = m_relative_location;
 }
 
-bool Sensor::sensorCalibrated(){
+bool Sensor::isCalibrated(){
     return calibrated;
 }
 

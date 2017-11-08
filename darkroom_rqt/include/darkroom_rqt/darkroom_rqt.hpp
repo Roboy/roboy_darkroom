@@ -12,6 +12,7 @@
 #include <darkroom/TrackedObject.hpp>
 #include <darkroom/Transform.hpp>
 #include <roboy_communication_middleware/LighthousePoseCorrection.h>
+#include <roboy_communication_middleware/DarkRoom.h>
 #include <map>
 #include <QLineEdit>
 #include <QSlider>
@@ -131,6 +132,11 @@ public Q_SLOTS:
      * Loads an object (updateing calibrated sensor distances)
      */
     void loadObject();
+    /**
+     * Plots the data
+     */
+    void plotData();
+
 private:
     /**
      * Is regularily publishing the tf frames (lighthouse1, lighthouse2)
@@ -148,24 +154,31 @@ private:
      * @param msg
      */
     void interactiveMarkersFeedback(const visualization_msgs::InteractiveMarkerFeedback &msg);
+
+    /**
+     * Callback for DarkRoom data
+     */
+    void receiveSensorData(const roboy_communication_middleware::DarkRoom::ConstPtr &msg);
+Q_SIGNALS:
+    void newData();
 private:
     Ui::RoboyDarkRoom ui;
     QWidget *widget_;
 
-    QVector<double> time;
+    QVector<double> time[4], horizontal_angle[2], vertical_angle[2];
     int counter = 0;
     QColor color_pallette[14] = {Qt::blue, Qt::red, Qt::green, Qt::cyan, Qt::magenta, Qt::darkGray, Qt::darkRed, Qt::darkGreen,
                                  Qt::darkBlue, Qt::darkCyan, Qt::darkMagenta, Qt::darkYellow, Qt::black, Qt::gray};
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     boost::shared_ptr<std::thread> transform_thread = nullptr;
-    ros::Subscriber pose_correction_sub, interactive_marker_sub;
+    ros::Subscriber pose_correction_sub, interactive_marker_sub, sensor_sub;
     tf::TransformListener tf_listener;
     tf::TransformBroadcaster tf_broadcaster;
     static tf::Transform lighthouse1, lighthouse2, tf_world,
             simulated_object_lighthouse1, simulated_object_lighthouse2;
     atomic<bool> publish_transform;
-    int object_counter = 0;
+    int object_counter = 0, values_in_plot = 2000, message_counter[4];
     map<int, TrackedObjectPtr> trackedObjects;
     mutex mux;
     static map<string, QLineEdit*> text;
