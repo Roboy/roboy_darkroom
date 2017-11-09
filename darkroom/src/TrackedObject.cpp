@@ -12,6 +12,9 @@ TrackedObject::TrackedObject() {
     }
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
 
+    darkroom_statistics_pub = nh->advertise<roboy_communication_middleware::DarkRoomStatistics>(
+            "/roboy/middleware/DarkRoom/Statistics", 1);
+
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
@@ -103,10 +106,12 @@ bool TrackedObject::record(bool start) {
 
 void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware::DarkRoom::ConstPtr &msg) {
     ROS_WARN_THROTTLE(10, "receiving sensor data");
-    unsigned short timestamp = (unsigned short) (ros::Time::now().sec & 0xFF);
     uint id = 0;
+
+    static int message_counter = 0;
+
+    uint lighthouse, rotor, sweepDuration;
     for (uint32_t const &data:msg->sensor_value) {
-        uint lighthouse, rotor, sweepDuration;
         lighthouse = (data >> 31) & 0x1;
         rotor = (data >> 30) & 0x1;
         int valid = (data >> 29) & 0x1;
@@ -120,18 +125,46 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware:
         if (valid == 1) {
             if (recording) {
                 file << "\n---------------------------------------------\n"
-                     << "timestamp:     " << timestamp << endl
+                     << "timestamp:     " << msg->timestamp[id] << endl
                      << "id:            " << id << endl
                      << "lighthouse:    " << lighthouse << endl
                      << "rotor:         " << rotor << endl
                      << "sweepDuration: " << sweepDuration << endl;
             }
             double angle = ticksToRadians(sweepDuration);
-            if(angle<M_PI-0.1) // the field of view is smaller than 180 degrees
-                sensors[id].update(lighthouse, rotor, timestamp, angle);
+            sensors[id].update(lighthouse, rotor, msg->timestamp[id], angle);
         }
+
         id++;
     }
+
+    if(message_counter++%50==0){ // publish statistics from time to time
+        {
+            roboy_communication_middleware::DarkRoomStatistics statistics_msg;
+            statistics_msg.object_name = name;
+            statistics_msg.lighthouse = LIGHTHOUSE_A;
+            for (uint i = 0; i < msg->sensor_value.size(); i++) {
+                float horizontal, vertical;
+                sensors[i].updateFrequency(LIGHTHOUSE_A, horizontal, vertical);
+                statistics_msg.updateFrequency_horizontal.push_back(horizontal);
+                statistics_msg.updateFrequency_vertical.push_back(vertical);
+            }
+            darkroom_statistics_pub.publish(statistics_msg);
+        }
+        {
+            roboy_communication_middleware::DarkRoomStatistics statistics_msg;
+            statistics_msg.object_name = name;
+            statistics_msg.lighthouse = LIGHTHOUSE_B;
+            for (uint i = 0; i < msg->sensor_value.size(); i++) {
+                float horizontal, vertical;
+                sensors[i].updateFrequency(LIGHTHOUSE_B, horizontal, vertical);
+                statistics_msg.updateFrequency_horizontal.push_back(horizontal);
+                statistics_msg.updateFrequency_vertical.push_back(vertical);
+            }
+            darkroom_statistics_pub.publish(statistics_msg);
+        }
+    }
+
 }
 
 void TrackedObject::receiveSensorData(){

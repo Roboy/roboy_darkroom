@@ -2,6 +2,7 @@
 
 #include <ros/ros.h>
 #include <roboy_communication_middleware/DarkRoom.h>
+#include <roboy_communication_middleware/DarkRoomStatistics.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -81,6 +82,7 @@ public:
     string mesh = "pimmel";
 private:
     ros::NodeHandlePtr nh;
+    ros::Publisher darkroom_statistics_pub;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     ros::Subscriber sensor_sub;
     vector<Eigen::Vector3f> object;

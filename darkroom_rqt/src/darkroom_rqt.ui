@@ -54,7 +54,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="tab">
     <attribute name="title">
@@ -2266,7 +2266,7 @@
    </widget>
    <widget class="QWidget" name="tab_2">
     <attribute name="title">
-     <string>statistics</string>
+     <string>angles</string>
     </attribute>
     <widget class="QCustomPlot" name="horizontal_angle_lighthouse_1" native="true">
      <property name="geometry">
@@ -2383,6 +2383,103 @@
       </property>
       <property name="text">
        <string>horizontal angle lighthouse 2</string>
+      </property>
+     </widget>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tab_3">
+    <attribute name="title">
+     <string>statistics</string>
+    </attribute>
+    <widget class="QCustomPlot" name="update_frequencies_horizontal_lighthouse_1" native="true">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>10</y>
+       <width>291</width>
+       <height>271</height>
+      </rect>
+     </property>
+     <widget class="QLabel" name="label_5">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>0</y>
+        <width>241</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>frequencies horizontal lighthouse 1</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QCustomPlot" name="update_frequencies_vertical_lighthouse_1" native="true">
+     <property name="geometry">
+      <rect>
+       <x>290</x>
+       <y>10</y>
+       <width>291</width>
+       <height>271</height>
+      </rect>
+     </property>
+     <widget class="QLabel" name="label_7">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>0</y>
+        <width>241</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>frequencies vertical lighthouse 1</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QCustomPlot" name="update_frequencies_horizontal_lighthouse_2" native="true">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>280</y>
+       <width>291</width>
+       <height>271</height>
+      </rect>
+     </property>
+     <widget class="QLabel" name="label_6">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>0</y>
+        <width>241</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>frequencies horizontal lighthouse 2</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QCustomPlot" name="update_frequencies_vertical_lighthouse_2" native="true">
+     <property name="geometry">
+      <rect>
+       <x>290</x>
+       <y>280</y>
+       <width>291</width>
+       <height>271</height>
+      </rect>
+     </property>
+     <widget class="QLabel" name="label_8">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>0</y>
+        <width>241</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>frequencies vertical lighthouse 2</string>
       </property>
      </widget>
     </widget>

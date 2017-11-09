@@ -43,8 +43,8 @@ void LighthouseEstimator::calibrateRelativeSensorDistances(){
     ros::Time start_time = ros::Time::now();
     clearAll();
 
-    ros::Time timestamp0_new[2], timestamp1_new[2];
-    map<int, ros::Time[2]> timestamps0_old, timestamps1_old;
+    int timestamp0_new[2], timestamp1_new[2];
+    map<int, int[2]> timestamps0_old, timestamps1_old;
 
     clearAll();
     ROS_INFO("measuring mean sensor positions for 10 seconds");
@@ -333,8 +333,8 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
 }
 
 void LighthouseEstimator::triangulateSensors(){
-    ros::Time timestamp0_new[2], timestamp1_new[2];
-    map<int, ros::Time[2]> timestamps0_old, timestamps1_old;
+    int timestamp0_new[2], timestamp1_new[2];
+    map<int, int[2]> timestamps0_old, timestamps1_old;
     while (tracking) {
         roboy_communication_middleware::DarkRoomSensor msg;
 

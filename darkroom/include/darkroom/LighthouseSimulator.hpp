@@ -8,6 +8,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Core>
 #include <thread>
+#include <chrono>
 #include "darkroom/Transform.hpp"
 #include "darkroom/Sensor.hpp"
 #include "darkroom/Utilities.hpp"
@@ -16,6 +17,7 @@
 
 using namespace std;
 using namespace Eigen;
+using namespace chrono;
 
 class LighthouseSimulator:public rviz_visualization, DarkRoom::Transform, Utilities{
 public:

@@ -27,10 +27,10 @@ public:
      * Updates the angles for the respective lighthouse
      * @param lighthouse for which lighthouse
      * @param type #ANGLE_TYPE
-     * @param timestamp millisecond timestamp
+     * @param timestamp microseconds
      * @param angle ligthhouse angle
      */
-    void update(bool lighthouse, int type, unsigned short timestamp, double angle);
+    void update(bool lighthouse, int type, int timestamp, double angle);
 
     /**
      * Switches lighthouses, such that angles for lighthouse 1 belong to lighthouse 2
@@ -55,9 +55,9 @@ public:
      * Get the recent angles and timestamps
      * @param lighthouse of this lighthouse
      * @param angles Vector(VERTICAL, HORIZONTAL)
-     * @param timestamps as ros time
+     * @param timestamps microseconds
      */
-    void get(bool lighthouse, Vector2d &angles, ros::Time *timestamps);
+    void get(bool lighthouse, Vector2d &angles, int *timestamps);
 
     /**
      * Get the recent angles
@@ -141,6 +141,14 @@ public:
      */
     void getRelativeLocation(vector<Vector3d> &relative_locations);
 
+    /**
+     * Estimates the angle update frequency from the sensors timestamps
+     * @param lighthouse
+     * @param horizontal
+     * @param vertical
+     */
+    void updateFrequency(bool lighthouse, float &horizontal, float &vertical);
+
     enum ANGLE_TYPE{
         HORIZONTAL = 0,
         VERTICAL = 1
@@ -149,8 +157,9 @@ private:
     static bool m_switch;
     Vector3d m_relative_location;
     Vector3d m_position3D, m_relativePosition3D[NUMBER_OF_LIGHTHOUSES], m_relativeOrigin3D[NUMBER_OF_LIGHTHOUSES];
-    pair<unsigned short, double> m_angles_horizontal[NUMBER_OF_LIGHTHOUSES], m_angles_vertical[NUMBER_OF_LIGHTHOUSES];
-    ros::Time m_angleUpdateTime[NUMBER_OF_LIGHTHOUSES];
+    double m_angles_horizontal[NUMBER_OF_LIGHTHOUSES], m_angles_vertical[NUMBER_OF_LIGHTHOUSES];
+    int m_angleUpdateTime_current[NUMBER_OF_LIGHTHOUSES][2], m_angleUpdateTime_prev[NUMBER_OF_LIGHTHOUSES][2];
+    float m_updateFrequency[NUMBER_OF_LIGHTHOUSES][2] = {{0,0}};
     mutex m_lockMutex;
     bool calibrated = false;
 };

@@ -59,6 +59,7 @@ LighthouseSimulator::~LighthouseSimulator(){
 void LighthouseSimulator::PublishSensorData(){
     ros::Rate rate(120);
     bool angle_switch = false;
+    high_resolution_clock::time_point t0 = high_resolution_clock::now();
     while(sensor_publishing){
         Matrix4d RT_object2lighthouse;
         if(!getTransform(name.c_str(), (id==0?"lighthouse1":"lighthouse2"),RT_object2lighthouse))
@@ -96,6 +97,9 @@ void LighthouseSimulator::PublishSensorData(){
                 publishSphere(pos,(id==0?"lighthouse1":"lighthouse2"),"simulated_sensor_positions",
                               sensor.first+id*sensor_position.size()+7543, COLOR(1,0,0,1), 0.01, 1);
             }
+            high_resolution_clock::time_point t1 = high_resolution_clock::now();
+            microseconds time_span = duration_cast<microseconds>(t1 - t0);
+            msg.timestamp.push_back(time_span.count());
             msg.sensor_value.push_back(sensor_value);
 //            Vector3d origin(0,0,0);
 //            Vector3d dir(sensor_pos[0],sensor_pos[1],sensor_pos[2]);

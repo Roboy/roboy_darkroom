@@ -154,6 +154,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(button["load_object"], SIGNAL(clicked()), this, SLOT(loadObject()));
 
     QObject::connect(this, SIGNAL(newData()), this, SLOT(plotData()));
+    QObject::connect(this, SIGNAL(newStatisticsData()), this, SLOT(plotStatisticsData()));
 
 
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
@@ -166,6 +167,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     pose_correction_sub = nh->subscribe("/roboy/middleware/DarkRoom/LighthousePoseCorrection", 1,
                                         &RoboyDarkRoom::correctPose, this);
     sensor_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensors", 1, &RoboyDarkRoom::receiveSensorData, this);
+    statistics_sub = nh->subscribe("/roboy/middleware/DarkRoom/Statistics", 2, &RoboyDarkRoom::receiveStatistics, this);
 
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
@@ -205,6 +207,26 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     ui.vertical_angle_lighthouse_2->graph(0)->setPen(QPen(color_pallette[1]));
     ui.vertical_angle_lighthouse_2->yAxis->setLabel("degrees");
     ui.vertical_angle_lighthouse_2->yAxis->setRange(0, 180);
+
+    for(uint i=0; i<32; i++){
+        QColor color(rand()/(float)RAND_MAX*255,rand()/(float)RAND_MAX*255,rand()/(float)RAND_MAX*255);
+        ui.update_frequencies_horizontal_lighthouse_1->addGraph();
+        ui.update_frequencies_horizontal_lighthouse_1->graph(0)->setPen(QPen(color));
+        ui.update_frequencies_horizontal_lighthouse_2->addGraph();
+        ui.update_frequencies_horizontal_lighthouse_2->graph(0)->setPen(QPen(color));
+        ui.update_frequencies_vertical_lighthouse_1->addGraph();
+        ui.update_frequencies_vertical_lighthouse_1->graph(0)->setPen(QPen(color));
+        ui.update_frequencies_vertical_lighthouse_2->addGraph();
+        ui.update_frequencies_vertical_lighthouse_2->graph(0)->setPen(QPen(color));
+    }
+    ui.update_frequencies_horizontal_lighthouse_1->yAxis->setLabel("frequency[Hz]");
+    ui.update_frequencies_horizontal_lighthouse_1->yAxis->setRange(0, 200);
+    ui.update_frequencies_horizontal_lighthouse_2->yAxis->setLabel("frequency[Hz]");
+    ui.update_frequencies_horizontal_lighthouse_2->yAxis->setRange(0, 200);
+    ui.update_frequencies_vertical_lighthouse_1->yAxis->setLabel("frequency[Hz]");
+    ui.update_frequencies_vertical_lighthouse_1->yAxis->setRange(0, 200);
+    ui.update_frequencies_vertical_lighthouse_2->yAxis->setLabel("frequency[Hz]");
+    ui.update_frequencies_vertical_lighthouse_2->yAxis->setRange(0, 200);
 }
 
 void RoboyDarkRoom::shutdownPlugin() {
@@ -601,7 +623,7 @@ void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::Interac
 }
 
 void RoboyDarkRoom::receiveSensorData(const roboy_communication_middleware::DarkRoom::ConstPtr &msg){
-    ROS_WARN_THROTTLE(10, "receiving sensor data");
+    ROS_DEBUG_THROTTLE(10, "receiving sensor data");
     uint id = 0;
     uint lighthouse, rotor, sweepDuration;
     for (uint32_t const &data:msg->sensor_value) {
@@ -634,6 +656,23 @@ void RoboyDarkRoom::receiveSensorData(const roboy_communication_middleware::Dark
         emit newData();
 }
 
+void RoboyDarkRoom::receiveStatistics(const roboy_communication_middleware::DarkRoomStatistics::ConstPtr &msg){
+    ROS_DEBUG_THROTTLE(10, "receiving statistics data");
+    for(uint i=0;i<msg->updateFrequency_horizontal.size();i++){
+        updateFrequencies[msg->lighthouse][i][0].push_back(msg->updateFrequency_horizontal[i]);
+        updateFrequencies[msg->lighthouse][i][1].push_back(msg->updateFrequency_vertical[i]);
+        if(updateFrequencies[msg->lighthouse][i][0].size()>50)
+            updateFrequencies[msg->lighthouse][i][0].pop_front();
+        if(updateFrequencies[msg->lighthouse][i][1].size()>50)
+            updateFrequencies[msg->lighthouse][i][1].pop_front();
+    }
+    statistics_time[msg->lighthouse].push_back(message_counter_statistics[msg->lighthouse]++);
+    if(statistics_time[msg->lighthouse].size()>50)
+        statistics_time[msg->lighthouse].pop_front();
+
+    emit newStatisticsData();
+}
+
 void RoboyDarkRoom::plotData() {
     ui.horizontal_angle_lighthouse_1->graph(0)->setData(time[0], horizontal_angle[0]);
     ui.horizontal_angle_lighthouse_2->graph(0)->setData(time[3], horizontal_angle[1]);
@@ -647,6 +686,27 @@ void RoboyDarkRoom::plotData() {
     ui.horizontal_angle_lighthouse_2->replot();
     ui.vertical_angle_lighthouse_1->replot();
     ui.vertical_angle_lighthouse_2->replot();
+}
+
+void RoboyDarkRoom::plotStatisticsData(){
+    for(auto &sensor:updateFrequencies[0]){
+        ui.update_frequencies_horizontal_lighthouse_1->graph(sensor.first)->setData(
+                statistics_time[0], updateFrequencies[0][sensor.first][0]);
+        ui.update_frequencies_vertical_lighthouse_1->graph(sensor.first)->setData(
+                statistics_time[0], updateFrequencies[0][sensor.first][1]);
+        ui.update_frequencies_horizontal_lighthouse_2->graph(sensor.first)->setData(
+                statistics_time[1], updateFrequencies[1][sensor.first][0]);
+        ui.update_frequencies_vertical_lighthouse_2->graph(sensor.first)->setData(
+                statistics_time[1], updateFrequencies[1][sensor.first][1]);
+    }
+    ui.update_frequencies_horizontal_lighthouse_1->xAxis->rescale();
+    ui.update_frequencies_vertical_lighthouse_1->xAxis->rescale();
+    ui.update_frequencies_horizontal_lighthouse_2->xAxis->rescale();
+    ui.update_frequencies_vertical_lighthouse_2->xAxis->rescale();
+    ui.update_frequencies_horizontal_lighthouse_1->replot();
+    ui.update_frequencies_vertical_lighthouse_1->replot();
+    ui.update_frequencies_horizontal_lighthouse_2->replot();
+    ui.update_frequencies_vertical_lighthouse_2->replot();
 }
 
 PLUGINLIB_DECLARE_CLASS(roboy_darkroom, RoboyDarkRoom, RoboyDarkRoom, rqt_gui_cpp::Plugin)
