@@ -2,55 +2,55 @@
 * This repo contains everything you need for tracking our custom sensors or the original HTC sensors in space.
 * The repo is structered like so:
 
-├── darkroom
-│   ├── calibrated_objects
-│   ├── CMakeLists.txt
-│   ├── darkroom.xml
-│   ├── include
-│   ├── launch
-│   ├── LICENSE
-│   ├── package.xml
-│   ├── protobuf
-│   ├── scripts
-│   ├── src
-│   └── vive_intrinsics.xml
-├── darkroom_esp8266
-│   ├── darkroom_esp8266.ino
-│   ├── hspi_slave.c
-│   ├── hspi_slave.h
-│   ├── SPISlave.cpp
-│   ├── SPISlave.h
-│   ├── wirelessLove.cpp
-│   └── wirelessLove.hpp
-├── darkroom_mkr
-│   ├── darkroom_mkr.ino
-│   ├── LICENSE
-│   ├── sensor.hpp
-│   ├── wirelessLove.cpp
-│   └── wirelessLove.hpp
-├── darkroom_rqt
-│   ├── CMakeLists.txt
-│   ├── include
-│   ├── package.xml
-│   ├── plugin.xml
-│   ├── qcustomplot
-│   ├── setup.py
-│   └── src
-└── roboy_de10_nano_soc
-    ├── DE10_NANO_SoC_GHRD.qpf
-    ├── DE10_NANO_SoC_GHRD.qsf
-    ├── DE10_NANO_SOC_GHRD.sdc
-    ├── DE10_NANO_SoC_GHRD.v
-    ├── generate_hps_qsys_header.sh
-    ├── hps_0.h
-    ├── images
-    ├── ip
-    ├── ip_backup
-    ├── LICENSE
-    ├── output_files
-    ├── README.md
-    ├── soc_system.qsys
-    └── to_jic.cof
+* ├── darkroom
+* │   ├── calibrated_objects
+* ├── CMakeLists.txt
+* │   ├── darkroom.xml
+* │   ├── include
+* │   ├── launch
+* │   ├── LICENSE
+* │   ├── package.xml
+* │   ├── protobuf
+* │   ├── scripts
+* │   ├── src
+* │   └── vive_intrinsics.xml
+* ├── darkroom_esp8266
+* │   ├── darkroom_esp8266.ino
+* │   ├── hspi_slave.c
+* │   ├── hspi_slave.h
+* │   ├── SPISlave.cpp
+* │   ├── SPISlave.h
+* │   ├── wirelessLove.cpp
+* │   └── wirelessLove.hpp
+* ├── darkroom_mkr
+* │   ├── darkroom_mkr.ino
+* │   ├── LICENSE
+* │   ├── sensor.hpp
+* │   ├── wirelessLove.cpp
+* │   └── wirelessLove.hpp
+* ├── darkroom_rqt
+* │   ├── CMakeLists.txt
+* │   ├── include
+* │   ├── package.xml
+* │   ├── plugin.xml
+* │   ├── qcustomplot
+* │   ├── setup.py
+* │   └── src
+* └── roboy_de10_nano_soc
+*   ├── DE10_NANO_SoC_GHRD.qpf
+*   ├── DE10_NANO_SoC_GHRD.qsf
+*   ├── DE10_NANO_SOC_GHRD.sdc
+*   ├── DE10_NANO_SoC_GHRD.v
+*   ├── generate_hps_qsys_header.sh
+*   ├── hps_0.h
+*   ├── images
+*   ├── ip
+*   ├── ip_backup
+*   ├── LICENSE
+*   ├── output_files
+*   ├── README.md
+*   ├── soc_system.qsys
+*   └── to_jic.cof
 
 
 #### darkroom 
