@@ -209,24 +209,24 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     ui.vertical_angle_lighthouse_2->yAxis->setRange(0, 180);
 
     for(uint i=0; i<32; i++){
-        QColor color(rand()/(float)RAND_MAX*255,rand()/(float)RAND_MAX*255,rand()/(float)RAND_MAX*255);
+        QColor color(((float)rand()/RAND_MAX)*255,((float)rand()/RAND_MAX)*255,((float)rand()/RAND_MAX)*255);
         ui.update_frequencies_horizontal_lighthouse_1->addGraph();
-        ui.update_frequencies_horizontal_lighthouse_1->graph(0)->setPen(QPen(color));
+        ui.update_frequencies_horizontal_lighthouse_1->graph(i)->setPen(QPen(color));
         ui.update_frequencies_horizontal_lighthouse_2->addGraph();
-        ui.update_frequencies_horizontal_lighthouse_2->graph(0)->setPen(QPen(color));
+        ui.update_frequencies_horizontal_lighthouse_2->graph(i)->setPen(QPen(color));
         ui.update_frequencies_vertical_lighthouse_1->addGraph();
-        ui.update_frequencies_vertical_lighthouse_1->graph(0)->setPen(QPen(color));
+        ui.update_frequencies_vertical_lighthouse_1->graph(i)->setPen(QPen(color));
         ui.update_frequencies_vertical_lighthouse_2->addGraph();
-        ui.update_frequencies_vertical_lighthouse_2->graph(0)->setPen(QPen(color));
+        ui.update_frequencies_vertical_lighthouse_2->graph(i)->setPen(QPen(color));
     }
     ui.update_frequencies_horizontal_lighthouse_1->yAxis->setLabel("frequency[Hz]");
-    ui.update_frequencies_horizontal_lighthouse_1->yAxis->setRange(0, 200);
+    ui.update_frequencies_horizontal_lighthouse_1->yAxis->setRange(0, 1000);
     ui.update_frequencies_horizontal_lighthouse_2->yAxis->setLabel("frequency[Hz]");
-    ui.update_frequencies_horizontal_lighthouse_2->yAxis->setRange(0, 200);
+    ui.update_frequencies_horizontal_lighthouse_2->yAxis->setRange(0, 1000);
     ui.update_frequencies_vertical_lighthouse_1->yAxis->setLabel("frequency[Hz]");
-    ui.update_frequencies_vertical_lighthouse_1->yAxis->setRange(0, 200);
+    ui.update_frequencies_vertical_lighthouse_1->yAxis->setRange(0, 1000);
     ui.update_frequencies_vertical_lighthouse_2->yAxis->setLabel("frequency[Hz]");
-    ui.update_frequencies_vertical_lighthouse_2->yAxis->setRange(0, 200);
+    ui.update_frequencies_vertical_lighthouse_2->yAxis->setRange(0, 1000);
 }
 
 void RoboyDarkRoom::shutdownPlugin() {
