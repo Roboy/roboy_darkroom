@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: catkin
-Description: Description of catkin
-Version: 0.7.6
-Cflags: 
-Libs: -L/opt/ros/kinetic/lib 
-Requires: 

@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: roswtf
-Description: Description of roswtf
-Version: 1.12.7
-Cflags: 
-Libs: -L/opt/ros/kinetic/lib 
-Requires: 

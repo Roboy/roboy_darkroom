@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: class_loader
-Description: Description of class_loader
-Version: 0.3.6
-Cflags: -I/opt/ros/kinetic/include -I/usr/include
-Libs: -L/opt/ros/kinetic/lib -lclass_loader -l:/usr/lib/arm-linux-gnueabihf/libboost_thread.so -l:/usr/lib/arm-linux-gnueabihf/libboost_system.so -l:/usr/lib/arm-linux-gnueabihf/libboost_chrono.so -l:/usr/lib/arm-linux-gnueabihf/libboost_date_time.so -l:/usr/lib/arm-linux-gnueabihf/libboost_atomic.so -l:/usr/lib/arm-linux-gnueabihf/libpthread.so -l:/usr/lib/libPocoFoundation.so -ldl -l:/usr/lib/arm-linux-gnueabihf/libconsole_bridge.so
-Requires: 

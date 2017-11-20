@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: nodelet
-Description: Description of nodelet
-Version: 1.9.10
-Cflags: -I/opt/ros/kinetic/include -I/usr/include
-Libs: -L/opt/ros/kinetic/lib -lnodeletlib -l:/usr/lib/arm-linux-gnueabihf/libuuid.so
-Requires: bondcpp message_runtime pluginlib rosconsole roscpp std_msgs

@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: genlisp
-Description: Description of genlisp
-Version: 0.4.16
-Cflags: 
-Libs: -L/opt/ros/kinetic/lib 
-Requires: genmsg

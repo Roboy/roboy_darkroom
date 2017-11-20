@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: dynamic_reconfigure
-Description: Description of dynamic_reconfigure
-Version: 1.5.48
-Cflags: -I/opt/ros/kinetic/include
-Libs: -L/opt/ros/kinetic/lib -ldynamic_reconfigure_config_init_mutex
-Requires: message_runtime std_msgs

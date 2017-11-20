@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: rosservice
-Description: Description of rosservice
-Version: 1.12.7
-Cflags: 
-Libs: -L/opt/ros/kinetic/lib 
-Requires: 

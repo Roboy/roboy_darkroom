@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: rosconsole
-Description: Description of rosconsole
-Version: 1.12.7
-Cflags: -I/opt/ros/kinetic/include -I/usr/include
-Libs: -L/opt/ros/kinetic/lib -lrosconsole -lrosconsole_log4cxx -lrosconsole_backend_interface -l:/usr/lib/arm-linux-gnueabihf/liblog4cxx.so -l:/usr/lib/arm-linux-gnueabihf/libboost_regex.so -l:/usr/lib/arm-linux-gnueabihf/libboost_system.so -l:/usr/lib/arm-linux-gnueabihf/libboost_thread.so -l:/usr/lib/arm-linux-gnueabihf/libboost_chrono.so -l:/usr/lib/arm-linux-gnueabihf/libboost_date_time.so -l:/usr/lib/arm-linux-gnueabihf/libboost_atomic.so -l:/usr/lib/arm-linux-gnueabihf/libpthread.so
-Requires: cpp_common rostime

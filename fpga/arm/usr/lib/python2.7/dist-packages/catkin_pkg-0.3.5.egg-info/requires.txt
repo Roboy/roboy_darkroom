@@ -1,3 +1,0 @@
-argparse
-docutils
-python-dateutil

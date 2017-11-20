@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: bondcpp
-Description: Description of bondcpp
-Version: 1.7.19
-Cflags: -I/opt/ros/kinetic/include -I/usr/include
-Libs: -L/opt/ros/kinetic/lib -lbondcpp -l:/usr/lib/arm-linux-gnueabihf/libuuid.so
-Requires: bond roscpp smclib

@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: topic_tools
-Description: Description of topic_tools
-Version: 1.12.7
-Cflags: -I/opt/ros/kinetic/include
-Libs: -L/opt/ros/kinetic/lib -ltopic_tools
-Requires: message_runtime rosconsole roscpp std_msgs xmlrpcpp

@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: roslang
-Description: Description of roslang
-Version: 1.13.5
-Cflags: 
-Libs: -L/opt/ros/kinetic/lib 
-Requires: 

@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: roscpp_traits
-Description: Description of roscpp_traits
-Version: 0.6.2
-Cflags: -I/opt/ros/kinetic/include
-Libs: -L/opt/ros/kinetic/lib 
-Requires: cpp_common rostime

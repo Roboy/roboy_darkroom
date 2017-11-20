@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: nodelet_topic_tools
-Description: Description of nodelet_topic_tools
-Version: 1.9.10
-Cflags: -I/opt/ros/kinetic/include -I/usr/include
-Libs: -L/opt/ros/kinetic/lib -l:/usr/lib/arm-linux-gnueabihf/libboost_thread.so -l:/usr/lib/arm-linux-gnueabihf/libboost_chrono.so -l:/usr/lib/arm-linux-gnueabihf/libboost_system.so -l:/usr/lib/arm-linux-gnueabihf/libboost_date_time.so -l:/usr/lib/arm-linux-gnueabihf/libboost_atomic.so -l:/usr/lib/arm-linux-gnueabihf/libpthread.so
-Requires: dynamic_reconfigure message_filters nodelet pluginlib roscpp

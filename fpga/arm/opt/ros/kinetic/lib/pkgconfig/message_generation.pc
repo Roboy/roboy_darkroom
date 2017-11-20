@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: message_generation
-Description: Description of message_generation
-Version: 0.4.0
-Cflags: 
-Libs: -L/opt/ros/kinetic/lib 
-Requires: gencpp geneus gennodejs genlisp genmsg genpy

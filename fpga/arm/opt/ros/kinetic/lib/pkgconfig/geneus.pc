@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: geneus
-Description: Description of geneus
-Version: 2.2.5
-Cflags: 
-Libs: -L/opt/ros/kinetic/lib 
-Requires: genmsg

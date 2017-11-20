@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: pluginlib
-Description: Description of pluginlib
-Version: 1.10.5
-Cflags: -I/opt/ros/kinetic/include -I/usr/include
-Libs: -L/opt/ros/kinetic/lib -l:/usr/lib/arm-linux-gnueabihf/libboost_filesystem.so -l:/usr/lib/arm-linux-gnueabihf/libboost_system.so -l:/usr/lib/arm-linux-gnueabihf/libtinyxml.so
-Requires: class_loader rosconsole roslib

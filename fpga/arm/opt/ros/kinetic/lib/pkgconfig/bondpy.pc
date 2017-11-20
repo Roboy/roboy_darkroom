@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: bondpy
-Description: Description of bondpy
-Version: 1.7.19
-Cflags: 
-Libs: -L/opt/ros/kinetic/lib 
-Requires: 

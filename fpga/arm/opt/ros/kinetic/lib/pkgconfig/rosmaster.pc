@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: rosmaster
-Description: Description of rosmaster
-Version: 1.12.7
-Cflags: 
-Libs: -L/opt/ros/kinetic/lib 
-Requires: 

@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: stereo_msgs
-Description: Description of stereo_msgs
-Version: 1.12.5
-Cflags: -I/opt/ros/kinetic/include
-Libs: -L/opt/ros/kinetic/lib 
-Requires: message_runtime sensor_msgs std_msgs

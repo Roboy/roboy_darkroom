@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: roscpp_serialization
-Description: Description of roscpp_serialization
-Version: 0.6.2
-Cflags: -I/opt/ros/kinetic/include
-Libs: -L/opt/ros/kinetic/lib -lroscpp_serialization
-Requires: cpp_common roscpp_traits rostime

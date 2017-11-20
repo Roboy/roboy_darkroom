@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: std_msgs
-Description: Description of std_msgs
-Version: 0.5.11
-Cflags: -I/opt/ros/kinetic/include
-Libs: -L/opt/ros/kinetic/lib 
-Requires: message_runtime

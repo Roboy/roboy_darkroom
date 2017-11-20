@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: rosparam
-Description: Description of rosparam
-Version: 1.12.7
-Cflags: 
-Libs: -L/opt/ros/kinetic/lib 
-Requires: 

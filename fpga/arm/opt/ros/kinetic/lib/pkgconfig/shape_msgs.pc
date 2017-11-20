@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: shape_msgs
-Description: Description of shape_msgs
-Version: 1.12.5
-Cflags: -I/opt/ros/kinetic/include
-Libs: -L/opt/ros/kinetic/lib 
-Requires: geometry_msgs message_runtime std_msgs

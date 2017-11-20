@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: rosgraph
-Description: Description of rosgraph
-Version: 1.12.7
-Cflags: 
-Libs: -L/opt/ros/kinetic/lib 
-Requires: 

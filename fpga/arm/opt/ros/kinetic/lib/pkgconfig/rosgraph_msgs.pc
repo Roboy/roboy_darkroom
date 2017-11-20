@@ -1,8 +1,0 @@
-prefix=/opt/ros/kinetic
-
-Name: rosgraph_msgs
-Description: Description of rosgraph_msgs
-Version: 1.11.2
-Cflags: -I/opt/ros/kinetic/include
-Libs: -L/opt/ros/kinetic/lib 
-Requires: message_runtime std_msgs
