@@ -10,7 +10,7 @@ TrackedObject::TrackedObject() {
         ros::init(argc, argv, "TrackedObject",
                   ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     }
-    nh = ros::NodeHandlePtr(new ros::NodeHandle);
+    nh = ros::NodeHandlePtr(new ros::NodeHandle("~"));
 
     darkroom_statistics_pub = nh->advertise<roboy_communication_middleware::DarkRoomStatistics>(
             "/roboy/middleware/DarkRoom/Statistics", 1);
@@ -25,9 +25,74 @@ TrackedObject::TrackedObject() {
     } else
         ROS_WARN("could not get DARKROOM_CALIBRATED_OBJECTS environmental variable");
 
-    trackeObjectInstance++;
-
     pose.setRotation(tf::Quaternion(0,1,0,0));
+
+    string package_path = ros::package::getPath("darkroom");
+    string load_yaml_command = "rosparam load "+package_path+"/launch/ekf_template.yaml " + nh->getNamespace();
+    ROS_DEBUG_STREAM("loading yaml file using this command: " << load_yaml_command);
+    system(load_yaml_command.c_str());
+
+//    nh->setParam("filter_type", "ekf");
+//    nh->setParam("frequency", 120);
+//    nh->setParam("sensor_timeout", 1);
+//    nh->setParam("map_frame", "world");
+//    nh->setParam("world_frame", "world");
+//    nh->setParam("base_link_frame", name);
+//    vector<float> process_noise_covariance = {
+//            0.05, 0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+//            0,    0.05, 0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+//            0,    0,    0.06, 0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+//            0,    0,    0,    0.03, 0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+//            0,    0,    0,    0,    0.03, 0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
+//            0,    0,    0,    0,    0,    0.06, 0,     0,     0,    0,    0,    0,    0,    0,    0,
+//            0,    0,    0,    0,    0,    0,    0.025, 0,     0,    0,    0,    0,    0,    0,    0,
+//            0,    0,    0,    0,    0,    0,    0,     0.025, 0,    0,    0,    0,    0,    0,    0,
+//            0,    0,    0,    0,    0,    0,    0,     0,     0.04, 0,    0,    0,    0,    0,    0,
+//            0,    0,    0,    0,    0,    0,    0,     0,     0,    0.01, 0,    0,    0,    0,    0,
+//            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0.01, 0,    0,    0,    0,
+//            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0.02, 0,    0,    0,
+//            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0.01, 0,    0,
+//            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0.01, 0,
+//            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0.015
+//    };
+//    nh->setParam("process_noise_covariance", process_noise_covariance);
+//    nh->setParam("imu0", nh->getNamespace()+"/imu0");
+//    vector<bool> activeStatesIMU = {false, false, false, // XYZ
+//                                    true, true, true, // roll, pitch, yaw
+//                                    false, false, false, // d(XYZ)
+//                                    false, false, false, // d(roll, pitch, yaw)
+//                                    true, true, true // dd(XYZ)
+//    };
+//    nh->setParam("imu0_config", activeStatesIMU);
+//    nh->setParam("imu0_queue_size", 100);
+//    nh->setParam("imu0_differential", false);
+//    nh->setParam("imu0_relative", true);
+//    nh->setParam("imu0_remove_gravitational_acceleration", false);
+//    nh->setParam("pose0", nh->getNamespace()+"/pose0");
+//    vector<bool> activeStatesPose = {true, true, true, // XYZ
+//                                true, true, true, // roll, pitch, yaw
+//                                false, false, false, // d(XYZ)
+//                                false, false, false, // d(roll, pitch, yaw)
+//                                false, false, false // dd(XYZ)
+//    };
+//    nh->setParam("pose0_config", activeStatesPose);
+//    nh->setParam("pose0_queue_size", 100);
+//    nh->setParam("pose0_differential", false);
+//    nh->setParam("pose0_relative", true);
+//
+//    vector<float> initial_state = { 0.0,  1.0,  0.0,
+//                                    0.0,  0.0,  0.0,
+//                                    0.0,  0.0,  0.0,
+//                                    0.0,  0.0,  0.0,
+//                                    0.0,  0.0,  0.0
+//    };
+//    nh->setParam("initial_state", initial_state);
+//    nh->setParam("publish_tf", true);
+//    nh->setParam("print_diagnostics", true);
+//    // start extended kalman filter
+//    kalman_filter_thread.reset(new boost::thread(&TrackedObject::run, this));
+
+    trackeObjectInstance++;
 }
 
 TrackedObject::~TrackedObject() {

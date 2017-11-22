@@ -10,7 +10,7 @@ SET(CMAKE_BUILD_TYPE Debug)
 # Dependencies
 #==============================================================================
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation tf tf_conversions visualization_msgs
-		roboy_communication_middleware common_utilities )
+		roboy_communication_middleware common_utilities robot_localization)
 
 # Eigen
 find_package(PkgConfig REQUIRED )
@@ -24,7 +24,8 @@ include_directories(${yaml-cpp_INCLUDE_DIRS})
 # OpenCV
 find_package(OpenCV 3.1.0 COMPONENTS opencv_core opencv_highgui opencv_calib3d REQUIRED)
 
-catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware common_utilities INCLUDE_DIRS include
+catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware common_utilities robot_localization
+		INCLUDE_DIRS include
         LIBRARIES ParticleFilter PoseEstimatorSensorCloud PoseEstimatorSensorDistance PoseEstimatorSensorDistances
         Transform Triangulate LighthouseEstimator LighthouseSimulator Sensor TrackedObject )
 

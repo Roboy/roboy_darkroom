@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <roboy_communication_middleware/DarkRoom.h>
 #include <roboy_communication_middleware/DarkRoomStatistics.h>
 #include <Eigen/Core>
@@ -15,6 +16,7 @@
 #include <common_utilities/UDPSocket.hpp>
 #include "darkroom/LighthouseEstimator.hpp"
 #include "darkroom/Utilities.hpp"
+#include <robot_localization/ros_filter_types.h>
 
 // Converts degrees to radians.
 #define degreesToRadians(angleDegrees) (angleDegrees * M_PI / 180.0)
@@ -27,7 +29,7 @@
 
 using namespace std;
 
-class TrackedObject : public LighthouseEstimator, Utilities {
+class TrackedObject : public LighthouseEstimator, Utilities, public RobotLocalization::RosEkf {
 public:
     TrackedObject();
 
@@ -90,6 +92,7 @@ private:
     static bool m_switch;
     ofstream file;
     boost::shared_ptr<UDPSocket> socket;
+    boost::shared_ptr<boost::thread> kalman_filter_thread;
 };
 
 typedef boost::shared_ptr<TrackedObject> TrackedObjectPtr;

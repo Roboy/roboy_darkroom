@@ -16,6 +16,7 @@
     <depend>roboy_communication_middleware</depend>
     <depend>common_utilities</depend>
     <depend>message_runtime</depend>
+    <depend>robot_localization</depend>
 
     <export>
         <rviz plugin="${prefix}/darkroom.xml"/>

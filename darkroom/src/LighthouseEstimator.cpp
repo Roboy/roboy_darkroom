@@ -580,7 +580,7 @@ bool LighthouseEstimator::lighthousePoseEstimationLeastSquares() {
 bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
     ros::Rate rate(60);
     ros::Time t0 = ros::Time::now(), t1;
-    bool show = true;
+//    bool show = true;
     while (objectposeestimating) {
         t1 = ros::Time::now();
 
@@ -607,22 +607,22 @@ bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
         getTransform(LIGHTHOUSE_A, "world", RT_0);
         estimator.pos3D_B = RT_0 * estimator.pos3D_B;
 
-        if((int)(t1-t0).toSec()%3==0){
-            if(show) {
-                cout << "using sensors:\n";
-                int i = 0;
-                for (auto sensor:visible_sensors) {
-                    cout << sensor << endl;
-                    cout << estimator.pos3D_A.block(0, i, 4, 1) << endl;
-//                    cout << estimator.pos3D_B.block(0, i, 4, 1) << endl;
-                    i++;
-                }
-                cout << endl;
-                show = false;
-            }
-        }else{
-            show = true;
-        }
+//        if((int)(t1-t0).toSec()%3==0){
+//            if(show) {
+//                cout << "using sensors:\n";
+//                int i = 0;
+//                for (auto sensor:visible_sensors) {
+//                    cout << sensor << endl;
+//                    cout << estimator.pos3D_A.block(0, i, 4, 1) << endl;
+////                    cout << estimator.pos3D_B.block(0, i, 4, 1) << endl;
+//                    i++;
+//                }
+//                cout << endl;
+//                show = false;
+//            }
+//        }else{
+//            show = true;
+//        }
 
         NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator> *numDiff;
         Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double> *lm;
