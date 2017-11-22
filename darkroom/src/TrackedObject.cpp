@@ -168,19 +168,25 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware:
 }
 
 void TrackedObject::receiveSensorData(){
+    chrono::high_resolution_clock::time_point t0 = chrono::high_resolution_clock::now();
     while(receiveData){
-        uint32_t id;
-        bool lighthouse;
-        bool rotor;
-        uint16_t sweepDuration;
+        vector<uint32_t> id;
+        vector<bool> lighthouse;
+        vector<bool> rotor;
+        vector<uint32_t> sweepDuration;
         if(socket->receiveSensorData(id,lighthouse,rotor,sweepDuration)){
-            ROS_INFO_STREAM(
-                "id:              " << id <<
-                "\tlighthouse:    " << lighthouse <<
-                "\trotor:         " << rotor <<
-                "\tsweepDuration: " << sweepDuration);
-            unsigned short timestamp = (unsigned short) (ros::Time::now().sec & 0xFF);
-            sensors[id].update(lighthouse, rotor, timestamp, uSecsToRadians(sweepDuration));
+            for(uint i=0; i<id.size(); i++) {
+                ROS_INFO_STREAM_THROTTLE(10,
+                        "id:              " << id[i] <<
+                                            "\tlighthouse:    " << lighthouse[i] <<
+                                            "\trotor:         " << rotor[i] <<
+                                            "\tsweepDuration: " << sweepDuration[i]<<
+                                            "\tangle: " << ticksToDegrees(sweepDuration[i]));
+
+                chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
+                chrono::microseconds time_span = chrono::duration_cast<chrono::microseconds>(t1 - t0);
+                sensors[id[i]].update(lighthouse[i], rotor[i], time_span.count(), ticksToRadians(sweepDuration[i]));
+            }
 //            Vector2d angles;
 //            sensors[id].get(0,angles);
 //            cout << angles << endl;

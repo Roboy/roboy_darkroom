@@ -47,15 +47,16 @@ void setup() {
 
   /************** SET UP SPI SLAVE OF FPGA*****************/
   SPISlave.onData([](uint8_t * data, size_t len) {
-        if(sensor_value_counter%1000==0){
+        if(sensor_value_counter%500==0){
           Serial.printf("received %d sensor frames, this frame:\n", sensor_value_counter);
           char str[33];
           for(uint i=0;i<len;i+=4){
             uint32_t val = uint32_t(data[i+3]<<24|data[i+2]<<16|data[i+1]<<8|data[i]);
-            Serial.printf("%d:\t",i);
+            Serial.printf("sensor %d",(val>>19) & 0x3FF);
             printBits(val);
-            Serial.println();
-            Serial.printf("   \t%d\t%d\t%d\t%d\t\n", data[i+3], data[i+2], data[i+1], data[i] );
+            Serial.println();            
+            Serial.printf("   \tlighthouse %d\t rotor %d\t valid %d\t duration %d\t\t angle ", (val >> 31) & 0x1, (val >> 31) & 0x1, (val >> 29) & 0x1, val & 0x7FFFF);
+            Serial.println( (val & 0x7FFFF)* 0.021600864 / 50.0);
           }
       }
       wifi->broadcast_send(data, len);

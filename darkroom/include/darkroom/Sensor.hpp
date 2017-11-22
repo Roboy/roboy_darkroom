@@ -11,11 +11,13 @@
 // std
 #include <mutex>
 #include <vector>
+#include <chrono>
 
 #define NUMBER_OF_LIGHTHOUSES 2
 
 using namespace Eigen;
 using namespace std;
+using namespace chrono;
 
 typedef Matrix<unsigned short, 2, 1> Vector2s;
 
@@ -55,9 +57,9 @@ public:
      * Get the recent angles and timestamps
      * @param lighthouse of this lighthouse
      * @param angles Vector(VERTICAL, HORIZONTAL)
-     * @param timestamps microseconds
+     * @param timestamps
      */
-    void get(bool lighthouse, Vector2d &angles, int *timestamps);
+    void get(bool lighthouse, Vector2d &angles, high_resolution_clock::time_point *timestamps);
 
     /**
      * Get the recent angles
@@ -158,7 +160,7 @@ private:
     Vector3d m_relative_location;
     Vector3d m_position3D, m_relativePosition3D[NUMBER_OF_LIGHTHOUSES], m_relativeOrigin3D[NUMBER_OF_LIGHTHOUSES];
     double m_angles_horizontal[NUMBER_OF_LIGHTHOUSES], m_angles_vertical[NUMBER_OF_LIGHTHOUSES];
-    int m_angleUpdateTime_current[NUMBER_OF_LIGHTHOUSES][2], m_angleUpdateTime_prev[NUMBER_OF_LIGHTHOUSES][2];
+    high_resolution_clock::time_point m_angleUpdateTime_cur[NUMBER_OF_LIGHTHOUSES][2], m_angleUpdateTime_prev[NUMBER_OF_LIGHTHOUSES][2];
     float m_updateFrequency[NUMBER_OF_LIGHTHOUSES][2] = {{0,0}};
     mutex m_lockMutex;
     bool calibrated = false;

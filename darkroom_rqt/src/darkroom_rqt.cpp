@@ -449,7 +449,7 @@ void RoboyDarkRoom::startTriangulation() {
                 ROS_INFO("stopping tracking thread");
                 trackedObjects[i]->tracking = false;
                 if (trackedObjects[i]->tracking_thread->joinable()) {
-                    ROS_INFO("Waiting for tracking thread to terminate");
+                    ROS_INFO_THROTTLE(1,"Waiting for tracking thread to terminate");
                     trackedObjects[i]->tracking_thread->join();
                 }
             }
@@ -475,13 +475,24 @@ void RoboyDarkRoom::startObjectPoseEstimationSensorCloud() {
     ROS_DEBUG("object pose estimation clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
         lock_guard<mutex>(trackedObjects[i]->mux);
-        ROS_INFO("starting pose estimation thread");
-        trackedObjects[i]->objectposeestimating = true;
-        trackedObjects[i]->objectposeestimation_thread = boost::shared_ptr<boost::thread>(
-                new boost::thread([this, i]() {
-                    this->trackedObjects[i]->objectPoseEstimationLeastSquares();
-                }));
-        trackedObjects[i]->objectposeestimation_thread->detach();
+        if (button["object_pose_estimation_least_squares"]->isChecked()) {
+            ROS_INFO("starting pose estimation thread");
+            trackedObjects[i]->objectposeestimating = true;
+            trackedObjects[i]->objectposeestimation_thread = boost::shared_ptr<boost::thread>(
+                    new boost::thread([this, i]() {
+                        this->trackedObjects[i]->objectPoseEstimationLeastSquares();
+                    }));
+            trackedObjects[i]->objectposeestimation_thread->detach();
+        } else {
+            if (trackedObjects[i]->objectposeestimation_thread != nullptr) {
+                ROS_INFO("stopping pose estimation thread");
+                trackedObjects[i]->objectposeestimating = false;
+                if (trackedObjects[i]->objectposeestimation_thread->joinable()) {
+                    ROS_INFO_THROTTLE(1,"Waiting for pose estimation thread to terminate");
+                    trackedObjects[i]->objectposeestimation_thread->join();
+                }
+            }
+        }
     }
 }
 
