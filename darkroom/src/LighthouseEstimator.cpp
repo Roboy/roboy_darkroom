@@ -12,6 +12,8 @@ LighthouseEstimator::LighthouseEstimator() {
             "/roboy/middleware/DarkRoom/sensor_location", 1);
     lighthouse_pose_correction = nh->advertise<roboy_communication_middleware::LighthousePoseCorrection>(
             "/roboy/middleware/DarkRoom/LighthousePoseCorrection", 1);
+    pose_pub = nh->advertise<geometry_msgs::PoseWithCovarianceStamped>(
+            "/roboy/middleware/pose0", 1);
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
@@ -641,6 +643,29 @@ bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
         tf::Transform tf;
         getTFtransform(RT_object, tf);
         publishTF(tf, "world", "object");
+
+        geometry_msgs::PoseWithCovarianceStamped msg;
+        msg.header.stamp = ros::Time::now();
+        msg.header.frame_id = "map";
+        Quaterniond q;
+        Vector3d origin;
+        getPose(q,origin,object_pose);
+        msg.pose.pose.orientation.x = q.x();
+        msg.pose.pose.orientation.y = q.y();
+        msg.pose.pose.orientation.z = q.z();
+        msg.pose.pose.orientation.w = q.w();
+        msg.pose.pose.position.x = origin(0);
+        msg.pose.pose.position.y = origin(1);
+        msg.pose.pose.position.z = origin(2);
+        msg.pose.covariance = {
+                0.1, 0, 0, 0, 0, 0,
+                0, 0.1, 0, 0, 0, 0,
+                0, 0, 0.1, 0, 0, 0,
+                0, 0, 0, 0.1, 0, 0,
+                0, 0, 0, 0, 0.1, 0,
+                0, 0, 0, 0, 0, 0.1
+        };
+        pose_pub.publish(msg);
 
         if(lm->fnorm>0.01)
             object_pose << 0,0,0,0,0,0.0001;

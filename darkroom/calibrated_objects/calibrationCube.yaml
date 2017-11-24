@@ -1,6 +1,6 @@
-name: bastiisdoff
+name: calibrationCube
 ObjectID: 0
-mesh: pimmel
+mesh: calibrationCube
 sensor_relative_locations:
   - [2, -0.045, -0.045, 0.045]
   - [3, -0.045, 0.045, 0.045]

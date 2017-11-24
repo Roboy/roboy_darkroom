@@ -187,7 +187,7 @@ private:
     ros::Subscriber pose_correction_sub, interactive_marker_sub, sensor_sub, statistics_sub;
     tf::TransformListener tf_listener;
     tf::TransformBroadcaster tf_broadcaster;
-    static tf::Transform lighthouse1, lighthouse2, tf_world,
+    static tf::Transform lighthouse1, lighthouse2, tf_world, tf_map,
             simulated_object_lighthouse1, simulated_object_lighthouse2;
     atomic<bool> publish_transform;
     int object_counter = 0, values_in_plot = 300, message_counter[4] = {0}, message_counter_statistics[2] = {0};

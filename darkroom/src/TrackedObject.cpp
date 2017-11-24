@@ -18,26 +18,38 @@ TrackedObject::TrackedObject() {
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
-    if (const char *env_p = getenv("DARKROOM_CALIBRATED_OBJECTS")) {
-        path = env_p;
-        ROS_INFO_STREAM("using DARKROOM_CALIBRATED_OBJECTS: " << path);
-        readConfig(path  + "/" +  "protoType4.yaml", objectID, name, mesh, calibrated_sensors, sensors);
-    } else
-        ROS_WARN("could not get DARKROOM_CALIBRATED_OBJECTS environmental variable");
+    string package_path = ros::package::getPath("darkroom");
+
+    path = package_path+"/calibrated_objects";
+    ROS_INFO_STREAM("using DARKROOM_CALIBRATED_OBJECTS: " << path);
+    readConfig(path  + "/" +  "calibrationCube.yaml", objectID, name, mesh, calibrated_sensors, sensors);
 
     pose.setRotation(tf::Quaternion(0,1,0,0));
 
-    string package_path = ros::package::getPath("darkroom");
-    string load_yaml_command = "rosparam load "+package_path+"/launch/ekf_template.yaml " + nh->getNamespace();
+    string load_yaml_command = "rosparam load "+package_path+"/params/ekf_parameters.yaml " + nh->getNamespace();
     ROS_DEBUG_STREAM("loading yaml file using this command: " << load_yaml_command);
     system(load_yaml_command.c_str());
+
+    imu.setOrigin(tf::Vector3(0,0,0));
+    imu.setRotation(tf::Quaternion(0,0,0,1));
+    publish_imu_transform.reset(new boost::thread(&TrackedObject::publishImuFrame, this));
+    publish_imu_transform->detach();
+
+    // the default parameters for the kalman filter are loaded with the above command
+    // some object specific parameters are set here:
+//    nh->setParam("map_frame", "odom");
+//    nh->setParam("world_frame", "world");
+//    nh->setParam("base_link_frame", name);
+//    nh->setParam("odom_frame", "odom");
+    nh->setParam("imu0", "roboy/middleware/imu0");
+    nh->setParam("pose0", "roboy/middleware/pose0");
+    nh->setParam("publish_tf", true);
+    nh->setParam("print_diagnostics", true);
 
 //    nh->setParam("filter_type", "ekf");
 //    nh->setParam("frequency", 120);
 //    nh->setParam("sensor_timeout", 1);
-//    nh->setParam("map_frame", "world");
-//    nh->setParam("world_frame", "world");
-//    nh->setParam("base_link_frame", name);
+
 //    vector<float> process_noise_covariance = {
 //            0.05, 0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
 //            0,    0.05, 0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
@@ -56,7 +68,7 @@ TrackedObject::TrackedObject() {
 //            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0.015
 //    };
 //    nh->setParam("process_noise_covariance", process_noise_covariance);
-//    nh->setParam("imu0", nh->getNamespace()+"/imu0");
+
 //    vector<bool> activeStatesIMU = {false, false, false, // XYZ
 //                                    true, true, true, // roll, pitch, yaw
 //                                    false, false, false, // d(XYZ)
@@ -90,7 +102,7 @@ TrackedObject::TrackedObject() {
 //    nh->setParam("publish_tf", true);
 //    nh->setParam("print_diagnostics", true);
 //    // start extended kalman filter
-//    kalman_filter_thread.reset(new boost::thread(&TrackedObject::run, this));
+    kalman_filter_thread.reset(new boost::thread(&TrackedObject::run, this));
 
     trackeObjectInstance++;
 }
@@ -101,6 +113,7 @@ TrackedObject::~TrackedObject() {
     calibrating = false;
     poseestimating = false;
     receiveData = false;
+    publish_transform = false;
     if (sensor_thread != nullptr) {
         if (sensor_thread->joinable()) {
             ROS_INFO("Waiting for sensor thread to terminate");
@@ -123,6 +136,12 @@ TrackedObject::~TrackedObject() {
         if (poseestimation_thread->joinable()) {
             ROS_INFO("Waiting for pose estimation thread to terminate");
             poseestimation_thread->join();
+        }
+    }
+    if (publish_imu_transform != nullptr) {
+        if (publish_imu_transform->joinable()) {
+            ROS_INFO("Waiting for imu publish thread to terminate");
+            publish_imu_transform->join();
         }
     }
 }
@@ -258,5 +277,14 @@ void TrackedObject::receiveSensorData(){
 //            sensors[id].get(1,angles);
 //            cout << angles << endl;
         }
+    }
+}
+
+void TrackedObject::publishImuFrame(){
+    ros::Rate rate(30);
+    while (publish_transform) {
+        lock_guard<mutex> lock(mux);
+        tf_broadcaster.sendTransform(tf::StampedTransform(imu, ros::Time::now(), "world", "odom"));
+        rate.sleep();
     }
 }

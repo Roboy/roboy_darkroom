@@ -8,6 +8,7 @@
 #include <common_utilities/rviz_visualization.hpp>
 #include <roboy_communication_middleware/LighthousePoseCorrection.h>
 #include <roboy_communication_middleware/DarkRoomSensor.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #include <darkroom/epnp/epnp.h>
 //#include <darkroom/mavmap/src/base3d/p3p.h>
@@ -104,6 +105,6 @@ public:
 private:
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
-    ros::Publisher sensor_location_pub, lighthouse_pose_correction;
+    ros::Publisher sensor_location_pub, lighthouse_pose_correction, pose_pub;
     VectorXd object_pose;
 };

@@ -71,12 +71,17 @@ private:
      */
     void receiveSensorData();
 
+    /**
+     * regularily publishes the transform between base_link and imu
+     */
+    void publishImuFrame();
+
 public:
     boost::shared_ptr<boost::thread> sensor_thread = nullptr, tracking_thread = nullptr, calibrate_thread = nullptr,
             imu_thread = nullptr, objectposeestimation_thread = nullptr, poseestimation_thread = nullptr,
             particlefilter_thread = nullptr, distance_thread_1 = nullptr,
             distance_thread_2 = nullptr;
-    std::atomic<bool> receiveData, recording;
+    std::atomic<bool> receiveData, recording, publish_transform;
     string path;
     tf::Transform pose;
     int objectID = 0;
@@ -92,7 +97,9 @@ private:
     static bool m_switch;
     ofstream file;
     boost::shared_ptr<UDPSocket> socket;
-    boost::shared_ptr<boost::thread> kalman_filter_thread;
+    boost::shared_ptr<boost::thread> kalman_filter_thread, publish_imu_transform;
+    tf::Transform imu;
+    tf::TransformBroadcaster tf_broadcaster;
 };
 
 typedef boost::shared_ptr<TrackedObject> TrackedObjectPtr;

@@ -5,6 +5,7 @@ tf::Transform RoboyDarkRoom::lighthouse2;
 tf::Transform RoboyDarkRoom::simulated_object_lighthouse1;
 tf::Transform RoboyDarkRoom::simulated_object_lighthouse2;
 tf::Transform RoboyDarkRoom::tf_world;
+tf::Transform RoboyDarkRoom::tf_map;
 
 map<string, QLineEdit *> RoboyDarkRoom::text;
 map<string, QPushButton *> RoboyDarkRoom::button;
@@ -314,10 +315,11 @@ void RoboyDarkRoom::clearAll() {
 void RoboyDarkRoom::resetLighthousePoses() {
     ROS_DEBUG("reset lighthouse poses");
     tf_world.setOrigin(tf::Vector3(0, 0, 0));
+    tf_map.setOrigin(tf::Vector3(0, 0, 0));
     tf::Quaternion quat;
     quat.setRPY(0, 0, 0);
     tf_world.setRotation(quat);
-
+    tf_map.setRotation(quat);
     bool ok;
     quat.setRPY(
             text["lighthouse1_roll"]->text().toFloat(&ok) * M_PI / 180.0,

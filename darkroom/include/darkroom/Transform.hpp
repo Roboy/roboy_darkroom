@@ -56,6 +56,14 @@ namespace DarkRoom {
          */
         void getRTmatrix(Matrix4d &RT, VectorXd &pose);
 
+        /**
+         * Calculates the quaternion and origin from pose
+         * @param q Quaternion will be filled
+         * @param origin 3d location will be filled
+         * @param pose input (r,p,y,x,y,z)
+         */
+        void getPose(Quaterniond &q, Vector3d &origin, VectorXd &pose);
+
         void getTFtransform(VectorXd &x, tf::Transform &tf);
 
         /**
