@@ -55,6 +55,9 @@ LighthouseSimulator::~LighthouseSimulator() {
 }
 
 void LighthouseSimulator::PublishSensorData() {
+    ros::Duration d(3);
+    d.sleep();
+
     ros::Rate rate(120);
     bool angle_switch = false;
     high_resolution_clock::time_point t0 = high_resolution_clock::now();

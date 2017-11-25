@@ -626,6 +626,8 @@ bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
 //            show = true;
 //        }
 
+        object_pose << 0,0,0,0,0,0.0001;
+
         NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator> *numDiff;
         Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double> *lm;
         numDiff = new NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>(estimator);
@@ -667,8 +669,7 @@ bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
         };
         pose_pub.publish(msg);
 
-        if(lm->fnorm>0.01)
-            object_pose << 0,0,0,0,0,0.0001;
+        publishMesh("darkroom","calibrated_objects/models", mesh.c_str(), origin, q, 0.001, "world", "mesh", 9999, 1);
 
         rate.sleep();
     }

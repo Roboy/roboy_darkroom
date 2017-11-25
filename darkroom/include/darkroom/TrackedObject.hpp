@@ -85,8 +85,6 @@ public:
     string path;
     tf::Transform pose;
     int objectID = 0;
-    string name = "bastiisdoff";
-    string mesh = "pimmel";
 private:
     ros::NodeHandlePtr nh;
     ros::Publisher darkroom_statistics_pub;

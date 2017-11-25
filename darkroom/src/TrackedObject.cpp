@@ -24,6 +24,9 @@ TrackedObject::TrackedObject() {
     ROS_INFO_STREAM("using DARKROOM_CALIBRATED_OBJECTS: " << path);
     readConfig(path  + "/" +  "calibrationCube.yaml", objectID, name, mesh, calibrated_sensors, sensors);
 
+    if(exists(path+mesh))
+        has_mesh = true;
+
     pose.setRotation(tf::Quaternion(0,1,0,0));
 
     string load_yaml_command = "rosparam load "+package_path+"/params/ekf_parameters.yaml " + nh->getNamespace();

@@ -3,6 +3,7 @@
 #include <fstream>
 #include "darkroom/Sensor.hpp"
 #include "yaml-cpp/yaml.h"
+#include <sys/stat.h>
 
 
 using namespace std;
@@ -24,4 +25,14 @@ public:
      */
     bool writeConfig(string filepath, int &objectID, string &name, string &mesh,
                      vector<int> &calibrated_sensors, map<int, Sensor> &sensors);
+
+    /**
+     * Checks if a file exists
+     * @param name
+     * @return exists
+     */
+    inline bool exists (const std::string& name) {
+        struct stat buffer;
+        return (stat (name.c_str(), &buffer) == 0);
+    }
 };

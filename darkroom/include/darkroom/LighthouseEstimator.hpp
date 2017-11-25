@@ -102,6 +102,9 @@ public:
     atomic<bool> tracking, calibrating, poseestimating, objectposeestimating,
             distances, rays, particle_filtering;
     mutex mux;
+    string mesh = "pimmel";
+    bool has_mesh = false;
+    string name = "bastiisdoff";
 private:
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
