@@ -118,6 +118,8 @@ void LighthouseSimulator::PublishSensorData() {
 }
 
 void LighthouseSimulator::PublishImuData() {
+    ros::Duration d(3);
+    d.sleep();
     ros::Rate rate(1);
     high_resolution_clock::time_point t0 = high_resolution_clock::now();
     while (imu_publishing) {

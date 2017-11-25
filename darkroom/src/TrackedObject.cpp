@@ -147,6 +147,8 @@ TrackedObject::~TrackedObject() {
             publish_imu_transform->join();
         }
     }
+    // delete all remaining markers
+    clearAll();
 }
 
 void TrackedObject::connectRoboy() {

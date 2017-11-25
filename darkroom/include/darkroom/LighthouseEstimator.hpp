@@ -19,7 +19,7 @@
 #define LIGHTHOUSE_A false
 #define LIGHTHOUSE_B true
 
-#define MAX_ITERATIONS 200
+#define MAX_ITERATIONS 10
 #define ERROR_THRESHOLD 0.00001
 
 #define NUMBER_OF_SAMPLES 100
