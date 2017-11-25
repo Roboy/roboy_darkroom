@@ -290,16 +290,16 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
         sprintf(str, "sensor_%d_estimated", id);
 
         publishSphere(relLocation, (lighthouse ? "lighthouse2" : "lighthouse1"), str,
-                      getMessageID(DISTANCE, id, lighthouse), COLOR(0, 1, lighthouse ? 0 : 1, 0.3), 0.01f, 3);
+                      getMessageID(DISTANCE, id, lighthouse), COLOR(0, 1, lighthouse ? 0 : 1, 0.3), 0.01f, 0);
 
         sprintf(str, "ray_%d", id);
         Vector3d pos(0, 0, 0);
         publishRay(pos, relLocation, (lighthouse ? "lighthouse2" : "lighthouse1"), str,
-                   getMessageID(RAY, id, lighthouse), COLOR(0, 1, lighthouse ? 0 : 1, 0.3), 3);
+                   getMessageID(RAY, id, lighthouse), COLOR(0, 1, lighthouse ? 0 : 1, 0.3), 0);
 
         sprintf(str, "%d", id);
         publishText(relLocation, str, (lighthouse ? "lighthouse2" : "lighthouse1"), "sensor_id", rand(),
-                    COLOR(1, 0, 0, 0.5), 3, 0.04f);
+                    COLOR(1, 0, 0, 0.5), 0, 0.04f);
     }
 
     for (auto id:ids) {
@@ -310,14 +310,14 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
                 sensors[id2].get(lighthouse, pos2);
                 dir = pos2 - pos1;
                 publishRay(pos1, dir, (lighthouse ? "lighthouse2" : "lighthouse1"), "distance",
-                           rand(), COLOR(0, 1, lighthouse ? 0 : 1, 0.5), 3);
+                           rand(), COLOR(0, 1, lighthouse ? 0 : 1, 0.5), 0);
 
                 if (distances) {
                     char str[100];
                     sprintf(str, "%.3f", dir.norm());
                     Vector3d pos = pos1 + dir / 2.0;
                     publishText(pos, str, (lighthouse ? "lighthouse2" : "lighthouse1"), "distance", rand(),
-                                COLOR(1, 0, 0, 0.5), 3, 0.02f);
+                                COLOR(1, 0, 0, 0.5), 0, 0.02f);
                 }
             }
         }
@@ -580,7 +580,7 @@ bool LighthouseEstimator::lighthousePoseEstimationLeastSquares() {
 }
 
 bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
-    ros::Rate rate(60);
+    ros::Rate rate(10);
     ros::Time t0 = ros::Time::now(), t1;
 //    bool show = true;
     while (objectposeestimating) {
@@ -626,7 +626,7 @@ bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
 //            show = true;
 //        }
 
-        object_pose << 0,0,0,0,0,0.0001;
+        object_pose << 0.1, 0.1, 0.2, 0.1, 0.1, 0.1;
 
         NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator> *numDiff;
         Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double> *lm;
@@ -671,6 +671,8 @@ bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
 
         publishMesh("darkroom","calibrated_objects/models", mesh.c_str(), origin, q, 0.001, "world", "mesh", 9999, 1);
 
+//        if(lm->fnorm>0.1) // arbitrary but very bad
+//            object_pose << 0, 0, 0, 0, 0, 0.1;
         rate.sleep();
     }
 }
