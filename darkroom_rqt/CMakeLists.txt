@@ -27,7 +27,7 @@ catkin_python_setup()
 roslint_cpp()
 
 catkin_package( INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS roscpp rqt_gui_cpp std_msgs
-        roboy_communication_middleware darkroom common_utilities)
+        roboy_communication_middleware darkroom common_utilities )
 
 if("${qt_gui_cpp_USE_QT_MAJOR_VERSION} " STREQUAL "5 ")
   qt5_wrap_cpp(darkroom_rqt_MOCS include/darkroom_rqt/darkroom_rqt.hpp qcustomplot/qcustomplot.h)

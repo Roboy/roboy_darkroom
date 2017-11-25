@@ -282,13 +282,20 @@ void RoboyDarkRoom::simulateRoboy() {
     lighthouse_simulation[LIGHTHOUSE_A]->sensor_publishing = true;
     lighthouse_simulation[LIGHTHOUSE_B]->sensor_publishing = true;
 
-    lighthouse_simulation[LIGHTHOUSE_A]->sensor_thread = boost::shared_ptr<boost::thread>(
+    // start a simulated sensor publishing thread for each lighthouse
+    lighthouse_simulation[LIGHTHOUSE_A]->sensor_thread.reset(
             new boost::thread(
                     [this]() { this->lighthouse_simulation[LIGHTHOUSE_A]->PublishSensorData(); }
             ));
-    lighthouse_simulation[LIGHTHOUSE_B]->sensor_thread = boost::shared_ptr<boost::thread>(
+    lighthouse_simulation[LIGHTHOUSE_B]->sensor_thread.reset(
             new boost::thread(
                     [this]() { this->lighthouse_simulation[LIGHTHOUSE_B]->PublishSensorData(); }
+            ));
+    // start one imu publisher
+    lighthouse_simulation[LIGHTHOUSE_A]->imu_publishing = true;
+    lighthouse_simulation[LIGHTHOUSE_A]->imu_thread.reset(
+            new boost::thread(
+                    [this]() { this->lighthouse_simulation[LIGHTHOUSE_A]->PublishImuData(); }
             ));
 
     make6DofMarker(false, visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D, tf::Vector3(0, 0, 0),
@@ -665,7 +672,7 @@ void RoboyDarkRoom::receiveSensorData(const roboy_communication_middleware::Dark
         }
         id++;
     }
-    if((message_counter[rotor+lighthouse*2]++)%10==0)
+    if((message_counter[rotor+lighthouse*2]++)%10==0 && ui.tabWidget->currentIndex() == 1)
         emit newData();
 }
 
@@ -683,7 +690,8 @@ void RoboyDarkRoom::receiveStatistics(const roboy_communication_middleware::Dark
     if(statistics_time[msg->lighthouse].size()>50)
         statistics_time[msg->lighthouse].pop_front();
 
-    emit newStatisticsData();
+    if(ui.tabWidget->currentIndex() == 2)
+        emit newStatisticsData();
 }
 
 void RoboyDarkRoom::plotData() {

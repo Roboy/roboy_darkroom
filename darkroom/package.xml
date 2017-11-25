@@ -17,6 +17,7 @@
     <depend>common_utilities</depend>
     <depend>message_runtime</depend>
     <depend>robot_localization</depend>
+    <depend>xmlrpcpp</depend>
 
     <export>
         <rviz plugin="${prefix}/darkroom.xml"/>
