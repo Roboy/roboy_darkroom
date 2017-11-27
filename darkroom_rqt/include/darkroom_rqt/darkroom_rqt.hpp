@@ -114,6 +114,11 @@ public Q_SLOTS:
     void startEstimateSensorPositionsUsingRelativeDistances();
 
     /**
+     * Toggles relative pose estimation thread
+     */
+    void startEstimateObjectPoseUsingRelativeDistances();
+
+    /**
      * Toggles particle filter thread for pose correction
      */
     void startPoseEstimationParticleFilter();

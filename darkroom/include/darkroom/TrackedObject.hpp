@@ -80,7 +80,7 @@ public:
     boost::shared_ptr<boost::thread> sensor_thread = nullptr, tracking_thread = nullptr, calibrate_thread = nullptr,
             imu_thread = nullptr, objectposeestimation_thread = nullptr, poseestimation_thread = nullptr,
             particlefilter_thread = nullptr, distance_thread_1 = nullptr,
-            distance_thread_2 = nullptr;
+            distance_thread_2 = nullptr, relative_pose_thread = nullptr;
     std::atomic<bool> receiveData, recording, publish_transform;
     string path;
     tf::Transform pose;

@@ -85,6 +85,13 @@ bool Sensor::isActive(bool lighthouse){
             time_span[VERTICAL].count() > 0 && time_span[VERTICAL].count() < 100000 );
 }
 
+bool Sensor::hasNewData(high_resolution_clock::time_point *timestamp){
+    return (m_angleUpdateTime_cur[0][HORIZONTAL]!=timestamp[HORIZONTAL] ||
+            m_angleUpdateTime_cur[0][VERTICAL]!=timestamp[VERTICAL] ||
+            m_angleUpdateTime_cur[1][HORIZONTAL]!=timestamp[2+HORIZONTAL] ||
+            m_angleUpdateTime_cur[1][VERTICAL]!=timestamp[2+VERTICAL]);
+}
+
 void Sensor::setRelativeLocation(Vector3d &relative_location){
     m_relative_location = relative_location;
     calibrated = true;

@@ -19,7 +19,7 @@
 #define LIGHTHOUSE_A false
 #define LIGHTHOUSE_B true
 
-#define MAX_ITERATIONS 10
+#define MAX_ITERATIONS 100
 #define ERROR_THRESHOLD 0.00001
 
 #define NUMBER_OF_SAMPLES 100
@@ -28,7 +28,7 @@
 
 static vector<int> DEFAULT_VECTOR;
 
-class LighthouseEstimator:public DarkRoom::Transform, public rviz_visualization{
+class LighthouseEstimator : public DarkRoom::Transform, public rviz_visualization {
 public:
     LighthouseEstimator();
 
@@ -37,6 +37,12 @@ public:
      * @param visible_sensors will be filled with sensor ids
      */
     void getVisibleCalibratedSensors(vector<int> &visible_sensors);
+
+    /**
+     * This returns the sensors that are calibrated and visible to the given lighthouse
+     * @param visible_sensors will be filled with sensor ids
+     */
+    void getVisibleCalibratedSensors(bool lighthouse, vector<int> &visible_sensors);
 
     /**
      * Estimates the pose correction between ligthhouse 1 and 2, such that the squared distances between sensor positions
@@ -56,10 +62,22 @@ public:
     */
     bool estimateSensorPositionsUsingRelativeDistances(bool lighthouse, vector<int> &specificIds = DEFAULT_VECTOR);
 
+    /**
+    * Estimates the sensor distances of all active sensors
+    * using the known (ie. calibrated) relative distance between the sensors and the lighthouse angles, then estimates
+    * the object pose relative to each ligthhouse
+    * @return success
+    */
+    bool estimateObjectPoseUsingRelativeDistances();
+
     bool poseEstimationSensorDistance();
+
     bool poseEstimationSensorDistances();
+
     bool poseEstimationP3P();
+
     bool poseEstimationEPnP();
+
     bool poseEstimationParticleFilter();
 
     /**
@@ -91,7 +109,7 @@ public:
         DISTANCES = 4
     };
 
-    enum POSE_CORRECTION_TYPE{
+    enum POSE_CORRECTION_TYPE {
         RELATIV = 0,
         ABSOLUT = 1,
         OBJECT = 2

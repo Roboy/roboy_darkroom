@@ -23,7 +23,7 @@ LighthouseSimulator::LighthouseSimulator(int id) : id(id) {
     string package_path = ros::package::getPath("darkroom");
     string path = package_path + "/calibrated_objects";
     ROS_INFO_STREAM("using DARKROOM_CALIBRATED_OBJECTS: " << path);
-    readConfig(path + "/" + "calibrationCube.yaml", objectID, name, mesh, calibrated_sensors, sensors);
+    readConfig(path + "/" + "calibrationObject.yaml", objectID, name, mesh, calibrated_sensors, sensors);
 
     for (auto &sensor:sensors) {
         Vector3d rel_location;
@@ -55,7 +55,7 @@ LighthouseSimulator::~LighthouseSimulator() {
 }
 
 void LighthouseSimulator::PublishSensorData() {
-    ros::Duration d(3);
+    ros::Duration d(1);
     d.sleep();
 
     ros::Rate rate(120);

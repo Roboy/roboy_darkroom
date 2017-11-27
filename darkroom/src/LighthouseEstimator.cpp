@@ -37,6 +37,13 @@ void LighthouseEstimator::getVisibleCalibratedSensors(vector<int> &visible_senso
     }
 }
 
+void LighthouseEstimator::getVisibleCalibratedSensors(bool lighthouse, vector<int> &visible_sensors) {
+    for (auto &sensor : sensors) {
+        if (sensor.second.isActive(lighthouse) && sensor.second.isCalibrated())
+            visible_sensors.push_back(sensor.first);
+    }
+}
+
 void LighthouseEstimator::calibrateRelativeSensorDistances() {
     map<int, vector<Vector3d>> sensorPosition3d;
     map<int, int> number_of_samples;
@@ -334,85 +341,193 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
     return true;
 }
 
-void LighthouseEstimator::triangulateSensors() {
-    high_resolution_clock::time_point timestamp0_new[2], timestamp1_new[2];
-    map<int, high_resolution_clock::time_point[2]> timestamps0_old, timestamps1_old;
+bool LighthouseEstimator::estimateObjectPoseUsingRelativeDistances(){
+    vector<int> visible_sensors[2];
+    getVisibleCalibratedSensors(LIGHTHOUSE_A, visible_sensors[LIGHTHOUSE_A]);
+    VectorXd pose[2];
+    Matrix4d  RT_object[2];
+    if (visible_sensors[LIGHTHOUSE_A].size() >= 4){
+        if(estimateSensorPositionsUsingRelativeDistances(LIGHTHOUSE_A,visible_sensors[LIGHTHOUSE_A])) {
+            PoseEstimatorSensorCloud::PoseEstimator estimator(visible_sensors[LIGHTHOUSE_A].size());
+            uint i = 0;
+            for (auto sensor:visible_sensors[LIGHTHOUSE_A]) {
+                Vector3d position3d, relLocation1;
+                sensors[sensor].get(LIGHTHOUSE_A, position3d); // get the relative position for this lighthouse
+                sensors[sensor].getRelativeLocation(relLocation1);
+                estimator.pos3D_A.block(0, i, 4, 1) << position3d(0), position3d(1), position3d(2), 1;
+                estimator.pos3D_B.block(0, i, 4, 1) << relLocation1(0), relLocation1(1), relLocation1(2), 1;
+                i++;
+            }
 
+            pose[LIGHTHOUSE_A] = VectorXd(6);
+            pose[LIGHTHOUSE_A] << 0.001, 0.001, 0.001, 0.001, 0.001, 0.001;
+
+            NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator> *numDiff;
+            Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double> *lm;
+            numDiff = new NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>(estimator);
+            lm = new LevenbergMarquardt<NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double>(*numDiff);
+            lm->parameters.maxfev = MAX_ITERATIONS;
+            lm->parameters.xtol = 1e-10;
+            int ret = lm->minimize(pose[LIGHTHOUSE_A]);
+            ROS_INFO_THROTTLE(1,
+                              "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
+                              visible_sensors[LIGHTHOUSE_A].size(), lm->iter, lm->fnorm);
+
+            getRTmatrix(RT_object[LIGHTHOUSE_A], pose[LIGHTHOUSE_A]);
+
+            tf::Transform tf;
+            getTFtransform(RT_object[LIGHTHOUSE_A], tf);
+            publishTF(tf, (LIGHTHOUSE_A?"lighthouse2":"lighthouse1"), "object_lighthouse_1");
+        }
+    }
+
+    getVisibleCalibratedSensors(LIGHTHOUSE_B, visible_sensors[LIGHTHOUSE_B]);
+    if (visible_sensors[LIGHTHOUSE_B].size() >= 4){
+        if(estimateSensorPositionsUsingRelativeDistances(LIGHTHOUSE_B,visible_sensors[LIGHTHOUSE_B])) {
+            PoseEstimatorSensorCloud::PoseEstimator estimator(visible_sensors[LIGHTHOUSE_B].size());
+            uint i = 0;
+            for (auto sensor:visible_sensors[LIGHTHOUSE_B]) {
+                Vector3d position3d, relLocation1;
+                sensors[sensor].get(LIGHTHOUSE_B, position3d); // get the relative position for this lighthouse
+                sensors[sensor].getRelativeLocation(relLocation1);
+                estimator.pos3D_A.block(0, i, 4, 1) << position3d(0), position3d(1), position3d(2), 1;
+                estimator.pos3D_B.block(0, i, 4, 1) << relLocation1(0), relLocation1(1), relLocation1(2), 1;
+                i++;
+            }
+
+            pose[LIGHTHOUSE_B] = VectorXd(6);
+            pose[LIGHTHOUSE_B] << 0.001, 0.001, 0.001, 0.001, 0.001, 0.001;
+            pose[LIGHTHOUSE_B] << 0.001, 0.001, 0.001, 0.001, 0.001, 0.001;
+
+            NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator> *numDiff;
+            Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double> *lm;
+            numDiff = new NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>(estimator);
+            lm = new LevenbergMarquardt<NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double>(*numDiff);
+            lm->parameters.maxfev = MAX_ITERATIONS;
+            lm->parameters.xtol = 1e-10;
+            int ret = lm->minimize(pose[LIGHTHOUSE_B]);
+            ROS_INFO_THROTTLE(1,
+                              "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
+                              visible_sensors[LIGHTHOUSE_B].size(), lm->iter, lm->fnorm);
+
+            getRTmatrix(RT_object[LIGHTHOUSE_B], pose[LIGHTHOUSE_B]);
+
+            tf::Transform tf;
+            getTFtransform(RT_object[LIGHTHOUSE_B], tf);
+            publishTF(tf, (LIGHTHOUSE_B?"lighthouse2":"lighthouse1"), "object_lighthouse_2");
+        }
+    }
+
+    Matrix4d RT_correct = RT_object[LIGHTHOUSE_A]*RT_object[LIGHTHOUSE_B].inverse();
+
+    tf::Transform tf;
+    tf.setOrigin(tf::Vector3(RT_correct(0,3), RT_correct(1,3), RT_correct(2,3)));
+    tf::Matrix3x3 rot_matrix(RT_correct(0, 0), RT_correct(0, 1), RT_correct(0, 2),
+                             RT_correct(1, 0), RT_correct(1, 1), RT_correct(1, 2),
+                             RT_correct(2, 0), RT_correct(2, 1), RT_correct(2, 2));
+
+    tf.setBasis(rot_matrix);
+
+    roboy_communication_middleware::LighthousePoseCorrection msg;
+    msg.id = LIGHTHOUSE_B;
+    msg.type = ABSOLUT;
+    tf::transformTFToMsg(tf, msg.tf);
+    lighthouse_pose_correction.publish(msg);
+
+//
+//
+//    Quaterniond q;
+//    Vector3d origin;
+//    getPose(q,origin,object_pose);
+//
+//    publishMesh("darkroom","calibrated_objects/models", mesh.c_str(), origin, q, 0.001, "world", "mesh", 9999, 1);
+
+//        if(lm->fnorm>0.1) // arbitrary but very bad
+//            object_pose << 0, 0, 0, 0, 0, 0.1;
+
+}
+
+void LighthouseEstimator::triangulateSensors() {
+    high_resolution_clock::time_point timestamp_new[4];
+    map<int, high_resolution_clock::time_point[4]> timestamps_old;
+
+    ros::Rate rate(30);
+    bool lighthouse_active[2];
     while (tracking) {
         roboy_communication_middleware::DarkRoomSensor msg;
 
         Matrix4d RT_0, RT_1;
-        if (!getTransform(LIGHTHOUSE_A, "world", RT_0))
+        if (!getTransform(LIGHTHOUSE_A, "world", RT_0)) {
+            rate.sleep(); // no need to query for frame faster than it is published
             continue;
-        if (!getTransform(LIGHTHOUSE_B, "world", RT_1))
+        }
+        if (!getTransform(LIGHTHOUSE_B, "world", RT_1)) {
+            rate.sleep(); // no need to query for frame faster than it is published
             continue;
+        }
 
         for (auto &sensor : sensors) {
-            if (sensor.second.isActive(LIGHTHOUSE_A) && sensor.second.isActive(LIGHTHOUSE_B)) {
+            lighthouse_active[LIGHTHOUSE_A] = sensor.second.isActive(LIGHTHOUSE_A);
+            lighthouse_active[LIGHTHOUSE_B] = sensor.second.isActive(LIGHTHOUSE_B);
+            if (sensor.second.hasNewData(timestamps_old[sensor.first])) {
                 Vector2d lighthouse0_angles;
                 Vector2d lighthouse1_angles;
-                sensor.second.get(LIGHTHOUSE_A, lighthouse0_angles, timestamp0_new);
-                sensor.second.get(LIGHTHOUSE_B, lighthouse1_angles, timestamp1_new);
-//                // check if this is actually new data
-//                if (timestamps0_old[sensor.first][LIGHTHOUSE_A] != timestamp0_new[LIGHTHOUSE_A] &&
-//                    timestamps0_old[sensor.first][LIGHTHOUSE_B] != timestamp0_new[LIGHTHOUSE_B] &&
-//                    timestamps1_old[sensor.first][LIGHTHOUSE_A] != timestamp1_new[LIGHTHOUSE_A] &&
-//                    timestamps1_old[sensor.first][LIGHTHOUSE_B] != timestamp1_new[LIGHTHOUSE_B]) {
-//
-//                    timestamps0_old[sensor.first][LIGHTHOUSE_A] = timestamp0_new[LIGHTHOUSE_A];
-//                    timestamps0_old[sensor.first][LIGHTHOUSE_B] = timestamp0_new[LIGHTHOUSE_B];
-//                    timestamps1_old[sensor.first][LIGHTHOUSE_A] = timestamp1_new[LIGHTHOUSE_A];
-//                    timestamps1_old[sensor.first][LIGHTHOUSE_B] = timestamp1_new[LIGHTHOUSE_B];
+                sensor.second.get(LIGHTHOUSE_A, lighthouse0_angles, &timestamp_new[LIGHTHOUSE_A*2]);
+                sensor.second.get(LIGHTHOUSE_B, lighthouse1_angles, &timestamp_new[LIGHTHOUSE_B*2]);
 
+                memcpy(timestamps_old[sensor.first],timestamp_new,sizeof(timestamp_new));
 
-                Vector3d triangulated_position, ray0, ray1;
-                triangulateFromLighthouseAngles(lighthouse0_angles, lighthouse1_angles, RT_0, RT_1,
-                                                triangulated_position, ray0,
-                                                ray1);
+                Vector3d ray0, ray1;
 
-                sensor.second.set(triangulated_position);
+                if(lighthouse_active[LIGHTHOUSE_A] && lighthouse_active[LIGHTHOUSE_B] ) {
+                    Vector3d triangulated_position;
+                    triangulateFromLighthouseAngles(lighthouse0_angles, lighthouse1_angles, RT_0, RT_1,
+                                                    triangulated_position, ray0,
+                                                    ray1);
 
-                if (!triangulated_position.hasNaN()) {
-                    char str[100], str2[2];
-                    sprintf(str, "sensor_%d", sensor.first);
-                    publishSphere(triangulated_position, "world", str,
-                                  getMessageID(TRIANGULATED, sensor.first), COLOR(0, 1, 0, 0.8), 0.01f, 0.1);
-                    sprintf(str2, "%d", sensor.first);
-                    publishText(triangulated_position, str2, "world", str, getMessageID(SENSOR_NAME, sensor.first),
-                                COLOR(1, 1, 1, 0.7), 0.1, 0.04f);
-                    msg.ids.push_back(sensor.first);
-                    geometry_msgs::Vector3 v;
-                    v.x = triangulated_position[0];
-                    v.y = triangulated_position[1];
-                    v.z = triangulated_position[2];
-                    msg.position.push_back(v);
-                }
+                    sensor.second.set(triangulated_position);
 
-                if (rays) {
-//                        {
-////
-//                            Vector3d origin0, origin1;
-//                            origin0 = RT_0.topRightCorner(3, 1);
-//                            origin1 = RT_1.topRightCorner(3, 1);
-//
-//                            Vector3d ray0_worldFrame, ray1_worldFrame;
-//
-//                            ray0_worldFrame = RT_0.topLeftCorner(3, 3)*ray0;
-//                            ray1_worldFrame = RT_1.topLeftCorner(3, 3)*ray1;
-//
-//                            publishRay(origin0, ray0_worldFrame, "world", "rays_lighthouse_1", rand(),
-//                                       COLOR(1, 0, 1, 1.0), 1);
-//                            publishRay(origin1, ray1_worldFrame, "world", "rays_lighthouse_2", rand(),
-//                                       COLOR(1, 0, 1, 1.0), 1);
-//                        }
-                    Vector3d pos(0, 0, 0);
-                    ray0 *= 5;
-                    publishRay(pos, ray0, "lighthouse1", "rays_lighthouse_1", getMessageID(RAY, sensor.first, 0),
-                               COLOR(1, 0, 0, 1.0), 0.1);
-                    ray1 *= 5;
-                    publishRay(pos, ray1, "lighthouse2", "rays_lighthouse_2", getMessageID(RAY, sensor.first, 1),
-                               COLOR(1, 0, 0, 1.0), 0.1);
+                    if (!triangulated_position.hasNaN()) {
+                        char str[100], str2[2];
+                        sprintf(str, "sensor_%d", sensor.first);
+                        publishSphere(triangulated_position, "world", str,
+                                      getMessageID(TRIANGULATED, sensor.first), COLOR(0, 1, 0, 0.8), 0.01f, 0.1);
+                        sprintf(str2, "%d", sensor.first);
+                        publishText(triangulated_position, str2, "world", str, getMessageID(SENSOR_NAME, sensor.first),
+                                    COLOR(1, 1, 1, 0.7), 0.1, 0.04f);
+                        msg.ids.push_back(sensor.first);
+                        geometry_msgs::Vector3 v;
+                        v.x = triangulated_position[0];
+                        v.y = triangulated_position[1];
+                        v.z = triangulated_position[2];
+                        msg.position.push_back(v);
+                    }
 
+                    if (rays) {
+                        Vector3d pos(0, 0, 0);
+                        ray0 *= 5;
+                        publishRay(pos, ray0, "lighthouse1", "rays_lighthouse_1", getMessageID(RAY, sensor.first, 0),
+                                   COLOR(0, 1, 0, 1.0), 0.1);
+                        ray1 *= 5;
+                        publishRay(pos, ray1, "lighthouse2", "rays_lighthouse_2", getMessageID(RAY, sensor.first, 1),
+                                   COLOR(0, 1, 0, 1.0), 0.1);
+
+                    }
+                }else{
+                    if(lighthouse_active[LIGHTHOUSE_A] && rays) {
+                        rayFromLighthouseAngles(lighthouse0_angles, ray0);
+                        Vector3d pos(0, 0, 0);
+                        ray0 *= 5;
+                        publishRay(pos, ray0, "lighthouse1", "rays_lighthouse_1", getMessageID(RAY, sensor.first, 0),
+                                   COLOR(1, 0, 0, 0.3), 0.1);
+                    }
+                    if(lighthouse_active[LIGHTHOUSE_B] && rays) {
+                        rayFromLighthouseAngles(lighthouse1_angles, ray1);
+                        Vector3d pos(0, 0, 0);
+                        ray1 *= 5;
+                        publishRay(pos, ray1, "lighthouse2", "rays_lighthouse_2", getMessageID(RAY, sensor.first, 0),
+                                   COLOR(1, 0, 0, 0.3), 0.1);
+                    }
                 }
 
                 if (distances) {
@@ -435,7 +550,6 @@ void LighthouseEstimator::triangulateSensors() {
                         }
                     }
                 }
-//                }
             }
         }
         if (msg.ids.size() > 0)
@@ -582,7 +696,7 @@ bool LighthouseEstimator::lighthousePoseEstimationLeastSquares() {
 bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
     ros::Rate rate(10);
     ros::Time t0 = ros::Time::now(), t1;
-//    bool show = true;
+
     while (objectposeestimating) {
         t1 = ros::Time::now();
 
@@ -609,6 +723,7 @@ bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
         getTransform(LIGHTHOUSE_A, "world", RT_0);
         estimator.pos3D_B = RT_0 * estimator.pos3D_B;
 
+//        static bool show = true;
 //        if((int)(t1-t0).toSec()%3==0){
 //            if(show) {
 //                cout << "using sensors:\n";
@@ -626,7 +741,7 @@ bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
 //            show = true;
 //        }
 
-        object_pose << 0.1, 0.1, 0.2, 0.1, 0.1, 0.1;
+        object_pose << 0.001, 0.001, 0.001, 0.001, 0.001, 0.001;
 
         NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator> *numDiff;
         Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double> *lm;

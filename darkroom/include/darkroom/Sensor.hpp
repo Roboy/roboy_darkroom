@@ -120,6 +120,13 @@ public:
     bool isActive(bool lighthouse);
 
     /**
+     * Checks if the provided timestamp matches the current timestamp
+     * @param timestamp four timestamps, one for each lighthouse and rotor
+     * @return new data available
+     */
+    bool hasNewData(high_resolution_clock::time_point *timestamp);
+
+    /**
      * Sets the sensors relative location on the tracked object
      * @param relative_location the relative 3D position
      */

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>608</width>
-    <height>640</height>
+    <height>768</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -64,7 +64,7 @@
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>490</y>
+       <y>520</y>
        <width>261</width>
        <height>27</height>
       </rect>
@@ -1898,7 +1898,7 @@
        <x>0</x>
        <y>370</y>
        <width>281</width>
-       <height>111</height>
+       <height>141</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -1927,7 +1927,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>70</y>
+        <y>100</y>
         <width>261</width>
         <height>27</height>
        </rect>
@@ -1940,13 +1940,29 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>40</y>
+        <y>70</y>
         <width>261</width>
         <height>27</height>
        </rect>
       </property>
       <property name="text">
        <string>pose correction (least squares)</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pose_estimation_relativ_sensor_distances">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>40</y>
+        <width>261</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string extracomment="test"/>
+      </property>
+      <property name="text">
+       <string>pose estimation (using relativ)</string>
       </property>
      </widget>
     </widget>
