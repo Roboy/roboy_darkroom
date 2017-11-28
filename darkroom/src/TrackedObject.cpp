@@ -35,8 +35,8 @@ TrackedObject::TrackedObject() {
 
     imu.setOrigin(tf::Vector3(0,0,0));
     imu.setRotation(tf::Quaternion(0,0,0,1));
-    publish_imu_transform.reset(new boost::thread(&TrackedObject::publishImuFrame, this));
-    publish_imu_transform->detach();
+//    publish_imu_transform.reset(new boost::thread(&TrackedObject::publishImuFrame, this));
+//    publish_imu_transform->detach();
 
     // the default parameters for the kalman filter are loaded with the above command
     // some object specific parameters are set here:
@@ -105,7 +105,7 @@ TrackedObject::TrackedObject() {
 //    nh->setParam("publish_tf", true);
 //    nh->setParam("print_diagnostics", true);
 //    // start extended kalman filter
-//    kalman_filter_thread.reset(new boost::thread(&TrackedObject::run, this));
+    kalman_filter_thread.reset(new boost::thread(&TrackedObject::run, this));
 
     trackeObjectInstance++;
 }

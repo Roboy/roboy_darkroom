@@ -763,7 +763,7 @@ bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
 
         geometry_msgs::PoseWithCovarianceStamped msg;
         msg.header.stamp = ros::Time::now();
-        msg.header.frame_id = "map";
+        msg.header.frame_id = "world";
         Quaterniond q;
         Vector3d origin;
         getPose(q,origin,object_pose);

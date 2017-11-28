@@ -132,9 +132,9 @@ void LighthouseSimulator::PublishImuData() {
         msg.header.frame_id = "calibrationCube";
         msg.orientation.w = 1;
         msg.linear_acceleration_covariance = {
-                0.01, 0, 0,
-                0, 0.01, 0,
-                0, 0, 0.01
+                1, 0, 0,
+                0, 1, 0,
+                0, 0, 1
         };
 
         msg.linear_acceleration.x = 0 + rand()/(double)RAND_MAX * IMU_ACC_NOISE;
