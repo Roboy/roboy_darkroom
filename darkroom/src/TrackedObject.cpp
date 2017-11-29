@@ -199,12 +199,14 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware:
 
     static int message_counter = 0;
 
-    uint lighthouse, rotor, sweepDuration;
+    uint lighthouse, rotor, sensorID,sweepDuration;
     for (uint32_t const &data:msg->sensor_value) {
         lighthouse = (data >> 31) & 0x1;
         rotor = (data >> 30) & 0x1;
         int valid = (data >> 29) & 0x1;
         sweepDuration = (data & 0x1fffffff); // raw sensor duration is 50 ticks per microsecond
+        sensorID= ((data >>19) & 0x3FF);
+        sweepDuration= ((data & 0x7FFFF));
 //        ROS_INFO_STREAM_THROTTLE(1,"timestamp:     " << timestamp << endl <<
 //                "valid:         " << valid << endl <<
 //                "id:            " << id << endl <<
@@ -214,14 +216,14 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware:
         if (valid == 1) {
             if (recording) {
                 file << "\n---------------------------------------------\n"
-                     << "timestamp:     " << msg->timestamp[id] << endl
-                     << "id:            " << id << endl
+                     << "timestamp:     " << msg->timestamp[sensorID] << endl
+                     << "id:            " << sensorID << endl
                      << "lighthouse:    " << lighthouse << endl
                      << "rotor:         " << rotor << endl
                      << "sweepDuration: " << sweepDuration << endl;
             }
             double angle = ticksToRadians(sweepDuration);
-            sensors[id].update(lighthouse, rotor, msg->timestamp[id], angle);
+            sensors[sensorID].update(lighthouse, rotor, msg->timestamp[sensorID], angle);
         }
 
         id++;

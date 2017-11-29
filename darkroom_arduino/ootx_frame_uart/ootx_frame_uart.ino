@@ -53,7 +53,7 @@ void loop() {
     uint32_t checksum = crc.finalize();
     
     cout << "--------------------------------------" <<  endl;
-    cout << "received ootx frame of length "  << " with crc " << ootx.frame.crc32 << " calculated: " << checksum<< endl;
+    cout << "received ootx frame"  << " with crc " << ootx.frame.crc32 << " calculated: " << checksum<< endl;
     cout << "fw_version:          " ; Serial.println(ootx.frame.fw_version,BIN);
     cout << "ID:                  " << ootx.frame.ID << endl;
     cout << "fcal_0_phase:        " << ootx.frame.fcal_0_phase << endl;
