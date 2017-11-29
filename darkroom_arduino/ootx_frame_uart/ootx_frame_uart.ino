@@ -2,7 +2,7 @@
 #include "CRC32.h"
 
 union OOTX{
-  uint8_t data[39];
+  uint8_t data[37];
   struct {
     uint16_t fw_version;
     uint32_t ID;
@@ -23,7 +23,6 @@ union OOTX{
     uint16_t fcal_1_gibmag;
     uint8_t mode;
     uint8_t faults;
-    uint16_t payload_length;
     uint32_t crc32;
   }frame;
 }ootx;
@@ -54,7 +53,7 @@ void loop() {
     uint32_t checksum = crc.finalize();
     
     cout << "--------------------------------------" <<  endl;
-    cout << "received ootx frame of length "  << (unsigned int)ootx.frame.payload_length << " with crc " << ootx.frame.crc32 << " calculated: " << checksum<< endl;
+    cout << "received ootx frame of length "  << " with crc " << ootx.frame.crc32 << " calculated: " << checksum<< endl;
     cout << "fw_version:          " ; Serial.println(ootx.frame.fw_version,BIN);
     cout << "ID:                  " << ootx.frame.ID << endl;
     cout << "fcal_0_phase:        " << ootx.frame.fcal_0_phase << endl;
