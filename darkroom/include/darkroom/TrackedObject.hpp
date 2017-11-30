@@ -18,11 +18,6 @@
 #include "darkroom/Utilities.hpp"
 #include <robot_localization/ros_filter_types.h>
 
-// Converts degrees to radians.
-#define degreesToRadians(angleDegrees) (angleDegrees * M_PI / 180.0)
-// Converts radians to degrees.
-#define radiansToDegrees(angleRadians) (angleRadians * 180.0 / M_PI)
-
 #define uSecsToRadians(ticks) (degreesToRadians(ticks * 0.021600864))
 #define ticksToRadians(ticks) (degreesToRadians(ticks * 0.021600864 / 50.0))
 #define ticksToDegrees(ticks) ((ticks * 0.021600864 / 50.0))

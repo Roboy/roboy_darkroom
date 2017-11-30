@@ -38,55 +38,31 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     // add widget to the user interface
     context.addWidget(widget_);
 
-    text["lighthouse1_x"] = widget_->findChild<QLineEdit *>("lighthouse1_x_text");
-    text["lighthouse1_y"] = widget_->findChild<QLineEdit *>("lighthouse1_y_text");
-    text["lighthouse1_z"] = widget_->findChild<QLineEdit *>("lighthouse1_z_text");
-    text["lighthouse1_roll"] = widget_->findChild<QLineEdit *>("lighthouse1_roll_text");
-    text["lighthouse1_pitch"] = widget_->findChild<QLineEdit *>("lighthouse1_pitch_text");
-    text["lighthouse1_yaw"] = widget_->findChild<QLineEdit *>("lighthouse1_yaw_text");
+    text["lighthouse_ID_1"] = widget_->findChild<QLineEdit *>("lighthouse_ID_1");
+    text["lighthouse_acc_x_1"] = widget_->findChild<QLineEdit *>("lighthouse_acc_x_1");
+    text["lighthouse_acc_y_1"] = widget_->findChild<QLineEdit *>("lighthouse_acc_y_1");
+    text["lighthouse_acc_z_1"] = widget_->findChild<QLineEdit *>("lighthouse_acc_z_1");
+    text["lighthouse_firmware_version_1"] = widget_->findChild<QLineEdit *>("lighthouse_firmware_version_1");
+    text["lighthouse_hardware_version_1"] = widget_->findChild<QLineEdit *>("lighthouse_hardware_version_1");
+    text["lighthouse_protocol_version_1"] = widget_->findChild<QLineEdit *>("lighthouse_protocol_version_1");
+    text["lighthouse_selected_mode_1"] = widget_->findChild<QLineEdit *>("lighthouse_selected_mode_1");
+    button["lighthouse_use_factory_calibration_data_phase_1"] = widget_->findChild<QPushButton *>("lighthouse_use_factory_calibration_data_phase_1");
+    button["lighthouse_use_factory_calibration_data_tilt_1"] = widget_->findChild<QPushButton *>("lighthouse_use_factory_calibration_data_tilt_1");
+    button["lighthouse_use_factory_calibration_data_gphase_1"] = widget_->findChild<QPushButton *>("lighthouse_use_factory_calibration_data_gphase_1");
+    button["lighthouse_use_factory_calibration_data_gmag_1"] = widget_->findChild<QPushButton *>("lighthouse_use_factory_calibration_data_gmag_1");
 
-    text["lighthouse2_x"] = widget_->findChild<QLineEdit *>("lighthouse2_x_text");
-    text["lighthouse2_y"] = widget_->findChild<QLineEdit *>("lighthouse2_y_text");
-    text["lighthouse2_z"] = widget_->findChild<QLineEdit *>("lighthouse2_z_text");
-    text["lighthouse2_roll"] = widget_->findChild<QLineEdit *>("lighthouse2_roll_text");
-    text["lighthouse2_pitch"] = widget_->findChild<QLineEdit *>("lighthouse2_pitch_text");
-    text["lighthouse2_yaw"] = widget_->findChild<QLineEdit *>("lighthouse2_yaw_text");
-
-    text["simulatedObject_x_lighthouse_1"] = widget_->findChild<QLineEdit *>("simulatedObject_x_text_lighthouse_1");
-    text["simulatedObject_y_lighthouse_1"] = widget_->findChild<QLineEdit *>("simulatedObject_y_text_lighthouse_1");
-    text["simulatedObject_z_lighthouse_1"] = widget_->findChild<QLineEdit *>("simulatedObject_z_text_lighthouse_1");
-    text["simulatedObject_roll_lighthouse_1"] = widget_->findChild<QLineEdit *>(
-            "simulatedObject_roll_text_lighthouse_1");
-    text["simulatedObject_pitch_lighthouse_1"] = widget_->findChild<QLineEdit *>(
-            "simulatedObject_pitch_text_lighthouse_1");
-    text["simulatedObject_yaw_lighthouse_1"] = widget_->findChild<QLineEdit *>("simulatedObject_yaw_text_lighthouse_1");
-
-    text["simulatedObject_x_lighthouse_2"] = widget_->findChild<QLineEdit *>("simulatedObject_x_text_lighthouse_2");
-    text["simulatedObject_y_lighthouse_2"] = widget_->findChild<QLineEdit *>("simulatedObject_y_text_lighthouse_2");
-    text["simulatedObject_z_lighthouse_2"] = widget_->findChild<QLineEdit *>("simulatedObject_z_text_lighthouse_2");
-    text["simulatedObject_roll_lighthouse_2"] = widget_->findChild<QLineEdit *>(
-            "simulatedObject_roll_text_lighthouse_2");
-    text["simulatedObject_pitch_lighthouse_2"] = widget_->findChild<QLineEdit *>(
-            "simulatedObject_pitch_text_lighthouse_2");
-    text["simulatedObject_yaw_lighthouse_2"] = widget_->findChild<QLineEdit *>("simulatedObject_yaw_text_lighthouse_2");
-
-    text["object_x"] = widget_->findChild<QLineEdit *>("object_x_text");
-    text["object_y"] = widget_->findChild<QLineEdit *>("object_y_text");
-    text["object_z"] = widget_->findChild<QLineEdit *>("object_z_text");
-    text["object_roll"] = widget_->findChild<QLineEdit *>(
-            "object_roll_text");
-    text["object_pitch"] = widget_->findChild<QLineEdit *>(
-            "object_pitch_text");
-    text["object_yaw"] = widget_->findChild<QLineEdit *>("object_yaw_text");
-
-    text["object_pose_estimate_x"] = widget_->findChild<QLineEdit *>("object_pose_estimate_x_text");
-    text["object_pose_estimate_y"] = widget_->findChild<QLineEdit *>("object_pose_estimate_y_text");
-    text["object_pose_estimate_z"] = widget_->findChild<QLineEdit *>("object_pose_estimate_z_text");
-    text["object_pose_estimate_roll"] = widget_->findChild<QLineEdit *>(
-            "object_pose_estimate_roll_text");
-    text["object_pose_estimate_pitch"] = widget_->findChild<QLineEdit *>(
-            "object_pose_estimate_pitch_text");
-    text["object_pose_estimate_yaw"] = widget_->findChild<QLineEdit *>("object_pose_estimate_yaw_text");
+    text["lighthouse_ID_2"] = widget_->findChild<QLineEdit *>("lighthouse_ID_2");
+    text["lighthouse_acc_x_2"] = widget_->findChild<QLineEdit *>("lighthouse_acc_x_2");
+    text["lighthouse_acc_y_2"] = widget_->findChild<QLineEdit *>("lighthouse_acc_y_2");
+    text["lighthouse_acc_z_2"] = widget_->findChild<QLineEdit *>("lighthouse_acc_z_2");
+    text["lighthouse_firmware_version_2"] = widget_->findChild<QLineEdit *>("lighthouse_firmware_version_2");
+    text["lighthouse_hardware_version_2"] = widget_->findChild<QLineEdit *>("lighthouse_hardware_version_2");
+    text["lighthouse_protocol_version_2"] = widget_->findChild<QLineEdit *>("lighthouse_protocol_version_2");
+    text["lighthouse_selected_mode_2"] = widget_->findChild<QLineEdit *>("lighthouse_selected_mode_2");
+    button["lighthouse_use_factory_calibration_data_phase_2"] = widget_->findChild<QPushButton *>("lighthouse_use_factory_calibration_data_phase_2");
+    button["lighthouse_use_factory_calibration_data_tilt_2"] = widget_->findChild<QPushButton *>("lighthouse_use_factory_calibration_data_tilt_2");
+    button["lighthouse_use_factory_calibration_data_gphase_2"] = widget_->findChild<QPushButton *>("lighthouse_use_factory_calibration_data_gphase_2");
+    button["lighthouse_use_factory_calibration_data_gmag_2"] = widget_->findChild<QPushButton *>("lighthouse_use_factory_calibration_data_gmag_2");
 
     text["broadcast_ip"] = widget_->findChild<QLineEdit *>("broadcast_ip");
     text["broadcast_port"] = widget_->findChild<QLineEdit *>("broadcast_port");
@@ -160,6 +136,14 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(button["object_pose_estimation_least_squares"], SIGNAL(clicked()), this,
                      SLOT(startObjectPoseEstimationSensorCloud()));
     QObject::connect(button["load_object"], SIGNAL(clicked()), this, SLOT(loadObject()));
+    QObject::connect(button["lighthouse_use_factory_calibration_data_phase_1"], SIGNAL(clicked()), this, SLOT(useFactoryCalibrationData()));
+    QObject::connect(button["lighthouse_use_factory_calibration_data_tilt_1"], SIGNAL(clicked()), this, SLOT(useFactoryCalibrationData()));
+    QObject::connect(button["lighthouse_use_factory_calibration_data_gphase_1"], SIGNAL(clicked()), this, SLOT(useFactoryCalibrationData()));
+    QObject::connect(button["lighthouse_use_factory_calibration_data_gmag_1"], SIGNAL(clicked()), this, SLOT(useFactoryCalibrationData()));
+    QObject::connect(button["lighthouse_use_factory_calibration_data_phase_2"], SIGNAL(clicked()), this, SLOT(useFactoryCalibrationData()));
+    QObject::connect(button["lighthouse_use_factory_calibration_data_tilt_2"], SIGNAL(clicked()), this, SLOT(useFactoryCalibrationData()));
+    QObject::connect(button["lighthouse_use_factory_calibration_data_gphase_2"], SIGNAL(clicked()), this, SLOT(useFactoryCalibrationData()));
+    QObject::connect(button["lighthouse_use_factory_calibration_data_gmag_2"], SIGNAL(clicked()), this, SLOT(useFactoryCalibrationData()));
 
     QObject::connect(this, SIGNAL(newData()), this, SLOT(plotData()));
     QObject::connect(this, SIGNAL(newStatisticsData()), this, SLOT(plotStatisticsData()));
@@ -176,6 +160,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
                                         &RoboyDarkRoom::correctPose, this);
     sensor_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensors", 1, &RoboyDarkRoom::receiveSensorData, this);
     statistics_sub = nh->subscribe("/roboy/middleware/DarkRoom/Statistics", 2, &RoboyDarkRoom::receiveStatistics, this);
+    ootx_sub = nh->subscribe("/roboy/middleware/DarkRoom/ootx", 1, &RoboyDarkRoom::receiveOOTXData, this);
 
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
@@ -242,23 +227,12 @@ void RoboyDarkRoom::shutdownPlugin() {
 
 void RoboyDarkRoom::saveSettings(qt_gui_cpp::Settings &plugin_settings,
                                  qt_gui_cpp::Settings &instance_settings) const {
-    instance_settings.setValue("lighthouse1_x", text["lighthouse1_x"]->text());
-    instance_settings.setValue("lighthouse1_y", text["lighthouse1_y"]->text());
-    instance_settings.setValue("lighthouse1_z", text["lighthouse1_z"]->text());
-    instance_settings.setValue("lighthouse2_x", text["lighthouse2_x"]->text());
-    instance_settings.setValue("lighthouse2_y", text["lighthouse2_y"]->text());
-    instance_settings.setValue("lighthouse2_z", text["lighthouse2_z"]->text());
+    instance_settings.setValue("load_object", text["load_object"]->text());
 }
 
 void RoboyDarkRoom::restoreSettings(const qt_gui_cpp::Settings &plugin_settings,
                                     const qt_gui_cpp::Settings &instance_settings) {
     text["load_object"]->setText(instance_settings.value("load_object").toString());
-    text["lighthouse1_x"]->setText(instance_settings.value("lighthouse1_x").toString());
-    text["lighthouse1_y"]->setText(instance_settings.value("lighthouse1_y").toString());
-    text["lighthouse1_z"]->setText(instance_settings.value("lighthouse1_z").toString());
-    text["lighthouse2_x"]->setText(instance_settings.value("lighthouse2_x").toString());
-    text["lighthouse2_y"]->setText(instance_settings.value("lighthouse2_y").toString());
-    text["lighthouse2_z"]->setText(instance_settings.value("lighthouse2_z").toString());
 }
 
 void RoboyDarkRoom::connectRoboy() {
@@ -267,13 +241,10 @@ void RoboyDarkRoom::connectRoboy() {
     newObject->connectRoboy();
     trackedObjects[object_counter] = newObject;
     object_counter++;
-    resetObjectPoses();
 }
 
 void RoboyDarkRoom::simulateRoboy() {
     ROS_DEBUG("simulate roboy clicked");
-
-    resetObjectPoses();
 
     simulate = true;
 
@@ -335,59 +306,10 @@ void RoboyDarkRoom::resetLighthousePoses() {
     tf_world.setRotation(quat);
     tf_map.setRotation(quat);
     bool ok;
-    quat.setRPY(
-            text["lighthouse1_roll"]->text().toFloat(&ok) * M_PI / 180.0,
-            text["lighthouse1_pitch"]->text().toFloat(&ok) * M_PI / 180.0,
-            text["lighthouse1_yaw"]->text().toFloat(&ok) * M_PI / 180.0
-    );
     lighthouse1.setRotation(quat);
-    lighthouse1.setOrigin(tf::Vector3(
-            text["lighthouse1_x"]->text().toFloat(&ok),
-            text["lighthouse1_y"]->text().toFloat(&ok),
-            text["lighthouse1_z"]->text().toFloat(&ok)
-    ));
-
-    quat.setRPY(
-            text["lighthouse2_roll"]->text().toFloat(&ok) * M_PI / 180.0,
-            text["lighthouse2_pitch"]->text().toFloat(&ok) * M_PI / 180.0,
-            text["lighthouse2_yaw"]->text().toFloat(&ok) * M_PI / 180.0
-    );
+    lighthouse1.setOrigin(tf::Vector3(0,0,0));
     lighthouse2.setRotation(quat);
-    lighthouse2.setOrigin(tf::Vector3(
-            text["lighthouse2_x"]->text().toFloat(&ok),
-            text["lighthouse2_y"]->text().toFloat(&ok),
-            text["lighthouse2_z"]->text().toFloat(&ok)
-    ));
-}
-
-void RoboyDarkRoom::resetObjectPoses() {
-    ROS_DEBUG("reset object poses");
-
-    tf::Quaternion quat;
-    bool ok;
-    quat.setRPY(
-            text["simulatedObject_roll_lighthouse_1"]->text().toFloat(&ok) * M_PI / 180.0,
-            text["simulatedObject_pitch_lighthouse_1"]->text().toFloat(&ok) * M_PI / 180.0,
-            text["simulatedObject_yaw_lighthouse_1"]->text().toFloat(&ok) * M_PI / 180.0
-    );
-    simulated_object_lighthouse1.setRotation(quat);
-    simulated_object_lighthouse1.setOrigin(tf::Vector3(
-            text["simulatedObject_x_lighthouse_1"]->text().toFloat(&ok),
-            text["simulatedObject_y_lighthouse_1"]->text().toFloat(&ok),
-            text["simulatedObject_z_lighthouse_1"]->text().toFloat(&ok)
-    ));
-
-    quat.setRPY(
-            text["simulatedObject_roll_lighthouse_2"]->text().toFloat(&ok) * M_PI / 180.0,
-            text["simulatedObject_pitch_lighthouse_2"]->text().toFloat(&ok) * M_PI / 180.0,
-            text["simulatedObject_yaw_lighthouse_2"]->text().toFloat(&ok) * M_PI / 180.0
-    );
-    simulated_object_lighthouse2.setRotation(quat);
-    simulated_object_lighthouse2.setOrigin(tf::Vector3(
-            text["simulatedObject_x_lighthouse_2"]->text().toFloat(&ok),
-            text["simulatedObject_y_lighthouse_2"]->text().toFloat(&ok),
-            text["simulatedObject_z_lighthouse_2"]->text().toFloat(&ok)
-    ));
+    lighthouse2.setOrigin(tf::Vector3(0.83,0,0));
 }
 
 void RoboyDarkRoom::record() {
@@ -637,15 +559,9 @@ void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::Interac
     if (strcmp(msg.marker_name.c_str(), "lighthouse1") == 0) {
         lighthouse1.setOrigin(position);
         lighthouse1.setRotation(orientation);
-        text["lighthouse1_x"]->setText(QString::number(position.x()));
-        text["lighthouse1_y"]->setText(QString::number(position.y()));
-        text["lighthouse1_z"]->setText(QString::number(position.z()));
     } else if (strcmp(msg.marker_name.c_str(), "lighthouse2") == 0) {
         lighthouse2.setOrigin(position);
         lighthouse2.setRotation(orientation);
-        text["lighthouse2_x"]->setText(QString::number(position.x()));
-        text["lighthouse2_y"]->setText(QString::number(position.y()));
-        text["lighthouse2_z"]->setText(QString::number(position.z()));
     } else if (strcmp(msg.marker_name.c_str(), "trackedObject") == 0) {
         for (auto &object:trackedObjects) {
             object.second->pose.setOrigin(position);
@@ -714,6 +630,36 @@ void RoboyDarkRoom::receiveStatistics(const roboy_communication_middleware::Dark
         emit newStatisticsData();
 }
 
+void RoboyDarkRoom::receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg){
+    if(msg->lighthouse==0) {
+        text["lighthouse_firmware_version_1"]->setText(QString::number(msg->fw_version >> 6 & 0x3FF, 16));
+        text["lighthouse_protocol_version_1"]->setText(QString::number(msg->fw_version & 0x1F, 10));
+        text["lighthouse_ID_1"]->setText(QString::number(msg->ID, 16));
+        text["lighthouse_hardware_version_1"]->setText(QString::number(msg->hw_version, 16));
+        text["lighthouse_selected_mode_1"]->setText(QString::number(msg->mode));
+        text["lighthouse_acc_x_1"]->setText(QString::number(msg->accel_dir_x));
+        text["lighthouse_acc_y_1"]->setText(QString::number(msg->accel_dir_y));
+        text["lighthouse_acc_z_1"]->setText(QString::number(msg->accel_dir_z));
+        button["lighthouse_use_factory_calibration_data_phase_1"]->setEnabled(true);
+        button["lighthouse_use_factory_calibration_data_tilt_1"]->setEnabled(true);
+        button["lighthouse_use_factory_calibration_data_gphase_1"]->setEnabled(true);
+        button["lighthouse_use_factory_calibration_data_gmag_1"]->setEnabled(true);
+    }else{
+        text["lighthouse_firmware_version_2"]->setText(QString::number(msg->fw_version >> 6 & 0x3FF, 16));
+        text["lighthouse_protocol_version_2"]->setText(QString::number(msg->fw_version & 0x1F, 10));
+        text["lighthouse_ID_2"]->setText(QString::number(msg->ID, 16));
+        text["lighthouse_hardware_version_2"]->setText(QString::number(msg->hw_version, 16));
+        text["lighthouse_selected_mode_2"]->setText(QString::number(msg->mode));
+        text["lighthouse_acc_x_2"]->setText(QString::number(msg->accel_dir_x));
+        text["lighthouse_acc_y_2"]->setText(QString::number(msg->accel_dir_y));
+        text["lighthouse_acc_z_2"]->setText(QString::number(msg->accel_dir_z));
+        button["lighthouse_use_factory_calibration_data_phase_2"]->setEnabled(true);
+        button["lighthouse_use_factory_calibration_data_tilt_2"]->setEnabled(true);
+        button["lighthouse_use_factory_calibration_data_gphase_2"]->setEnabled(true);
+        button["lighthouse_use_factory_calibration_data_gmag_2"]->setEnabled(true);
+    }
+}
+
 void RoboyDarkRoom::plotData() {
     ui.horizontal_angle_lighthouse_1->graph(0)->setData(time[0], horizontal_angle[0]);
     ui.horizontal_angle_lighthouse_2->graph(0)->setData(time[3], horizontal_angle[1]);
@@ -748,6 +694,102 @@ void RoboyDarkRoom::plotStatisticsData(){
     ui.update_frequencies_vertical_lighthouse_1->replot();
     ui.update_frequencies_horizontal_lighthouse_2->replot();
     ui.update_frequencies_vertical_lighthouse_2->replot();
+}
+
+void RoboyDarkRoom::useFactoryCalibrationData(){
+    ROS_DEBUG("lighthouse_use_factory_calibration_data clicked");
+    // phase
+    if(button["lighthouse_use_factory_calibration_data_phase_1"]->isChecked()){
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_phase[0] = true;
+        }
+    }else{
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_phase[0] = false;
+        }
+    }
+    if(button["lighthouse_use_factory_calibration_data_phase_2"]->isChecked()){
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_phase[1] = true;
+        }
+    }else{
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_phase[1] = false;
+        }
+    }
+    // tilt
+    if(button["lighthouse_use_factory_calibration_data_tilt_1"]->isChecked()){
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_tilt[0] = true;
+        }
+    }else{
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_tilt[0] = false;
+        }
+    }
+    if(button["lighthouse_use_factory_calibration_data_tilt_2"]->isChecked()){
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_tilt[1] = true;
+        }
+    }else{
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_tilt[1] = false;
+        }
+    }
+    // gibbous phase
+    if(button["lighthouse_use_factory_calibration_data_gphase_1"]->isChecked()){
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[0] = true;
+        }
+    }else{
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[0] = false;
+        }
+    }
+    if(button["lighthouse_use_factory_calibration_data_gphase_2"]->isChecked()){
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[1] = true;
+        }
+    }else{
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[1] = false;
+        }
+    }
+    // gibbous magnitude
+    if(button["lighthouse_use_factory_calibration_data_gmag_1"]->isChecked()){
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[0] = true;
+        }
+    }else{
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[0] = false;
+        }
+    }
+    if(button["lighthouse_use_factory_calibration_data_gmag_2"]->isChecked()){
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[1] = true;
+        }
+    }else{
+        for (uint i = 0; i < trackedObjects.size(); i++) {
+            lock_guard<mutex>(trackedObjects[i]->mux);
+            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[1] = false;
+        }
+    }
 }
 
 PLUGINLIB_DECLARE_CLASS(roboy_darkroom, RoboyDarkRoom, RoboyDarkRoom, rqt_gui_cpp::Plugin)

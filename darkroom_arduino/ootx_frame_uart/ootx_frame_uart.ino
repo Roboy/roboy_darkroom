@@ -45,8 +45,13 @@ void loop() {
     CRC32 crc;
     while(counter<sizeof(ootx)){
       ootx.data[counter] = Serial1.read();
-      if(counter<33)
+      if(counter<33){
+        Serial.print(ootx.data[counter],HEX);
+        Serial.print(" ");
+        if((counter+1)%10==0)
+            Serial.println("");
         crc.update(ootx.data[counter]);
+      }
       counter++;
     }
     // Calculate the checksum.

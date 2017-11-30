@@ -14,6 +14,7 @@
 #include <roboy_communication_middleware/LighthousePoseCorrection.h>
 #include <roboy_communication_middleware/DarkRoom.h>
 #include <roboy_communication_middleware/DarkRoomStatistics.h>
+#include <roboy_communication_middleware/DarkRoomOOTX.h>
 #include <map>
 #include <QLineEdit>
 #include <QSlider>
@@ -64,10 +65,6 @@ public Q_SLOTS:
          * Resets the lighthouse poses to slider values
          */
     void resetLighthousePoses();
-    /**
-         * Resets the object poses to slider values
-         */
-    void resetObjectPoses();
 
     /**
      * Toggles recording sensor values for all tracked objects
@@ -146,6 +143,10 @@ public Q_SLOTS:
      * Plots statistics data
      */
     void plotStatisticsData();
+    /**
+     * Toggles usage of factory calibration data phase
+     */
+    void useFactoryCalibrationData();
 
 private:
     /**
@@ -174,6 +175,11 @@ private:
      * @param msg
      */
     void receiveStatistics(const roboy_communication_middleware::DarkRoomStatistics::ConstPtr &msg);
+    /**
+     * Callback for DarkRoom ootx
+     * @param msg
+     */
+    void receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg);
 Q_SIGNALS:
     void newData();
     void newStatisticsData();
@@ -189,7 +195,7 @@ private:
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     boost::shared_ptr<std::thread> transform_thread = nullptr;
-    ros::Subscriber pose_correction_sub, interactive_marker_sub, sensor_sub, statistics_sub;
+    ros::Subscriber pose_correction_sub, interactive_marker_sub, sensor_sub, statistics_sub, ootx_sub;
     tf::TransformListener tf_listener;
     tf::TransformBroadcaster tf_broadcaster;
     static tf::Transform lighthouse1, lighthouse2, tf_world, tf_map,

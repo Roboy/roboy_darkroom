@@ -8,6 +8,8 @@
 #include <common_utilities/rviz_visualization.hpp>
 #include <roboy_communication_middleware/LighthousePoseCorrection.h>
 #include <roboy_communication_middleware/DarkRoomSensor.h>
+#include <roboy_communication_middleware/DarkRoomOOTX.h>
+#include <common_utilities/CommonDefinitions.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #include <darkroom/epnp/epnp.h>
@@ -118,14 +120,23 @@ public:
     map<int, Sensor> sensors;
     vector<int> calibrated_sensors;
     atomic<bool> tracking, calibrating, poseestimating, objectposeestimating,
-            distances, rays, particle_filtering;
+            distances, rays, particle_filtering, use_lighthouse_calibration_data_phase[2],
+            use_lighthouse_calibration_data_tilt[2], use_lighthouse_calibration_data_gibphase[2],
+            use_lighthouse_calibration_data_gibmag[2];
     mutex mux;
     string mesh = "pimmel";
     bool has_mesh = false;
     string name = "bastiisdoff";
 private:
+    void receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg);
+    void applyCalibrationData(Vector2d &lighthouse0_angles, Vector2d &lighthouse1_angles);
+    void applyCalibrationData(bool lighthouse, Vector2d &lighthouse_angles);
+    void applyCalibrationData(bool lighthouse, double &elevation, double &azimuth);
+private:
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     ros::Publisher sensor_location_pub, lighthouse_pose_correction, pose_pub;
+    ros::Subscriber ootx_sub;
     VectorXd object_pose;
+    OOTXframe ootx[2];
 };

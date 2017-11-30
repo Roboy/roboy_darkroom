@@ -1,3 +1,4 @@
+#include <common_utilities/CommonDefinitions.h>
 #include "darkroom/LighthouseEstimator.hpp"
 
 LighthouseEstimator::LighthouseEstimator() {
@@ -14,6 +15,7 @@ LighthouseEstimator::LighthouseEstimator() {
             "/roboy/middleware/DarkRoom/LighthousePoseCorrection", 1);
     pose_pub = nh->advertise<geometry_msgs::PoseWithCovarianceStamped>(
             "/roboy/middleware/pose0", 1);
+    ootx_sub = nh->subscribe("/roboy/middleware/DarkRoom/ootx", 1, &LighthouseEstimator::receiveOOTXData, this);
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
@@ -23,6 +25,14 @@ LighthouseEstimator::LighthouseEstimator() {
     distances = false;
     rays = false;
     particle_filtering = false;
+    use_lighthouse_calibration_data_phase[LIGHTHOUSE_A] = false;
+    use_lighthouse_calibration_data_phase[LIGHTHOUSE_B] = false;
+    use_lighthouse_calibration_data_tilt[LIGHTHOUSE_A] = false;
+    use_lighthouse_calibration_data_tilt[LIGHTHOUSE_B] = false;
+    use_lighthouse_calibration_data_gibphase[LIGHTHOUSE_A] = false;
+    use_lighthouse_calibration_data_gibphase[LIGHTHOUSE_B] = false;
+    use_lighthouse_calibration_data_gibmag[LIGHTHOUSE_A] = false;
+    use_lighthouse_calibration_data_gibmag[LIGHTHOUSE_B] = false;
 
     object_pose = VectorXd(6);
     object_pose << 0, 0, 0, 0, 0, 0.001;
@@ -186,6 +196,8 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
             if (sensor.second.isActive(lighthouse) && sensor.second.isCalibrated()) {
                 ids.push_back(sensor.first);
                 sensor.second.get(lighthouse, elevations, azimuths);
+                // apply factory calibration correction if desired
+                applyCalibrationData(lighthouse, elevations.back(), azimuths.back());
                 sensor.second.getRelativeLocation(relPos);
                 distanceToLighthouse.push_back(sensor.second.getDistance(lighthouse));
                 cout << sensor.first << "\t";
@@ -210,6 +222,9 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
         for (uint i = 0; i < specificIds.size(); i++) {
             ids.push_back(specificIds.at(i));
             sensors[specificIds.at(i)].get(lighthouse, elevations, azimuths);
+            // apply factory calibration correction if desired
+            // apply factory calibration correction if desired
+            applyCalibrationData(lighthouse, elevations.back(), azimuths.back());
             sensors[specificIds.at(i)].getRelativeLocation(relPos);
             distanceToLighthouse.push_back(sensors[specificIds.at(i)].getDistance(lighthouse));
         }
@@ -481,6 +496,9 @@ void LighthouseEstimator::triangulateSensors() {
 
                 if(lighthouse_active[LIGHTHOUSE_A] && lighthouse_active[LIGHTHOUSE_B] ) {
                     Vector3d triangulated_position;
+
+                    applyCalibrationData(lighthouse0_angles, lighthouse1_angles);
+
                     triangulateFromLighthouseAngles(lighthouse0_angles, lighthouse1_angles, RT_0, RT_1,
                                                     triangulated_position, ray0,
                                                     ray1);
@@ -1224,5 +1242,66 @@ int LighthouseEstimator::getMessageID(int type, int sensor, bool lighthouse) {
             return 6000 + sensor;
         default:
             return rand();
+    }
+}
+
+void LighthouseEstimator::receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg){
+    ootx[msg->lighthouse].fw_version = msg->fw_version;
+    ootx[msg->lighthouse].ID = msg->ID;
+    ootx[msg->lighthouse].fcal_0_phase = msg->fcal_0_phase;
+    ootx[msg->lighthouse].fcal_1_phase = msg->fcal_1_phase;
+    ootx[msg->lighthouse].fcal_0_tilt = msg->fcal_0_tilt;
+    ootx[msg->lighthouse].fcal_1_tilt = msg->fcal_1_tilt;
+    ootx[msg->lighthouse].unlock_count = msg->unlock_count;
+    ootx[msg->lighthouse].hw_version = msg->hw_version;
+    ootx[msg->lighthouse].fcal_0_curve = msg->fcal_0_curve;
+    ootx[msg->lighthouse].fcal_1_curve = msg->fcal_1_curve;
+    ootx[msg->lighthouse].accel_dir_x = msg->accel_dir_x;
+    ootx[msg->lighthouse].accel_dir_y = msg->accel_dir_y;
+    ootx[msg->lighthouse].accel_dir_z = msg->accel_dir_z;
+    ootx[msg->lighthouse].fcal_0_gibphase = msg->fcal_0_gibphase;
+    ootx[msg->lighthouse].fcal_1_gibphase = msg->fcal_1_gibphase;
+    ootx[msg->lighthouse].fcal_0_gibmag = msg->fcal_0_gibmag;
+    ootx[msg->lighthouse].fcal_1_gibmag = msg->fcal_1_gibmag;
+    ootx[msg->lighthouse].mode = msg->mode;
+    ootx[msg->lighthouse].faults = msg->faults;
+}
+
+void LighthouseEstimator::applyCalibrationData(Vector2d &lighthouse0_angles, Vector2d &lighthouse1_angles){
+    applyCalibrationData(LIGHTHOUSE_A, lighthouse0_angles);
+    applyCalibrationData(LIGHTHOUSE_B, lighthouse1_angles);
+}
+
+void LighthouseEstimator::applyCalibrationData(bool lighthouse, Vector2d &lighthouse_angles){
+    if(use_lighthouse_calibration_data_phase[lighthouse]){
+        lighthouse_angles[HORIZONTAL] += ootx[lighthouse].fcal_0_phase;
+        lighthouse_angles[VERTICAL] += ootx[lighthouse].fcal_1_phase;
+    }
+    if(use_lighthouse_calibration_data_tilt[lighthouse]){
+        lighthouse_angles[HORIZONTAL] += ootx[lighthouse].fcal_0_tilt;
+        lighthouse_angles[VERTICAL] += ootx[lighthouse].fcal_1_tilt;
+    }
+    if(use_lighthouse_calibration_data_gibphase[lighthouse]){
+        // TODO
+    }
+    if(use_lighthouse_calibration_data_gibmag[lighthouse]){
+        // TODO
+    }
+}
+
+void LighthouseEstimator::applyCalibrationData(bool lighthouse, double &elevation, double &azimuth){
+    if(use_lighthouse_calibration_data_phase[lighthouse]){
+        azimuth+= ootx[lighthouse].fcal_0_phase;
+        elevation+= ootx[lighthouse].fcal_1_phase;
+    }
+    if(use_lighthouse_calibration_data_tilt[lighthouse]){
+        azimuth += ootx[lighthouse].fcal_0_tilt;
+        elevation += ootx[lighthouse].fcal_1_tilt;
+    }
+    if(use_lighthouse_calibration_data_gibphase[lighthouse]){
+        // TODO
+    }
+    if(use_lighthouse_calibration_data_gibmag[lighthouse]){
+        // TODO
     }
 }

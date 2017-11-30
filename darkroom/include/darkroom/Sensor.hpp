@@ -19,7 +19,10 @@ using namespace Eigen;
 using namespace std;
 using namespace chrono;
 
-typedef Matrix<unsigned short, 2, 1> Vector2s;
+enum ANGLE_TYPE{
+    HORIZONTAL = 0,
+    VERTICAL = 1
+};
 
 class Sensor{
 public:
@@ -158,10 +161,6 @@ public:
      */
     void updateFrequency(bool lighthouse, float &horizontal, float &vertical);
 
-    enum ANGLE_TYPE{
-        HORIZONTAL = 0,
-        VERTICAL = 1
-    };
 private:
     static bool m_switch;
     Vector3d m_relative_location;

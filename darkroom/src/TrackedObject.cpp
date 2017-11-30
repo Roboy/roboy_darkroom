@@ -27,7 +27,8 @@ TrackedObject::TrackedObject() {
     if(exists(path+mesh))
         has_mesh = true;
 
-    pose.setRotation(tf::Quaternion(0,1,0,0));
+    pose.setOrigin(tf::Vector3(0,0,0));
+    pose.setRotation(tf::Quaternion(0,0,0,1));
 
     string load_yaml_command = "rosparam load "+package_path+"/params/ekf_parameters.yaml " + nh->getNamespace();
     ROS_DEBUG_STREAM("loading yaml file using this command: " << load_yaml_command);
@@ -95,13 +96,13 @@ TrackedObject::TrackedObject() {
 //    nh->setParam("pose0_differential", false);
 //    nh->setParam("pose0_relative", true);
 //
-//    vector<float> initial_state = { 0.0,  1.0,  0.0,
-//                                    0.0,  0.0,  0.0,
-//                                    0.0,  0.0,  0.0,
-//                                    0.0,  0.0,  0.0,
-//                                    0.0,  0.0,  0.0
-//    };
-//    nh->setParam("initial_state", initial_state);
+    vector<float> initial_state = { 0.0,  0.0,  0.0,
+                                    0.0,  0.0,  0.0,
+                                    0.0,  0.0,  0.0,
+                                    0.0,  0.0,  0.0,
+                                    0.0,  0.0,  0.0
+    };
+    nh->setParam("initial_state", initial_state);
 //    nh->setParam("publish_tf", true);
 //    nh->setParam("print_diagnostics", true);
 //    // start extended kalman filter
