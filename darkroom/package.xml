@@ -18,8 +18,10 @@
     <depend>message_runtime</depend>
     <depend>robot_localization</depend>
     <depend>xmlrpcpp</depend>
+    <depend>gazebo</depend>
 
     <export>
         <rviz plugin="${prefix}/darkroom.xml"/>
+        <darkroom plugin="${prefix}/LighthouseVisualPlugin.xml"/>
     </export>
 </package>

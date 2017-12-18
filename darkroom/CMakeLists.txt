@@ -10,7 +10,7 @@ SET(CMAKE_BUILD_TYPE Debug)
 # Dependencies
 #==============================================================================
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation tf tf_conversions visualization_msgs
-		roboy_communication_middleware common_utilities robot_localization xmlrpcpp)
+		roboy_communication_middleware common_utilities robot_localization xmlrpcpp )
 
 # Eigen
 find_package(PkgConfig REQUIRED )
@@ -23,6 +23,12 @@ include_directories(${yaml-cpp_INCLUDE_DIRS})
 
 # OpenCV
 find_package(OpenCV 3.1.0 COMPONENTS opencv_core opencv_highgui opencv_calib3d REQUIRED)
+include_directories( ${OpenCV_INCLUDE_DIRS} )
+
+# gazebo
+find_package(gazebo REQUIRED)
+include_directories(${GAZEBO_INCLUDE_DIRS})
+link_directories(${GAZEBO_LIBRARY_DIRS})
 
 catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware common_utilities robot_localization xmlrpcpp
 		INCLUDE_DIRS include
@@ -33,7 +39,6 @@ include_directories(
 		include/
         include/darkroom/mavmap/src
         ${catkin_INCLUDE_DIRS}
-        ${OpenCV_INCLUDE_DIRS}
         ${ncurses_INCLUDE_DIRS}
 )
 #==============================================================================
@@ -72,8 +77,15 @@ target_link_libraries( LighthouseEstimator ${catkin_LIBRARIES} PoseEstimatorSens
 
 add_library( TrackedObject src/TrackedObject.cpp )
 add_dependencies(TrackedObject roboy_communication_middleware_gencpp )
-target_link_libraries( TrackedObject ${yaml-cpp_LIBRARIES} ${catkin_LIBRARIES} ${OpenCV_LIBS}
-		Sensor LighthouseEstimator Utilities )
+target_link_libraries( TrackedObject ${yaml-cpp_LIBRARIES} ${catkin_LIBRARIES} ${OpenCV_LIBS} Sensor LighthouseEstimator Utilities )
+
+add_library( DarkRoomVisualPlugin src/gazebo/DarkRoomVisualPlugin.cpp )
+add_dependencies(DarkRoomVisualPlugin roboy_communication_middleware_gencpp )
+target_link_libraries( DarkRoomVisualPlugin ${catkin_LIBRARIES} )
+
+add_library( LighthouseVisualPlugin src/gazebo/LighthouseVisualPlugin.cpp )
+add_dependencies(LighthouseVisualPlugin roboy_communication_middleware_gencpp )
+target_link_libraries( LighthouseVisualPlugin ${catkin_LIBRARIES} Transform )
 
 #==============================================================================
 # Installation

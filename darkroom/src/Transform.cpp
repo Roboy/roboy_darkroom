@@ -8,7 +8,7 @@ namespace DarkRoom {
             tf_listener.lookupTransform(to, from, ros::Time(0), trans);
         }
         catch (tf::TransformException ex) {
-            ROS_WARN("%s", ex.what());
+            ROS_WARN_THROTTLE(1,"%s", ex.what());
             return false;
         }
 
@@ -24,7 +24,7 @@ namespace DarkRoom {
             tf_listener.lookupTransform(to, (lighthouse?"lighthouse2":"lighthouse1"), ros::Time(0), trans);
         }
         catch (tf::TransformException ex) {
-            ROS_WARN("%s", ex.what());
+            ROS_WARN_THROTTLE(1,"%s", ex.what());
             return false;
         }
 
@@ -40,7 +40,7 @@ namespace DarkRoom {
             tf_listener.lookupTransform((lighthouse?"lighthouse2":"lighthouse1"), from, ros::Time(0), trans);
         }
         catch (tf::TransformException ex) {
-            ROS_WARN("%s", ex.what());
+            ROS_WARN_THROTTLE(1,"%s", ex.what());
             return false;
         }
 
@@ -56,7 +56,7 @@ namespace DarkRoom {
             tf_listener.lookupTransform(to, from, ros::Time(0), trans);
         }
         catch (tf::TransformException ex) {
-            ROS_WARN("%s", ex.what());
+            ROS_WARN_THROTTLE(1,"%s", ex.what());
             return false;
         }
         transform = tf::Transform(trans);

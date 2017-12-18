@@ -1,0 +1,8 @@
+<library path="libLighthouseVisualPlugin">
+    <class type="gazebo::rendering::LighthouseVisualPlugin"
+           base_class_type="gazebo::rendering::LighthouseVisualPlugin">
+        <description>
+            This is a lighthouse visual plugin
+        </description>
+    </class>
+</library>
