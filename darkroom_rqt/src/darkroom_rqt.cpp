@@ -536,16 +536,16 @@ void RoboyDarkRoom::transformPublisher() {
         lock_guard<mutex> lock(mux);
         tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse1, ros::Time::now(), "world", "lighthouse1"));
         tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse2, ros::Time::now(), "world", "lighthouse2"));
-        for (auto &simulated:lighthouse_simulation) {
-            tf_broadcaster.sendTransform(tf::StampedTransform(simulated.second->relative_object_pose, ros::Time::now(),
-                                                              (simulated.second->id == 0 ? "lighthouse1"
-                                                                                         : "lighthouse2"),
-                                                              simulated.second->name.c_str()));
-        }
-        for (auto &object:trackedObjects) {
-            tf_broadcaster.sendTransform(tf::StampedTransform(object.second->pose, ros::Time::now(),
-                                                              "world", object.second->name.c_str()));
-        }
+//        for (auto &simulated:lighthouse_simulation) {
+//            tf_broadcaster.sendTransform(tf::StampedTransform(simulated.second->relative_object_pose, ros::Time::now(),
+//                                                              (simulated.second->id == 0 ? "lighthouse1"
+//                                                                                         : "lighthouse2"),
+//                                                              simulated.second->name.c_str()));
+//        }
+//        for (auto &object:trackedObjects) {
+//            tf_broadcaster.sendTransform(tf::StampedTransform(object.second->pose, ros::Time::now(),
+//                                                              "world", object.second->name.c_str()));
+//        }
         rate.sleep();
     }
 }

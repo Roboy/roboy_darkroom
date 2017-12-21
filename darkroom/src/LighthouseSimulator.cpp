@@ -31,10 +31,10 @@ LighthouseSimulator::LighthouseSimulator(int id, const char* configFile) : id(id
         sensor_position[sensor.first] << rel_location[0], rel_location[1], rel_location[2], 1;
     }
 
-    char str[100];
-    sprintf(str, "%s_simulated_%d", name.c_str(), id);
+//    char str[100];
+//    sprintf(str, "%s_simulated_%d", name.c_str(), id);
 
-    name = string(str);
+//    name = string(str);
 
     class_counter++;
 
