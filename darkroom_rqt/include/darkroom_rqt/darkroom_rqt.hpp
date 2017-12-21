@@ -3,6 +3,7 @@
 #ifndef Q_MOC_RUN
 
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <rqt_gui_cpp/plugin.h>
 #include <darkroom_rqt/ui_darkroom_rqt.h>
 #include <QWidget>
@@ -21,6 +22,7 @@
 #include <QPushButton>
 #include <common_utilities/rviz_visualization.hpp>
 #include <visualization_msgs/InteractiveMarkerFeedback.h>
+#include <QFileSystemModel>
 
 #endif
 
@@ -210,4 +212,6 @@ private:
     bool simulate = false;
 
     map<int, boost::shared_ptr<LighthouseSimulator>> lighthouse_simulation;
+
+    QFileSystemModel *model;
 };

@@ -28,9 +28,10 @@ public:
     /**
      * Constructor
      * @param id lighthouse id (currently only 0 or 1 is supported)
+     * @param configFile path to yaml file 
      * @param object_pose (initial object pose wrt world)
      */
-    LighthouseSimulator(int id);
+    LighthouseSimulator(int id, const char* configFile = "calibrationCube.yaml");
     ~LighthouseSimulator();
     /**
      * Publishes simulated lighthouse data

@@ -26,7 +26,7 @@ using namespace std;
 
 class TrackedObject : public LighthouseEstimator, Utilities, public RobotLocalization::RosEkf {
 public:
-    TrackedObject();
+    TrackedObject(const char* configFile = "calibrationCube.yaml");
 
     ~TrackedObject();
 

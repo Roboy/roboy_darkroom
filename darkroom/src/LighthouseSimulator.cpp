@@ -2,7 +2,7 @@
 
 int LighthouseSimulator::class_counter = 0;
 
-LighthouseSimulator::LighthouseSimulator(int id) : id(id) {
+LighthouseSimulator::LighthouseSimulator(int id, const char* configFile) : id(id) {
     if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
@@ -20,10 +20,10 @@ LighthouseSimulator::LighthouseSimulator(int id) : id(id) {
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
-    string package_path = ros::package::getPath("darkroom");
-    string path = package_path + "/calibrated_objects";
-    ROS_INFO_STREAM("using DARKROOM_CALIBRATED_OBJECTS: " << path);
-    readConfig(path + "/" + "calibrationObject.yaml", objectID, name, mesh, calibrated_sensors, sensors);
+//    string package_path = ros::package::getPath("darkroom");
+//    string path = package_path + "/calibrated_objects";
+    ROS_INFO_STREAM("reading config of " << configFile);
+    readConfig(configFile, objectID, name, mesh, calibrated_sensors, sensors);
 
     for (auto &sensor:sensors) {
         Vector3d rel_location;
@@ -82,12 +82,12 @@ void LighthouseSimulator::PublishSensorData() {
 
                 if (!angle_switch) {
                     uint32_t elevation_in_ticks = (uint32_t) (degreesToTicks(elevation));
-                    sensor_value = (uint32_t) (id << 31 | 1 << 30 | true << 29 | elevation_in_ticks & 0x1fffffff);
+                    sensor_value = (uint32_t) (id << 31 | 1 << 30 | true << 29 | sensor.first<<19 | elevation_in_ticks & 0x7FFFF);
                     if (sensor.first == 0)
                         ROS_DEBUG_THROTTLE(1, "elevation: %lf in ticks: %d", elevation, elevation_in_ticks);
                 } else {
                     uint32_t azimuth_in_ticks = (uint32_t) (degreesToTicks(azimuth));
-                    sensor_value = (uint32_t) (id << 31 | 0 << 30 | true << 29 | azimuth_in_ticks & 0x1fffffff);
+                    sensor_value = (uint32_t) (id << 31 | 0 << 30 | true << 29 | sensor.first<<19 | azimuth_in_ticks & 0x7FFFF);
                     if (sensor.first == 0)
                         ROS_DEBUG_THROTTLE(1, "azimuth: %lf in ticks: %d", azimuth, azimuth_in_ticks);
                 }

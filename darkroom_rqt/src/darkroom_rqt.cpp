@@ -17,6 +17,7 @@ RoboyDarkRoom::RoboyDarkRoom()
 }
 
 RoboyDarkRoom::~RoboyDarkRoom() {
+    clearAll();
     publish_transform = false;
     for (auto const &object:trackedObjects) {
         lock_guard<mutex>(object.second->mux);
@@ -26,6 +27,7 @@ RoboyDarkRoom::~RoboyDarkRoom() {
         object.second->poseestimating = false;
         object.second->tracking = false;
     }
+    delete model;
 }
 
 void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
@@ -66,7 +68,6 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
 
     text["broadcast_ip"] = widget_->findChild<QLineEdit *>("broadcast_ip");
     text["broadcast_port"] = widget_->findChild<QLineEdit *>("broadcast_port");
-    text["load_object"] = widget_->findChild<QLineEdit *>("load_object_text");
 
     button["triangulate"] = widget_->findChild<QPushButton *>("triangulate");
     button["show_rays"] = widget_->findChild<QPushButton *>("show_rays");
@@ -220,26 +221,34 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     ui.update_frequencies_vertical_lighthouse_1->yAxis->setRange(0, 1000);
     ui.update_frequencies_vertical_lighthouse_2->yAxis->setLabel("frequency[Hz]");
     ui.update_frequencies_vertical_lighthouse_2->yAxis->setRange(0, 1000);
+
+    model = new QFileSystemModel;
+    string package_path = ros::package::getPath("roboy_models");
+    model->setRootPath(QString(package_path.c_str()));
+    ui.objectBrowser->setModel(model);
+    ui.objectBrowser->setRootIndex(model->index(QString(package_path.c_str())));
 }
 
 void RoboyDarkRoom::shutdownPlugin() {
+
 }
 
 void RoboyDarkRoom::saveSettings(qt_gui_cpp::Settings &plugin_settings,
                                  qt_gui_cpp::Settings &instance_settings) const {
-    instance_settings.setValue("load_object", text["load_object"]->text());
 }
 
 void RoboyDarkRoom::restoreSettings(const qt_gui_cpp::Settings &plugin_settings,
                                     const qt_gui_cpp::Settings &instance_settings) {
-    text["load_object"]->setText(instance_settings.value("load_object").toString());
 }
 
 void RoboyDarkRoom::connectRoboy() {
     ROS_DEBUG("connect roboy clicked");
-    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject());
+    string package_path = ros::package::getPath("roboy_models");
+    string path = package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/xylophone.yaml";
+    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject(path.c_str()));
     newObject->connectRoboy();
     trackedObjects[object_counter] = newObject;
+    ui.trackedObjects->addItem(path.c_str());
     object_counter++;
 }
 
@@ -248,13 +257,15 @@ void RoboyDarkRoom::simulateRoboy() {
 
     simulate = true;
 
-    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject());
+    string package_path = ros::package::getPath("roboy_models");
+    string path = package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/xylophone.yaml";
+    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject(path.c_str()));
     newObject->connectRoboy();
     trackedObjects[object_counter] = newObject;
-    object_counter++;
+    ui.trackedObjects->addItem(path.c_str());
 
-    lighthouse_simulation[LIGHTHOUSE_A].reset(new LighthouseSimulator(LIGHTHOUSE_A));
-    lighthouse_simulation[LIGHTHOUSE_B].reset(new LighthouseSimulator(LIGHTHOUSE_B));
+    lighthouse_simulation[LIGHTHOUSE_A].reset(new LighthouseSimulator(LIGHTHOUSE_A, path.c_str()));
+    lighthouse_simulation[LIGHTHOUSE_B].reset(new LighthouseSimulator(LIGHTHOUSE_B, path.c_str()));
 
 
     lighthouse_simulation[LIGHTHOUSE_A]->sensor_publishing = true;
@@ -510,10 +521,13 @@ void RoboyDarkRoom::startPoseEstimationP3P() {
 
 void RoboyDarkRoom::loadObject() {
     ROS_DEBUG("load_object clicked");
-    for (uint i = 0; i < trackedObjects.size(); i++) {
-        lock_guard<mutex>(trackedObjects[i]->mux);
-//        trackedObjects[i]->readConfig(trackedObjects[i]->path + "/" + text["load_object"]->text().toStdString());
-    }
+    QModelIndexList indexList = ui.objectBrowser->selectionModel()->selectedIndexes();
+    ROS_INFO_STREAM("loading object " << model->filePath(indexList[0]).toStdString().c_str());
+    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject(model->filePath(indexList[0]).toStdString().c_str()));
+    newObject->connectRoboy();
+    trackedObjects[object_counter] = newObject;
+    ui.trackedObjects->addItem(model->filePath(indexList[0]).toStdString().c_str());
+    object_counter++;
 }
 
 void RoboyDarkRoom::transformPublisher() {

@@ -3,7 +3,7 @@
 int TrackedObject::trackeObjectInstance = 0;
 bool TrackedObject::m_switch = false;
 
-TrackedObject::TrackedObject() {
+TrackedObject::TrackedObject(const char* configFile) {
     if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
@@ -21,8 +21,8 @@ TrackedObject::TrackedObject() {
     string package_path = ros::package::getPath("darkroom");
 
     path = package_path+"/calibrated_objects";
-    ROS_INFO_STREAM("using DARKROOM_CALIBRATED_OBJECTS: " << path);
-    readConfig(path  + "/" +  "calibrationCube.yaml", objectID, name, mesh, calibrated_sensors, sensors);
+    ROS_INFO_STREAM("reading config of  " << configFile);
+    readConfig(configFile, objectID, name, mesh, calibrated_sensors, sensors);
 
     if(exists(path+mesh))
         has_mesh = true;
@@ -106,7 +106,7 @@ TrackedObject::TrackedObject() {
 //    nh->setParam("publish_tf", true);
 //    nh->setParam("print_diagnostics", true);
 //    // start extended kalman filter
-    kalman_filter_thread.reset(new boost::thread(&TrackedObject::run, this));
+//    kalman_filter_thread.reset(new boost::thread(&TrackedObject::run, this));
 
     trackeObjectInstance++;
 }
@@ -224,7 +224,7 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware:
                      << "sweepDuration: " << sweepDuration << endl;
             }
             double angle = ticksToRadians(sweepDuration);
-            sensors[sensorID].update(lighthouse, rotor, msg->timestamp[sensorID], angle);
+            sensors[sensorID].update(lighthouse, rotor, angle);
         }
 
         id++;
@@ -277,7 +277,7 @@ void TrackedObject::receiveSensorData(){
 
                 chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
                 chrono::microseconds time_span = chrono::duration_cast<chrono::microseconds>(t1 - t0);
-                sensors[id[i]].update(lighthouse[i], rotor[i], time_span.count(), ticksToRadians(sweepDuration[i]));
+                sensors[id[i]].update(lighthouse[i], rotor[i], ticksToRadians(sweepDuration[i]));
             }
 //            Vector2d angles;
 //            sensors[id].get(0,angles);

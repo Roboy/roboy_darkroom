@@ -32,10 +32,9 @@ public:
      * Updates the angles for the respective lighthouse
      * @param lighthouse for which lighthouse
      * @param type #ANGLE_TYPE
-     * @param timestamp microseconds
      * @param angle ligthhouse angle
      */
-    void update(bool lighthouse, int type, int timestamp, double angle);
+    void update(bool lighthouse, int type, double angle);
 
     /**
      * Switches lighthouses, such that angles for lighthouse 1 belong to lighthouse 2

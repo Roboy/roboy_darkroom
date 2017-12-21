@@ -8,7 +8,7 @@ Sensor::Sensor(){
 
 }
 
-void Sensor::update(bool lighthouse, int type, int timestamp, double angle){
+void Sensor::update(bool lighthouse, int type, double angle){
     lock_guard<std::mutex> lock(m_lockMutex);
     if (type == HORIZONTAL) {
         m_angles_horizontal[lighthouse] = angle;
