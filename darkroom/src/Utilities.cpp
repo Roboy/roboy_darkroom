@@ -2,23 +2,27 @@
 
 bool Utilities::readConfig(string filepath, int &objectID, string &name, string &mesh,
                            vector<int> &calibrated_sensors, map<int, Sensor> &sensors) {
-    YAML::Node config = YAML::LoadFile(filepath);
-    objectID = config["ObjectID"].as<int>();
-    name = config["name"].as<string>();
-    mesh = config["mesh"].as<string>();
-    vector<vector<float>> relative_locations =
-            config["sensor_relative_locations"].as<vector<vector<float >>>();
-    sensors.clear();
-    calibrated_sensors.clear();
-    cout << "using calibrated sensors: ";
-    for (int i = 0; i < relative_locations.size(); i++) {
-        Vector3d relLocation(relative_locations[i][1], relative_locations[i][2], relative_locations[i][3]);
-        sensors[relative_locations[i][0]].setRelativeLocation(relLocation);
-        calibrated_sensors.push_back((int) relative_locations[i][0]);
-        cout << "\t" << calibrated_sensors.back();
+    try{
+        YAML::Node config = YAML::LoadFile(filepath);
+        objectID = config["ObjectID"].as<int>();
+        name = config["name"].as<string>();
+        mesh = config["mesh"].as<string>();
+        vector<vector<float>> relative_locations =
+                config["sensor_relative_locations"].as<vector<vector<float >>>();
+        sensors.clear();
+        calibrated_sensors.clear();
+        cout << "using calibrated sensors: ";
+        for (int i = 0; i < relative_locations.size(); i++) {
+            Vector3d relLocation(relative_locations[i][1], relative_locations[i][2], relative_locations[i][3]);
+            sensors[relative_locations[i][0]].setRelativeLocation(relLocation);
+            calibrated_sensors.push_back((int) relative_locations[i][0]);
+            cout << "\t" << calibrated_sensors.back();
+        }
+        cout << endl;
+    }catch(YAML::Exception& e) {
+        ROS_ERROR_STREAM(e.what());
+        return false;
     }
-    cout << endl;
-
     return true;
 }
 

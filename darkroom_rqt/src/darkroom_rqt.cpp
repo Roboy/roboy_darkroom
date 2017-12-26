@@ -19,14 +19,18 @@ RoboyDarkRoom::RoboyDarkRoom()
 RoboyDarkRoom::~RoboyDarkRoom() {
     clearAll();
     publish_transform = false;
-    for (auto const &object:trackedObjects) {
-        lock_guard<mutex>(object.second->mux);
-        object.second->calibrating = false;
-        object.second->distances = false;
-        object.second->particle_filtering = false;
-        object.second->poseestimating = false;
-        object.second->tracking = false;
+    update_tracked_object_info = false;
+
+    if(transform_thread->joinable()){
+        ROS_INFO("waiting for transform thread to shut down");
+        transform_thread->join();
     }
+
+    if(update_tracked_object_info_thread->joinable()){
+        ROS_INFO("waiting for update_tracked_object_info_thread to shut down");
+        update_tracked_object_info_thread->join();
+    }
+
     delete model;
 }
 
@@ -65,6 +69,8 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     button["lighthouse_use_factory_calibration_data_tilt_2"] = widget_->findChild<QPushButton *>("lighthouse_use_factory_calibration_data_tilt_2");
     button["lighthouse_use_factory_calibration_data_gphase_2"] = widget_->findChild<QPushButton *>("lighthouse_use_factory_calibration_data_gphase_2");
     button["lighthouse_use_factory_calibration_data_gmag_2"] = widget_->findChild<QPushButton *>("lighthouse_use_factory_calibration_data_gmag_2");
+    button["add_tracked_object"] = widget_->findChild<QPushButton *>("add_tracked_object");
+    button["remove_tracked_object"] = widget_->findChild<QPushButton *>("remove_tracked_object");
 
     text["broadcast_ip"] = widget_->findChild<QLineEdit *>("broadcast_ip");
     text["broadcast_port"] = widget_->findChild<QLineEdit *>("broadcast_port");
@@ -88,7 +94,6 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     button["clear_all"] = widget_->findChild<QPushButton *>("clear_all");
     button["object_pose_estimation_least_squares"] = widget_->findChild<QPushButton *>(
             "object_pose_estimation_least_squares");
-    button["load_object"] = widget_->findChild<QPushButton *>("load_object");
 
     button["triangulate"]->setToolTip(
             "activates triangulation of lighthouse rays\n"
@@ -114,7 +119,8 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     button["simulate_roboy"]->setToolTip("simulate lighthouse data");
     button["clear_all"]->setToolTip("clears all visualization markers");
     button["object_pose_estimation_least_squares"]->setToolTip("estimates object pose using least squares minimizer");
-    button["load_object"]->setToolTip("loads the given object yaml file");
+    button["add_tracked_object"]->setToolTip("adds the selected tracked object from the file browser");
+    button["remove_tracked_object"]->setToolTip("removes the selected tracked object");
 
     QObject::connect(button["triangulate"], SIGNAL(clicked()), this, SLOT(startTriangulation()));
     QObject::connect(button["show_rays"], SIGNAL(clicked()), this, SLOT(showRays()));
@@ -136,7 +142,6 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(button["clear_all"], SIGNAL(clicked()), this, SLOT(clearAll()));
     QObject::connect(button["object_pose_estimation_least_squares"], SIGNAL(clicked()), this,
                      SLOT(startObjectPoseEstimationSensorCloud()));
-    QObject::connect(button["load_object"], SIGNAL(clicked()), this, SLOT(loadObject()));
     QObject::connect(button["lighthouse_use_factory_calibration_data_phase_1"], SIGNAL(clicked()), this, SLOT(useFactoryCalibrationData()));
     QObject::connect(button["lighthouse_use_factory_calibration_data_tilt_1"], SIGNAL(clicked()), this, SLOT(useFactoryCalibrationData()));
     QObject::connect(button["lighthouse_use_factory_calibration_data_gphase_1"], SIGNAL(clicked()), this, SLOT(useFactoryCalibrationData()));
@@ -145,10 +150,11 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(button["lighthouse_use_factory_calibration_data_tilt_2"], SIGNAL(clicked()), this, SLOT(useFactoryCalibrationData()));
     QObject::connect(button["lighthouse_use_factory_calibration_data_gphase_2"], SIGNAL(clicked()), this, SLOT(useFactoryCalibrationData()));
     QObject::connect(button["lighthouse_use_factory_calibration_data_gmag_2"], SIGNAL(clicked()), this, SLOT(useFactoryCalibrationData()));
+    QObject::connect(button["add_tracked_object"], SIGNAL(clicked()), this, SLOT(addTrackedObject()));
+    QObject::connect(button["remove_tracked_object"], SIGNAL(clicked()), this, SLOT(removeTrackedObject()));
 
     QObject::connect(this, SIGNAL(newData()), this, SLOT(plotData()));
     QObject::connect(this, SIGNAL(newStatisticsData()), this, SLOT(plotStatisticsData()));
-
 
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
     if (!ros::isInitialized()) {
@@ -169,10 +175,12 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     resetLighthousePoses();
 
     publish_transform = true;
-    if (transform_thread == nullptr) {
-        transform_thread = boost::shared_ptr<std::thread>(new std::thread(&RoboyDarkRoom::transformPublisher, this));
-        transform_thread->detach();
-    }
+    transform_thread = boost::shared_ptr<std::thread>(new std::thread(&RoboyDarkRoom::transformPublisher, this));
+    transform_thread->detach();
+
+    update_tracked_object_info = true;
+    update_tracked_object_info_thread = boost::shared_ptr<std::thread>(new std::thread(&RoboyDarkRoom::updateTrackedObjectInfo, this));
+    update_tracked_object_info_thread->detach();
 
     interactive_marker_sub = nh->subscribe("/interactive_markers/feedback", 1,
                                            &RoboyDarkRoom::interactiveMarkersFeedback, this);
@@ -225,8 +233,21 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     model = new QFileSystemModel;
     string package_path = ros::package::getPath("roboy_models");
     model->setRootPath(QString(package_path.c_str()));
-    ui.objectBrowser->setModel(model);
-    ui.objectBrowser->setRootIndex(model->index(QString(package_path.c_str())));
+    ui.tracked_object_browser->setModel(model);
+    ui.tracked_object_browser->setRootIndex(model->index(QString(package_path.c_str())));
+
+    QScrollArea* scrollArea = widget_->findChild<QScrollArea *>("tracked_objects");
+    scrollArea->setBackgroundRole(QPalette::Window);
+    scrollArea->setFrameShadow(QFrame::Plain);
+    scrollArea->setFrameShape(QFrame::NoFrame);
+    scrollArea->setWidgetResizable(true);
+
+    //vertical box that contains all the checkboxes for the filters
+    QWidget* trackedObjects_scrollarea = new QWidget(widget_);
+    trackedObjects_scrollarea->setObjectName("tracked_objects_scrollarea");
+    trackedObjects_scrollarea->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    trackedObjects_scrollarea->setLayout(new QVBoxLayout(trackedObjects_scrollarea));
+    scrollArea->setWidget(trackedObjects_scrollarea);
 }
 
 void RoboyDarkRoom::shutdownPlugin() {
@@ -244,12 +265,45 @@ void RoboyDarkRoom::restoreSettings(const qt_gui_cpp::Settings &plugin_settings,
 void RoboyDarkRoom::connectRoboy() {
     ROS_DEBUG("connect roboy clicked");
     string package_path = ros::package::getPath("roboy_models");
-    string path = package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/xylophone.yaml";
-    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject(path.c_str()));
-    newObject->connectRoboy();
-    trackedObjects[object_counter] = newObject;
-    ui.trackedObjects->addItem(path.c_str());
-    object_counter++;
+    vector<string> roboy_parts = {
+            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/xylophone.yaml",
+            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/head.yaml",
+            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/torso.yaml",
+            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/upper_arm_left.yaml",
+            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/upper_arm_right.yaml"
+    };
+    for(auto &part:roboy_parts){
+        string path = package_path+part;
+        if(!fileExists(path)){
+            ROS_ERROR("could not connect Roboy, check the path %s", path.c_str());
+            return;
+        }
+        if(!addTrackedObject(path.c_str()))
+            continue;
+        if(simulate){
+            lighthouse_simulation[trackedObjects.back()->name].first.reset(new LighthouseSimulator(LIGHTHOUSE_A, path.c_str()));
+            lighthouse_simulation[trackedObjects.back()->name].second.reset(new LighthouseSimulator(LIGHTHOUSE_B, path.c_str()));
+
+            lighthouse_simulation[trackedObjects.back()->name].first->sensor_publishing = true;
+            lighthouse_simulation[trackedObjects.back()->name].second->sensor_publishing = true;
+
+            // start a simulated sensor publishing thread for each lighthouse
+            lighthouse_simulation[trackedObjects.back()->name].first->sensor_thread.reset(
+                    new boost::thread(
+                            [this]() { this->lighthouse_simulation[trackedObjects.back()->name].first->PublishSensorData(); }
+                    ));
+            lighthouse_simulation[trackedObjects.back()->name].second->sensor_thread.reset(
+                    new boost::thread(
+                            [this]() { this->lighthouse_simulation[trackedObjects.back()->name].second->PublishSensorData(); }
+                    ));
+            // start one imu publisher
+            lighthouse_simulation[trackedObjects.back()->name].first->imu_publishing = true;
+            lighthouse_simulation[trackedObjects.back()->name].second->imu_thread.reset(
+                    new boost::thread(
+                            [this]() { this->lighthouse_simulation[trackedObjects.back()->name].first->PublishImuData(); }
+                    ));
+        }
+    }
 }
 
 void RoboyDarkRoom::simulateRoboy() {
@@ -257,54 +311,22 @@ void RoboyDarkRoom::simulateRoboy() {
 
     simulate = true;
 
-    string package_path = ros::package::getPath("roboy_models");
-    string path = package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/xylophone.yaml";
-    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject(path.c_str()));
-    newObject->connectRoboy();
-    trackedObjects[object_counter] = newObject;
-    ui.trackedObjects->addItem(path.c_str());
-
-    lighthouse_simulation[LIGHTHOUSE_A].reset(new LighthouseSimulator(LIGHTHOUSE_A, path.c_str()));
-    lighthouse_simulation[LIGHTHOUSE_B].reset(new LighthouseSimulator(LIGHTHOUSE_B, path.c_str()));
-
-
-    lighthouse_simulation[LIGHTHOUSE_A]->sensor_publishing = true;
-    lighthouse_simulation[LIGHTHOUSE_B]->sensor_publishing = true;
-
-    // start a simulated sensor publishing thread for each lighthouse
-    lighthouse_simulation[LIGHTHOUSE_A]->sensor_thread.reset(
-            new boost::thread(
-                    [this]() { this->lighthouse_simulation[LIGHTHOUSE_A]->PublishSensorData(); }
-            ));
-    lighthouse_simulation[LIGHTHOUSE_B]->sensor_thread.reset(
-            new boost::thread(
-                    [this]() { this->lighthouse_simulation[LIGHTHOUSE_B]->PublishSensorData(); }
-            ));
-    // start one imu publisher
-    lighthouse_simulation[LIGHTHOUSE_A]->imu_publishing = true;
-    lighthouse_simulation[LIGHTHOUSE_A]->imu_thread.reset(
-            new boost::thread(
-                    [this]() { this->lighthouse_simulation[LIGHTHOUSE_A]->PublishImuData(); }
-            ));
-
-    make6DofMarker(false, visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D, tf::Vector3(0, 0, 0),
-                   true, 0.1, "world", "trackedObject", "");
+    connectRoboy();
 }
 
 void RoboyDarkRoom::connectObject() {
     ROS_DEBUG("connect object clicked");
-    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject());
+    if(!addTrackedObject())
+        return;
     bool ok;
-    newObject->connectObject(text["broadcast_ip"]->text().toStdString().c_str(),
+    trackedObjects.back()->connectObject(text["broadcast_ip"]->text().toStdString().c_str(),
                              text["broadcast_port"]->text().toInt(&ok));
-    trackedObjects[object_counter] = newObject;
-    object_counter++;
 }
 
 void RoboyDarkRoom::clearAll() {
     ROS_DEBUG("clear all clicked");
     for (auto const &object:trackedObjects) {
-        object.second->clearAll();
+        object->clearAll();
     }
 }
 
@@ -328,32 +350,32 @@ void RoboyDarkRoom::record() {
     if (trackedObjects.empty())
         button["record"]->setChecked(false);
     for (auto const &object:trackedObjects) {
-        lock_guard<mutex>(object.second->mux);
-        object.second->record(button["record"]->isChecked());
+        lock_guard<mutex>(object->mux);
+        object->record(button["record"]->isChecked());
     }
 }
 
 void RoboyDarkRoom::showRays() {
     ROS_DEBUG("show rays clicked");
     for (auto const &object:trackedObjects) {
-        lock_guard<mutex>(object.second->mux);
-        object.second->rays = button["show_rays"]->isChecked();
+        lock_guard<mutex>(object->mux);
+        object->rays = button["show_rays"]->isChecked();
     }
 }
 
 void RoboyDarkRoom::showDistances() {
     ROS_DEBUG("show distances clicked");
     for (auto const &object:trackedObjects) {
-        lock_guard<mutex>(object.second->mux);
-        object.second->distances = object.second->rays = button["show_distances"]->isChecked();
+        lock_guard<mutex>(object->mux);
+        object->distances = object->rays = button["show_distances"]->isChecked();
     }
 }
 
 void RoboyDarkRoom::switchLighthouses() {
     ROS_DEBUG("switch lighthouses clicked");
     for (auto const &object:trackedObjects) {
-        lock_guard<mutex>(object.second->mux);
-        object.second->switchLighthouses(button["switch_lighthouses"]->isChecked());
+        lock_guard<mutex>(object->mux);
+        object->switchLighthouses(button["switch_lighthouses"]->isChecked());
     }
 }
 
@@ -519,17 +541,6 @@ void RoboyDarkRoom::startPoseEstimationP3P() {
     }
 }
 
-void RoboyDarkRoom::loadObject() {
-    ROS_DEBUG("load_object clicked");
-    QModelIndexList indexList = ui.objectBrowser->selectionModel()->selectedIndexes();
-    ROS_INFO_STREAM("loading object " << model->filePath(indexList[0]).toStdString().c_str());
-    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject(model->filePath(indexList[0]).toStdString().c_str()));
-    newObject->connectRoboy();
-    trackedObjects[object_counter] = newObject;
-    ui.trackedObjects->addItem(model->filePath(indexList[0]).toStdString().c_str());
-    object_counter++;
-}
-
 void RoboyDarkRoom::transformPublisher() {
     ros::Rate rate(60);
     while (publish_transform) {
@@ -543,8 +554,8 @@ void RoboyDarkRoom::transformPublisher() {
 //                                                              simulated.second->name.c_str()));
 //        }
 //        for (auto &object:trackedObjects) {
-//            tf_broadcaster.sendTransform(tf::StampedTransform(object.second->pose, ros::Time::now(),
-//                                                              "world", object.second->name.c_str()));
+//            tf_broadcaster.sendTransform(tf::StampedTransform(object->pose, ros::Time::now(),
+//                                                              "world", object->name.c_str()));
 //        }
         rate.sleep();
     }
@@ -578,17 +589,20 @@ void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::Interac
         lighthouse2.setRotation(orientation);
     } else if (strcmp(msg.marker_name.c_str(), "trackedObject") == 0) {
         for (auto &object:trackedObjects) {
-            object.second->pose.setOrigin(position);
-            object.second->pose.setRotation(orientation);
+            object->pose.setOrigin(position);
+            object->pose.setRotation(orientation);
             for (auto &simulated:lighthouse_simulation) {
                 tf::Transform tf;
-                if (!getTransform(object.second->name.c_str(),
-                                  (simulated.second->id ? "lighthouse2" : "lighthouse1"), tf))
+                if (!getTransform(object->name.c_str(),
+                                  (simulated.second.first->id ? "lighthouse2" : "lighthouse1"), tf))
                     continue;
-                simulated.second->relative_object_pose = tf;
+                simulated.second.first->relative_object_pose = tf;
+                if (!getTransform(object->name.c_str(),
+                                  (simulated.second.second->id ? "lighthouse2" : "lighthouse1"), tf))
+                    continue;
+                simulated.second.second->relative_object_pose = tf;
             }
         }
-
     }
 }
 
@@ -671,6 +685,26 @@ void RoboyDarkRoom::receiveOOTXData(const roboy_communication_middleware::DarkRo
         button["lighthouse_use_factory_calibration_data_tilt_2"]->setEnabled(true);
         button["lighthouse_use_factory_calibration_data_gphase_2"]->setEnabled(true);
         button["lighthouse_use_factory_calibration_data_gmag_2"]->setEnabled(true);
+    }
+}
+
+bool RoboyDarkRoom::fileExists(const string &filepath){
+    struct stat buffer;
+    return (stat (filepath.c_str(), &buffer) == 0);
+}
+
+void RoboyDarkRoom::updateTrackedObjectInfo(){
+    ros::Rate rate(10);
+    while(update_tracked_object_info){
+        {
+            lock_guard<mutex> lock(mux);
+            for(int i=0; i<trackedObjects.size(); i++){
+                char str[100];
+                sprintf(str, "%d/%d", trackedObjects[i]->active_sensors, (int)trackedObjects[i]->sensors.size());
+                trackedObjectsInfo[i].activeSensors->setText(str);
+            }
+        }
+        rate.sleep();
     }
 }
 
@@ -806,4 +840,79 @@ void RoboyDarkRoom::useFactoryCalibrationData(){
     }
 }
 
+bool RoboyDarkRoom::addTrackedObject(const char* config_file_path){
+    if(strlen(config_file_path)==0) {
+        QModelIndexList indexList = ui.tracked_object_browser->selectionModel()->selectedIndexes();
+        if (indexList.empty())
+            return false;
+        config_file_path = model->filePath(indexList[0]).toStdString().c_str();
+    }
+    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject());
+    if(newObject->init(config_file_path)){
+        ROS_DEBUG_STREAM("adding tracked object " << config_file_path);
+        trackedObjects.push_back(newObject);
+        object_counter++;
+
+        TrackedObjectInfo info;
+
+        QWidget *tracked_objects_scrollarea = widget_->findChild<QWidget *>("tracked_objects_scrollarea");
+        info.widget = new QWidget(tracked_objects_scrollarea);
+        char str[100];
+        sprintf(str, "%s", newObject->name.c_str());
+        info.widget->setObjectName(str);
+        info.widget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+        info.widget->setLayout(new QHBoxLayout(info.widget));
+
+        QCheckBox *box = new QCheckBox;
+        box->setChecked(true);
+        info.widget->layout()->addWidget(box);
+
+        QLabel *name = new QLabel(info.widget);
+        name->setFixedSize(150,30);
+        name->setText(str);
+        info.widget->layout()->addWidget(name);
+
+        QLabel *activeSensors = new QLabel(info.widget);
+        activeSensors->setFixedSize(50,30);
+        activeSensors->setText("active sensors");
+        info.widget->layout()->addWidget(activeSensors);
+
+        info.name = name;
+        info.activeSensors = activeSensors;
+        info.selected = box;
+
+        trackedObjectsInfo.push_back(info);
+
+        tracked_objects_scrollarea->layout()->addWidget(info.widget);
+        return true;
+    }
+    return false;
+}
+/**
+ * removes the selected tracked object
+ */
+void RoboyDarkRoom::removeTrackedObject(){
+    int i = 0;
+    for (auto it=trackedObjects.begin(); it!=trackedObjects.end();){
+        if(trackedObjectsInfo[i].selected->isChecked()){
+            // remove gui elements
+            delete trackedObjectsInfo[i].name;
+            delete trackedObjectsInfo[i].activeSensors;
+            delete trackedObjectsInfo[i].selected;
+            delete trackedObjectsInfo[i].widget;
+            trackedObjectsInfo.erase(trackedObjectsInfo.begin() + i);
+            // if we are simulating, shutdown lighthouse simulators
+            if(simulate){
+                lighthouse_simulation.erase(it->get()->name);
+            }
+            // erase the trackedObject
+            it = trackedObjects.erase(it);
+        }else {
+            i++;
+            ++it;
+        }
+    }
+}
+
 PLUGINLIB_DECLARE_CLASS(roboy_darkroom, RoboyDarkRoom, RoboyDarkRoom, rqt_gui_cpp::Plugin)
+

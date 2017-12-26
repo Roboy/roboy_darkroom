@@ -65,3 +65,5 @@ private:
     map<int, Vector2d> sensor_angle;
     static int class_counter;
 };
+
+typedef boost::shared_ptr<LighthouseSimulator> LighthouseSimulatorPtr;

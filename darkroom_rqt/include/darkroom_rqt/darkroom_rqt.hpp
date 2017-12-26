@@ -23,8 +23,16 @@
 #include <common_utilities/rviz_visualization.hpp>
 #include <visualization_msgs/InteractiveMarkerFeedback.h>
 #include <QFileSystemModel>
+#include <QScrollArea>
+#include <QPushButton>
+#include <QCheckBox>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <utility>
 
 #endif
+
+using namespace std;
 
 class RoboyDarkRoom
         : public rqt_gui_cpp::Plugin, rviz_visualization, DarkRoom::Transform {
@@ -48,75 +56,63 @@ public Q_SLOTS:
      * connect Roboy via ROS
      */
     void connectRoboy();
-
     /**
      * connect simulated Roboy via ROS
      */
     void simulateRoboy();
-
     /**
      * connect Object via UDP socket
      */
     void connectObject();
-
     /**
      * Clears all visualizations in rviz
      */
     void clearAll();
     /**
-         * Resets the lighthouse poses to slider values
-         */
+     * Resets the lighthouse poses to slider values
+     */
     void resetLighthousePoses();
-
     /**
      * Toggles recording sensor values for all tracked objects
      */
     void record();
-
     /**
      * Toggles visualization of lighthouse rays
      */
     void showRays();
-
     /**
      * Toggles visualization of relative sensor distances
      */
     void showDistances();
-
-
+    /**
+     * Switches IDs of lighthouses
+     */
     void switchLighthouses();
-
     /**
      * Toggles tracking thread
      * @param start toggle flag
      */
     void startTriangulation();
-
     /**
      * Toggles calibration thread
      */
     void startCalibrateRelativeSensorDistances();
-
     /**
      * Toggles poseestimation thread
      */
     void startPoseEstimationSensorCloud();
-
     /**
      * Toggles object poseestimation thread
      */
     void startObjectPoseEstimationSensorCloud();
-
     /**
      * Toggles distance estimation thread
      */
     void startEstimateSensorPositionsUsingRelativeDistances();
-
     /**
      * Toggles relative pose estimation thread
      */
     void startEstimateObjectPoseUsingRelativeDistances();
-
     /**
      * Toggles particle filter thread for pose correction
      */
@@ -134,10 +130,6 @@ public Q_SLOTS:
      */
     void startPoseEstimationP3P();
     /**
-     * Loads an object (updateing calibrated sensor distances)
-     */
-    void loadObject();
-    /**
      * Plots the data
      */
     void plotData();
@@ -149,7 +141,16 @@ public Q_SLOTS:
      * Toggles usage of factory calibration data phase
      */
     void useFactoryCalibrationData();
-
+    /**
+     * adds a tracked object
+     * @param config_file_path path to yaml config file
+     * @return success
+     */
+    bool addTrackedObject(const char* config_file_path = "");
+    /**
+     * removes the selected tracked object
+     */
+    void removeTrackedObject();
 private:
     /**
      * Is regularily publishing the tf frames (lighthouse1, lighthouse2)
@@ -182,6 +183,14 @@ private:
      * @param msg
      */
     void receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg);
+    /**
+     * Checks if a file exists
+     * @param filepath
+     * @return exists
+     */
+    inline bool fileExists(const string &filepath);
+
+    void updateTrackedObjectInfo();
 Q_SIGNALS:
     void newData();
     void newStatisticsData();
@@ -196,22 +205,30 @@ private:
                                  Qt::darkBlue, Qt::darkCyan, Qt::darkMagenta, Qt::darkYellow, Qt::black, Qt::gray};
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
-    boost::shared_ptr<std::thread> transform_thread = nullptr;
+    boost::shared_ptr<std::thread> transform_thread = nullptr, update_tracked_object_info_thread = nullptr;
     ros::Subscriber pose_correction_sub, interactive_marker_sub, sensor_sub, statistics_sub, ootx_sub;
     tf::TransformListener tf_listener;
     tf::TransformBroadcaster tf_broadcaster;
     static tf::Transform lighthouse1, lighthouse2, tf_world, tf_map,
             simulated_object_lighthouse1, simulated_object_lighthouse2;
-    atomic<bool> publish_transform;
+    atomic<bool> publish_transform, update_tracked_object_info;
     int object_counter = 0, values_in_plot = 300, message_counter[4] = {0}, message_counter_statistics[2] = {0};
-    map<int, TrackedObjectPtr> trackedObjects;
+    vector<TrackedObjectPtr> trackedObjects;
     mutex mux;
     static map<string, QLineEdit*> text;
     static map<string, QSlider*> slider;
     static map<string, QPushButton*> button;
     bool simulate = false;
 
-    map<int, boost::shared_ptr<LighthouseSimulator>> lighthouse_simulation;
+    map<string, pair<LighthouseSimulatorPtr,LighthouseSimulatorPtr>> lighthouse_simulation;
 
     QFileSystemModel *model;
+    struct TrackedObjectInfo{
+        QWidget *widget;
+        QCheckBox *selected;
+        QLabel* name;
+        QLabel* activeSensors;
+    };
+    vector<TrackedObjectInfo> trackedObjectsInfo;
 };
+

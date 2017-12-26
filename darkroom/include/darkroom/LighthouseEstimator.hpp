@@ -119,6 +119,7 @@ public:
 
     map<int, Sensor> sensors;
     vector<int> calibrated_sensors;
+    int active_sensors = 0;
     atomic<bool> tracking, calibrating, poseestimating, objectposeestimating,
             distances, rays, particle_filtering, use_lighthouse_calibration_data_phase[2],
             use_lighthouse_calibration_data_tilt[2], use_lighthouse_calibration_data_gibphase[2],

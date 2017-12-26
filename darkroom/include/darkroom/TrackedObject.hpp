@@ -26,14 +26,22 @@ using namespace std;
 
 class TrackedObject : public LighthouseEstimator, Utilities, public RobotLocalization::RosEkf {
 public:
-    TrackedObject(const char* configFile = "calibrationCube.yaml");
+    TrackedObject();
 
     ~TrackedObject();
 
     /**
-     * This function initializes a subscriber for roboy darkroom
+     * initializes with yaml config file
+     * @param configFile
+     * @return success
      */
-    void connectRoboy();
+    bool init(const char* configFile = "calibrationCube.yaml");
+
+    /**
+     * Terminates all threads
+     */
+    void shutDown();
+
     /**
      * connect an arbitrary object via UDP socket
      * @param broadcastIP your broadcast ip (check with ifconfig)

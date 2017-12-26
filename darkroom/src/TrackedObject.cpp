@@ -3,7 +3,7 @@
 int TrackedObject::trackeObjectInstance = 0;
 bool TrackedObject::m_switch = false;
 
-TrackedObject::TrackedObject(const char* configFile) {
+TrackedObject::TrackedObject() {
     if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
@@ -15,17 +15,15 @@ TrackedObject::TrackedObject(const char* configFile) {
     darkroom_statistics_pub = nh->advertise<roboy_communication_middleware::DarkRoomStatistics>(
             "/roboy/middleware/DarkRoom/Statistics", 1);
 
+    receiveData = true;
+    sensor_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensors", 1, &TrackedObject::receiveSensorDataRoboy, this);
+
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
     string package_path = ros::package::getPath("darkroom");
 
     path = package_path+"/calibrated_objects";
-    ROS_INFO_STREAM("reading config of  " << configFile);
-    readConfig(configFile, objectID, name, mesh, calibrated_sensors, sensors);
-
-    if(exists(path+mesh))
-        has_mesh = true;
 
     pose.setOrigin(tf::Vector3(0,0,0));
     pose.setRotation(tf::Quaternion(0,0,0,1));
@@ -112,6 +110,17 @@ TrackedObject::TrackedObject(const char* configFile) {
 }
 
 TrackedObject::~TrackedObject() {
+    shutDown();
+    // delete all remaining markers
+    clearAll();
+}
+
+bool TrackedObject::init(const char* configFile){
+    ROS_INFO_STREAM("reading config of  " << configFile);
+    return readConfig(configFile, objectID, name, mesh, calibrated_sensors, sensors);
+}
+
+void TrackedObject::shutDown(){
     receiveData = false;
     tracking = false;
     calibrating = false;
@@ -148,13 +157,6 @@ TrackedObject::~TrackedObject() {
             publish_imu_transform->join();
         }
     }
-    // delete all remaining markers
-    clearAll();
-}
-
-void TrackedObject::connectRoboy() {
-    receiveData = true;
-    sensor_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensors", 1, &TrackedObject::receiveSensorDataRoboy, this);
 }
 
 void TrackedObject::connectObject(const char* broadcastIP, int port){

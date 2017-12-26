@@ -481,6 +481,8 @@ void LighthouseEstimator::triangulateSensors() {
             continue;
         }
 
+        active_sensors = 0;
+
         for (auto &sensor : sensors) {
             lighthouse_active[LIGHTHOUSE_A] = sensor.second.isActive(LIGHTHOUSE_A);
             lighthouse_active[LIGHTHOUSE_B] = sensor.second.isActive(LIGHTHOUSE_B);
@@ -495,6 +497,8 @@ void LighthouseEstimator::triangulateSensors() {
                 Vector3d ray0, ray1;
 
                 if(lighthouse_active[LIGHTHOUSE_A] && lighthouse_active[LIGHTHOUSE_B] ) {
+                    active_sensors++;
+
                     Vector3d triangulated_position;
 
                     applyCalibrationData(lighthouse0_angles, lighthouse1_angles);
