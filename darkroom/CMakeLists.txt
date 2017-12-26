@@ -85,7 +85,7 @@ target_link_libraries( DarkRoomVisualPlugin ${catkin_LIBRARIES} )
 
 add_library( LighthouseVisualPlugin src/gazebo/LighthouseVisualPlugin.cpp )
 add_dependencies(LighthouseVisualPlugin roboy_communication_middleware_gencpp )
-target_link_libraries( LighthouseVisualPlugin ${catkin_LIBRARIES} Transform )
+target_link_libraries( LighthouseVisualPlugin ${catkin_LIBRARIES} bashr )
 
 #==============================================================================
 # Installation
