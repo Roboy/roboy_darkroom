@@ -11,12 +11,12 @@
 #include <roboy_communication_middleware/DarkRoomOOTX.h>
 #include <common_utilities/CommonDefinitions.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
-
+#include <boost/filesystem.hpp>
 #include <darkroom/epnp/epnp.h>
-//#include <darkroom/mavmap/src/base3d/p3p.h>
-
 #include <atomic>
 #include <mutex>
+
+namespace fs = boost::filesystem;
 
 #define LIGHTHOUSE_A false
 #define LIGHTHOUSE_B true
@@ -125,7 +125,7 @@ public:
             use_lighthouse_calibration_data_tilt[2], use_lighthouse_calibration_data_gibphase[2],
             use_lighthouse_calibration_data_gibmag[2];
     mutex mux;
-    string mesh = "pimmel";
+    fs::path mesh;
     bool has_mesh = false;
     string name = "bastiisdoff";
 private:

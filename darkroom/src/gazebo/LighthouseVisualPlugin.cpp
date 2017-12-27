@@ -72,8 +72,6 @@ namespace gazebo
                 tf::Quaternion orientation = pose.getRotation();
                 math::Pose p(origin.getX(), origin.getY(), origin.getZ(), 0, 0, 0);
                 visual_->SetWorldPose(p);
-
-
             }else{
                 ROS_INFO_STREAM_THROTTLE(1, "no tf for " << name );
             }

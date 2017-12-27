@@ -14,6 +14,9 @@
 #include "darkroom/Transform.hpp"
 #include "darkroom/Sensor.hpp"
 #include "darkroom/Utilities.hpp"
+#include <pcl/PolygonMesh.h>
+#include <pcl/io/vtk_lib_io.h>
+#include "darkroom/Triangulation.hpp"
 
 #define degreesToTicks(degrees) (degrees * 50.0 * 8333.0 / 180.0)
 
@@ -28,10 +31,10 @@ public:
     /**
      * Constructor
      * @param id lighthouse id (currently only 0 or 1 is supported)
-     * @param configFile path to yaml file 
+     * @param configFile path to yaml file
      * @param object_pose (initial object pose wrt world)
      */
-    LighthouseSimulator(int id, const char* configFile = "calibrationCube.yaml");
+    LighthouseSimulator(int id, fs::path configFile);
     ~LighthouseSimulator();
     /**
      * Publishes simulated lighthouse data
@@ -47,8 +50,27 @@ public:
      */
     void interactiveMarkersFeedback(const visualization_msgs::InteractiveMarkerFeedback &msg);
 
+    bool checkIfSensorVisible(vector<Vector4d> &vertices, Vector3d &ray);
+
+    /**
+     * Checks if a ray intersects a triangle
+     * (adapted from http://www.lighthouse3d.com/tutorials/maths/ray-triangle-intersection/)
+     * @param ray the ray
+     * @param v0 first vertex
+     * @param v1 second vertex
+     * @param v2 third vertex
+     * @param u barycentric coordinate
+     * @param v barycentric coordinate
+     * @param t length of intersection on ray: intersection = t*ray
+     * @return intersects
+     */
+    bool rayIntersectsTriangle(Vector3d &origin, Vector3d &ray,
+                               Vector4d &v0, Vector4d &v1, Vector4d &v2,
+                               double &u, double &v, double &t);
+
     int objectID;
-    string name, mesh;
+    string name;
+    fs::path meshPath;
     map<int, Sensor> sensors;
     vector<int> calibrated_sensors;
     boost::shared_ptr<boost::thread> sensor_thread, imu_thread;
@@ -64,6 +86,10 @@ private:
     map<int, Vector4d> sensor_position;
     map<int, Vector2d> sensor_angle;
     static int class_counter;
+    struct{
+        vector<::pcl::Vertices> polygons;
+        vector<Vector4d> vertices;
+    }mesh;
 };
 
 typedef boost::shared_ptr<LighthouseSimulator> LighthouseSimulatorPtr;

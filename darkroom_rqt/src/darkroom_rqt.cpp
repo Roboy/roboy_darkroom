@@ -265,12 +265,15 @@ void RoboyDarkRoom::restoreSettings(const qt_gui_cpp::Settings &plugin_settings,
 void RoboyDarkRoom::connectRoboy() {
     ROS_DEBUG("connect roboy clicked");
     string package_path = ros::package::getPath("roboy_models");
+//    vector<string> roboy_parts = {
+//            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/xylophone.yaml",
+//            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/head.yaml",
+//            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/torso.yaml",
+//            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/upper_arm_left.yaml",
+//            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/upper_arm_right.yaml"
+//    };
     vector<string> roboy_parts = {
-            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/xylophone.yaml",
-            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/head.yaml",
-            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/torso.yaml",
-            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/upper_arm_left.yaml",
-            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/upper_arm_right.yaml"
+            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/xylophone.yaml"
     };
     for(auto &part:roboy_parts){
         string path = package_path+part;
@@ -340,9 +343,9 @@ void RoboyDarkRoom::resetLighthousePoses() {
     tf_map.setRotation(quat);
     bool ok;
     lighthouse1.setRotation(quat);
-    lighthouse1.setOrigin(tf::Vector3(0,0,0));
+    lighthouse1.setOrigin(tf::Vector3(0,-1,0));
     lighthouse2.setRotation(quat);
-    lighthouse2.setOrigin(tf::Vector3(0.83,0,0));
+    lighthouse2.setOrigin(tf::Vector3(0.83,-1,0));
 }
 
 void RoboyDarkRoom::record() {
@@ -553,10 +556,10 @@ void RoboyDarkRoom::transformPublisher() {
 //                                                                                         : "lighthouse2"),
 //                                                              simulated.second->name.c_str()));
 //        }
-//        for (auto &object:trackedObjects) {
-//            tf_broadcaster.sendTransform(tf::StampedTransform(object->pose, ros::Time::now(),
-//                                                              "world", object->name.c_str()));
-//        }
+        for (auto &object:trackedObjects) {
+            tf_broadcaster.sendTransform(tf::StampedTransform(object->pose, ros::Time::now(),
+                                                              "world", object->name.c_str()));
+        }
         rate.sleep();
     }
 }

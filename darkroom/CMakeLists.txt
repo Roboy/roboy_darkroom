@@ -10,7 +10,7 @@ SET(CMAKE_BUILD_TYPE Debug)
 # Dependencies
 #==============================================================================
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation tf tf_conversions visualization_msgs
-		roboy_communication_middleware common_utilities robot_localization xmlrpcpp )
+		roboy_communication_middleware common_utilities robot_localization xmlrpcpp pcl_ros )
 
 # Eigen
 find_package(PkgConfig REQUIRED )
@@ -31,6 +31,7 @@ include_directories(${GAZEBO_INCLUDE_DIRS})
 link_directories(${GAZEBO_LIBRARY_DIRS})
 
 catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware common_utilities robot_localization xmlrpcpp
+		pcl_ros
 		INCLUDE_DIRS include
         LIBRARIES ParticleFilter PoseEstimatorSensorCloud PoseEstimatorSensorDistance PoseEstimatorSensorDistances
         Transform Triangulate LighthouseEstimator LighthouseSimulator Sensor TrackedObject )

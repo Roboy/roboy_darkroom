@@ -1,12 +1,65 @@
 #include "darkroom/Utilities.hpp"
 
-bool Utilities::readConfig(string filepath, int &objectID, string &name, string &mesh,
+bool Utilities::readModelDirectory(string modelDirectory, ModelInformation &info) {
+    if(!directory_exists(modelDirectory))
+        return false;
+
+    info.modelSdf = fs::path(modelDirectory+"/model.sdf");
+
+    info.rootDirectory = fs::path(modelDirectory);
+    info.meshDirectory = fs::path(modelDirectory+"/meshes/CAD");
+    if(directory_exists(info.meshDirectory.root_path().c_str())){
+        fs::directory_iterator end_iter;
+        for (fs::directory_iterator dir_itr(info.meshDirectory); dir_itr != end_iter; ++dir_itr) {
+            try {
+                if (fs::is_regular_file(dir_itr->status())) {
+                    info.meshes.push_back(dir_itr->path());
+                    ROS_DEBUG_STREAM(dir_itr->path());
+                }
+            }
+            catch (const std::exception &ex) {
+                ROS_ERROR_STREAM(dir_itr->path().filename() << " " << ex.what());
+            }
+        }
+    }else{
+        ROS_ERROR("mesh directory %s does not exist", info.meshDirectory);
+        return false;
+    }
+    info.lighthouseDirectory = fs::path(modelDirectory+"/lighthouseSensors");
+    if(directory_exists(info.lighthouseDirectory.root_path().c_str())){
+        fs::directory_iterator end_iter;
+        for (fs::directory_iterator dir_itr(info.lighthouseDirectory); dir_itr != end_iter; ++dir_itr) {
+            try {
+                if (fs::is_regular_file(dir_itr->status())) {
+                    info.lighthouseConfigFiles.push_back(dir_itr->path());
+                    ROS_DEBUG_STREAM(dir_itr->path());
+                }
+            }
+            catch (const std::exception &ex) {
+                ROS_ERROR_STREAM(dir_itr->path().filename() << " " << ex.what());
+            }
+        }
+    }else{
+        ROS_ERROR("lighthouse directory %s does not exist", info.lighthouseDirectory);
+        return false;
+    }
+}
+
+bool Utilities::readConfig(fs::path filepath, int &objectID, string &name, fs::path &mesh,
                            vector<int> &calibrated_sensors, map<int, Sensor> &sensors) {
-    try{
-        YAML::Node config = YAML::LoadFile(filepath);
+    if(!file_exists(filepath.c_str()))
+        return false;
+    try {
+        ROS_INFO_STREAM("reading config " << filepath.filename());
+        YAML::Node config = YAML::LoadFile(filepath.c_str());
         objectID = config["ObjectID"].as<int>();
         name = config["name"].as<string>();
-        mesh = config["mesh"].as<string>();
+        mesh = filepath.remove_filename().c_str();
+        mesh += "/" + config["mesh"].as<string>();
+        if(!file_exists(mesh.c_str())){
+            ROS_ERROR("mesh %s does not exist", mesh.c_str());
+            return false;
+        }
         vector<vector<float>> relative_locations =
                 config["sensor_relative_locations"].as<vector<vector<float >>>();
         sensors.clear();
@@ -19,16 +72,16 @@ bool Utilities::readConfig(string filepath, int &objectID, string &name, string 
             cout << "\t" << calibrated_sensors.back();
         }
         cout << endl;
-    }catch(YAML::Exception& e) {
+    } catch (YAML::Exception &e) {
         ROS_ERROR_STREAM(e.what());
         return false;
     }
     return true;
 }
 
-bool Utilities::writeConfig(string filepath, int &objectID, string &name, string &mesh,
+bool Utilities::writeConfig(fs::path filepath, int &objectID, string &name, fs::path &mesh,
                             vector<int> &calibrated_sensors, map<int, Sensor> &sensors) {
-    std::ofstream fout(filepath);
+    std::ofstream fout(filepath.root_path().c_str());
     if (!fout.is_open()) {
         ROS_WARN_STREAM("Could not write config " << filepath);
         return false;
@@ -37,7 +90,7 @@ bool Utilities::writeConfig(string filepath, int &objectID, string &name, string
     YAML::Node config;
     config["ObjectID"] = objectID;
     config["name"] = name;
-    config["mesh"] = mesh;
+    config["mesh"] = mesh.c_str();
     for (auto &sensor : sensors) {
         if (!sensor.second.isCalibrated())
             continue;
@@ -53,5 +106,29 @@ bool Utilities::writeConfig(string filepath, int &objectID, string &name, string
     }
 
     fout << config;
+    return true;
+}
+
+bool Utilities::directory_exists(string directory_path){
+    if (!fs::exists(directory_path)) {
+        ROS_ERROR("%s does not exist", directory_path.c_str());
+        return false;
+    }
+    if (!fs::is_directory(directory_path)) {
+        ROS_ERROR("%s id not a directory", directory_path.c_str());
+        return false;
+    }
+    return true;
+}
+
+bool Utilities::file_exists(string file_path){
+    if (!fs::exists(file_path)) {
+        ROS_ERROR("%s does not exist", file_path.c_str());
+        return false;
+    }
+    if (!fs::is_regular_file(file_path)) {
+        ROS_ERROR("%s id not a file", file_path.c_str());
+        return false;
+    }
     return true;
 }

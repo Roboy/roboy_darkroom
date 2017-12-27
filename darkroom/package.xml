@@ -19,6 +19,7 @@
     <depend>robot_localization</depend>
     <depend>xmlrpcpp</depend>
     <depend>gazebo</depend>
+    <depend>pcl_ros</depend>
 
     <export>
         <rviz plugin="${prefix}/darkroom.xml"/>

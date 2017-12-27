@@ -40,8 +40,6 @@ namespace gazebo
             /// \brief Destructor
             virtual ~LighthouseVisualPlugin();
 
-            /// \brief Load the visual force plugin tags
-            /// \param node XML config node
             void Load( VisualPtr _parent, sdf::ElementPtr _sdf );
 
 
