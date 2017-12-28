@@ -265,47 +265,31 @@ void RoboyDarkRoom::restoreSettings(const qt_gui_cpp::Settings &plugin_settings,
 void RoboyDarkRoom::connectRoboy() {
     ROS_DEBUG("connect roboy clicked");
     string package_path = ros::package::getPath("roboy_models");
-//    vector<string> roboy_parts = {
-//            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/xylophone.yaml",
-//            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/head.yaml",
-//            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/torso.yaml",
-//            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/upper_arm_left.yaml",
-//            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/upper_arm_right.yaml"
-//    };
-    vector<string> roboy_parts = {
-            "/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/xylophone.yaml"
+   // vector<fs::path> roboy_parts = {
+   //         package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/xylophone.yaml",
+   //         package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/head.yaml",
+   //         package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/torso.yaml",
+   //         package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/upper_arm_left.yaml",
+   //         package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/upper_arm_right.yaml"
+   // };
+    vector<fs::path> roboy_parts = {
+            package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/xylophone.yaml"
     };
     for(auto &part:roboy_parts){
-        string path = package_path+part;
-        if(!fileExists(path)){
-            ROS_ERROR("could not connect Roboy, check the path %s", path.c_str());
+        if(!fileExists(part.c_str())){
+            ROS_ERROR("could not connect Roboy, check the path %s", part.c_str());
             return;
         }
-        if(!addTrackedObject(path.c_str()))
+        if(!addTrackedObject(part.c_str()))
             continue;
-        if(simulate){
-            lighthouse_simulation[trackedObjects.back()->name].first.reset(new LighthouseSimulator(LIGHTHOUSE_A, path.c_str()));
-            lighthouse_simulation[trackedObjects.back()->name].second.reset(new LighthouseSimulator(LIGHTHOUSE_B, path.c_str()));
+    }
+    if(simulate){
+        pair<LighthouseSimulatorPtr,LighthouseSimulatorPtr> simulation;
 
-            lighthouse_simulation[trackedObjects.back()->name].first->sensor_publishing = true;
-            lighthouse_simulation[trackedObjects.back()->name].second->sensor_publishing = true;
+        simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, roboy_parts));
+        simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, roboy_parts));
 
-            // start a simulated sensor publishing thread for each lighthouse
-            lighthouse_simulation[trackedObjects.back()->name].first->sensor_thread.reset(
-                    new boost::thread(
-                            [this]() { this->lighthouse_simulation[trackedObjects.back()->name].first->PublishSensorData(); }
-                    ));
-            lighthouse_simulation[trackedObjects.back()->name].second->sensor_thread.reset(
-                    new boost::thread(
-                            [this]() { this->lighthouse_simulation[trackedObjects.back()->name].second->PublishSensorData(); }
-                    ));
-            // start one imu publisher
-            lighthouse_simulation[trackedObjects.back()->name].first->imu_publishing = true;
-            lighthouse_simulation[trackedObjects.back()->name].second->imu_thread.reset(
-                    new boost::thread(
-                            [this]() { this->lighthouse_simulation[trackedObjects.back()->name].first->PublishImuData(); }
-                    ));
-        }
+        lighthouse_simulation.push_back(simulation);
     }
 }
 
@@ -594,17 +578,6 @@ void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::Interac
         for (auto &object:trackedObjects) {
             object->pose.setOrigin(position);
             object->pose.setRotation(orientation);
-            for (auto &simulated:lighthouse_simulation) {
-                tf::Transform tf;
-                if (!getTransform(object->name.c_str(),
-                                  (simulated.second.first->id ? "lighthouse2" : "lighthouse1"), tf))
-                    continue;
-                simulated.second.first->relative_object_pose = tf;
-                if (!getTransform(object->name.c_str(),
-                                  (simulated.second.second->id ? "lighthouse2" : "lighthouse1"), tf))
-                    continue;
-                simulated.second.second->relative_object_pose = tf;
-            }
         }
     }
 }
@@ -906,7 +879,7 @@ void RoboyDarkRoom::removeTrackedObject(){
             trackedObjectsInfo.erase(trackedObjectsInfo.begin() + i);
             // if we are simulating, shutdown lighthouse simulators
             if(simulate){
-                lighthouse_simulation.erase(it->get()->name);
+                lighthouse_simulation.erase(lighthouse_simulation.begin() + i);
             }
             // erase the trackedObject
             it = trackedObjects.erase(it);
@@ -918,4 +891,3 @@ void RoboyDarkRoom::removeTrackedObject(){
 }
 
 PLUGINLIB_DECLARE_CLASS(roboy_darkroom, RoboyDarkRoom, RoboyDarkRoom, rqt_gui_cpp::Plugin)
-

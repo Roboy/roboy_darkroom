@@ -16,7 +16,6 @@
 #include "darkroom/Utilities.hpp"
 #include <pcl/PolygonMesh.h>
 #include <pcl/io/vtk_lib_io.h>
-#include "darkroom/Triangulation.hpp"
 
 #define degreesToTicks(degrees) (degrees * 50.0 * 8333.0 / 180.0)
 
@@ -31,10 +30,10 @@ public:
     /**
      * Constructor
      * @param id lighthouse id (currently only 0 or 1 is supported)
-     * @param configFile path to yaml file
+     * @param configFile path to yaml files
      * @param object_pose (initial object pose wrt world)
      */
-    LighthouseSimulator(int id, fs::path configFile);
+    LighthouseSimulator(int id, vector<fs::path> &configFile);
     ~LighthouseSimulator();
     /**
      * Publishes simulated lighthouse data
@@ -44,13 +43,15 @@ public:
      * Publishes simulated imu data
      */
     void PublishImuData();
-    /**
-     * Use feedback from interactive markers to update relative object pose
-     * @param msg
-     */
-    void interactiveMarkersFeedback(const visualization_msgs::InteractiveMarkerFeedback &msg);
 
-    bool checkIfSensorVisible(vector<Vector4d> &vertices, Vector3d &ray);
+    /**
+     * Iterates through all polygons and checks for the number of intersections
+     * @param vertices the vertices of the mesh
+     * @param polygons indices of vertices (only triangles supported)
+     * @param ray the ray to check intersections for
+     * @return is visible
+     */
+    bool checkIfSensorVisible(vector<Vector4d> &vertices, vector<::pcl::Vertices> &polygons, Vector3d &ray);
 
     /**
      * Checks if a ray intersects a triangle
@@ -67,29 +68,25 @@ public:
     bool rayIntersectsTriangle(Vector3d &origin, Vector3d &ray,
                                Vector4d &v0, Vector4d &v1, Vector4d &v2,
                                double &u, double &v, double &t);
-
-    int objectID;
-    string name;
-    fs::path meshPath;
-    map<int, Sensor> sensors;
-    vector<int> calibrated_sensors;
-    boost::shared_ptr<boost::thread> sensor_thread, imu_thread;
+    boost::shared_ptr<boost::thread> sensor_thread = nullptr, imu_thread = nullptr;
     atomic<bool> sensor_publishing, imu_publishing;
     mutex mux;
-    tf::Transform relative_object_pose;
     int id;
 private:
     ros::NodeHandlePtr nh;
     ros::Publisher sensors_pub, imu_pub;
-    ros::Subscriber interactive_marker_sub;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
-    map<int, Vector4d> sensor_position;
-    map<int, Vector2d> sensor_angle;
-    static int class_counter;
-    struct{
+
+    vector<int32_t> objectID;
+    vector<string> name;
+    struct mesh{
         vector<::pcl::Vertices> polygons;
         vector<Vector4d> vertices;
-    }mesh;
+        vector<Vector4d> vertices_transformed;
+    };
+    vector<mesh> meshes;
+    vector<map<int, Vector4d>> sensor_position;
+    vector<vector<bool>> sensor_visible;
 };
 
 typedef boost::shared_ptr<LighthouseSimulator> LighthouseSimulatorPtr;

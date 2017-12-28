@@ -1,8 +1,6 @@
 #include <darkroom/LighthouseSimulator.hpp>
 
-int LighthouseSimulator::class_counter = 0;
-
-LighthouseSimulator::LighthouseSimulator(int id, fs::path configFile) : id(id) {
+LighthouseSimulator::LighthouseSimulator(int id, vector<fs::path> &configFile) : id(id) {
     if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;
@@ -14,48 +12,69 @@ LighthouseSimulator::LighthouseSimulator(int id, fs::path configFile) : id(id) {
             "/roboy/middleware/DarkRoom/sensors", 1);
     imu_pub = nh->advertise<sensor_msgs::Imu>("/roboy/middleware/imu0", 1);
 
-    interactive_marker_sub = nh->subscribe("/interactive_markers/feedback", 1,
-                                           &LighthouseSimulator::interactiveMarkersFeedback, this);
-
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
 
-    if(!readConfig(configFile, objectID, name, meshPath, calibrated_sensors, sensors))
-        return;
+    name.resize(configFile.size());
+    meshes.resize(configFile.size());
+    sensor_position.resize(configFile.size());
+    sensor_visible.resize(configFile.size());
+    objectID.resize(configFile.size());
 
-    ROS_DEBUG_STREAM("loading mesh file " << meshPath);
-    pcl::PolygonMesh m;
-    pcl::io::loadPolygonFile(meshPath.c_str(),m);
-    pcl::PointCloud<pcl::PointXYZ> vertices;
-    pcl::fromPCLPointCloud2(m.cloud, vertices);
-    mesh.polygons = m.polygons;
-    for(int i=0;i<vertices.size();i++){
-        // convert from mm to meter
-        mesh.vertices.push_back(Vector4d(vertices[i].x*0.001, vertices[i].y*0.001, vertices[i].z*0.001, 1));
+    for(int i=0;i<configFile.size();i++){
+        fs::path meshPath;
+        vector<int> calibrated_sensors;
+        map<int, Sensor> sensors;
+
+        if(!readConfig(configFile[i], objectID[i], name[i], meshPath, calibrated_sensors, sensors))
+            return;
+
+        ROS_DEBUG_STREAM("loading mesh file " << meshPath);
+        pcl::PolygonMesh m;
+        pcl::io::loadPolygonFile(meshPath.c_str(),m);
+        pcl::PointCloud<pcl::PointXYZ> vertices;
+        pcl::fromPCLPointCloud2(m.cloud, vertices);
+        meshes[i].polygons = m.polygons;
+        for(int j=0;j<vertices.size();j++){
+            // convert from mm to meter
+            meshes[i].vertices.push_back(Vector4d(vertices.at(j).x*0.001, vertices.at(j).y*0.001, vertices.at(j).z*0.001, 1));
+        }
+        meshes[i].vertices_transformed = meshes[i].vertices;
+        ROS_INFO("done loading mesh %s: %ld triangles, %ld vertices", meshPath.filename().c_str(),
+               meshes[i].polygons.size(), meshes[i].vertices.size());
+
+        for (auto &sensor:sensors) {
+            Vector3d rel_location;
+            sensor.second.getRelativeLocation(rel_location);
+            sensor_position[i][sensor.first] << rel_location[0], rel_location[1], rel_location[2], 1;
+            sensor_visible[i].push_back(true);
+        }
     }
-    ROS_INFO("done loading mesh %s: %ld triangles, %ld vertices", meshPath.filename().c_str(),
-             mesh.polygons.size(), mesh.vertices.size());
 
-    for (auto &sensor:sensors) {
-        Vector3d rel_location;
-        sensor.second.getRelativeLocation(rel_location);
-        sensor_position[sensor.first] << rel_location[0], rel_location[1], rel_location[2], 1;
-    }
-
-    class_counter++;
-
-    tf::Vector3 origin(0, 1, 0);
-    make6DofMarker(false, visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D, origin,
-                   true, 0.1, (id == 0 ? "lighthouse1" : "lighthouse2"), name.c_str(), "");
-    relative_object_pose.setOrigin(origin);
-    relative_object_pose.setRotation(tf::Quaternion(0, 0, 1, 0));
+    sensor_publishing = true;
+    sensor_thread.reset(
+            new boost::thread(
+                    [this]() { PublishSensorData(); }
+            ));
 }
 
 LighthouseSimulator::~LighthouseSimulator() {
-    {
-        lock_guard<mutex> lock(mux);
-        sensor_publishing = false;
-        imu_publishing = false;
+    lock_guard<mutex> lock(mux);
+    sensor_publishing = false;
+    imu_publishing = false;
+
+    if(sensor_thread!=nullptr){
+        if(sensor_thread->joinable()){
+            ROS_INFO("waiting for sensor thread to shutdown");
+            sensor_thread->join();
+        }
+    }
+
+    if(imu_thread!=nullptr){
+        if(imu_thread->joinable()){
+            ROS_INFO("waiting for imu thread to shutdown");
+            imu_thread->join();
+        }
     }
 }
 
@@ -66,81 +85,83 @@ void LighthouseSimulator::PublishSensorData() {
     ros::Rate rate(120);
     bool angle_switch = false;
     high_resolution_clock::time_point t0 = high_resolution_clock::now();
-    Matrix4d RT_object2lighthouse, RT_object2lighthouse_new;
-    vector<Vector4d> vertices = mesh.vertices;
-    bool pose_changed = true;
-    vector<bool> sensor_visible(sensor_position.size(), false);
+    vector<Matrix4d> RT_object2lighthouse(meshes.size()), RT_object2lighthouse_new(meshes.size());
+    vector<bool> pose_changed(meshes.size(),true);
+
     while (sensor_publishing) {
-        if (!getTransform(name.c_str(), (id == 0 ? "lighthouse1" : "lighthouse2"), RT_object2lighthouse_new))
-            continue;
+        for (int i=0; i<meshes.size();i++) {
+            // we need the transform from object to lighthouse frame
+            if (!getTransform(name[i].c_str(), (id == 0 ? "lighthouse1" : "lighthouse2"), RT_object2lighthouse_new[i]))
+                continue;
 
-        if(!RT_object2lighthouse_new.isApprox(RT_object2lighthouse)){
-            pose_changed = true;
-            vertices = mesh.vertices;
-            // apply transform to all vertices
-            for(auto &v:vertices){
-                v = RT_object2lighthouse_new*v;
-            }
-        }else{
-            pose_changed = false;
-        }
-
-        RT_object2lighthouse = RT_object2lighthouse_new;
-        Vector4d lighthouse_pos(0, 0, 0, 1);
-        roboy_communication_middleware::DarkRoom msg;
-
-        int i = 0;
-        for (auto const &sensor:sensor_position) {
-            Vector4d sensor_pos;
-            sensor_pos = RT_object2lighthouse * sensor.second;
-            double distance = sqrt(pow(sensor_pos[0], 2.0) + pow(sensor_pos[1], 2.0) + pow(sensor_pos[2], 2.0));
-            double elevation = 180.0 - acos(sensor_pos[2] / distance) * 180.0 / M_PI;
-            double azimuth = atan2(sensor_pos[1], sensor_pos[0]) * 180.0 / M_PI;
-
-            if(pose_changed){ // we gotta check if the sensor is visible
-                Vector3d ray(sensor_pos[0],sensor_pos[1],sensor_pos[2]);
-                sensor_visible[i] = checkIfSensorVisible(vertices,ray);
-            }
-
-            uint32_t sensor_value;
-            if (elevation >= 0 && elevation <= 180.0 && azimuth >= 0 &&
-                azimuth <= 180.0 && sensor_visible[i]) { // if the sensor is visible by lighthouse
-
-                if (!angle_switch) {
-                    uint32_t elevation_in_ticks = (uint32_t) (degreesToTicks(elevation));
-                    sensor_value = (uint32_t) (id << 31 | 1 << 30 | true << 29 | sensor.first<<19 | elevation_in_ticks & 0x7FFFF);
-                    if (sensor.first == 0)
-                        ROS_DEBUG_THROTTLE(1, "elevation: %lf in ticks: %d", elevation, elevation_in_ticks);
-                } else {
-                    uint32_t azimuth_in_ticks = (uint32_t) (degreesToTicks(azimuth));
-                    sensor_value = (uint32_t) (id << 31 | 0 << 30 | true << 29 | sensor.first<<19 | azimuth_in_ticks & 0x7FFFF);
-                    if (sensor.first == 0)
-                        ROS_DEBUG_THROTTLE(1, "azimuth: %lf in ticks: %d", azimuth, azimuth_in_ticks);
+            // because checking the visiblity of a sensor is costly, we only do it, when the pose has changed
+            if(!RT_object2lighthouse_new[i].isApprox(RT_object2lighthouse[i])){
+                pose_changed[i] = true;
+                // apply transform to all vertices
+                for(int k=0;k<meshes[i].vertices.size();k++){
+                    meshes[i].vertices_transformed[k] = RT_object2lighthouse_new[i]*meshes[i].vertices[k];
                 }
-                Vector3d pos(sensor_pos[0], sensor_pos[1], sensor_pos[2]);
-                publishSphere(pos, (id == 0 ? "lighthouse1" : "lighthouse2"), "simulated_sensor_positions",
-                              sensor.first + id * sensor_position.size() + 6543, COLOR(0, 1, 0, 1), 0.01);
-            } else {
-                Vector3d pos(sensor_pos[0], sensor_pos[1], sensor_pos[2]);
-                publishSphere(pos, (id == 0 ? "lighthouse1" : "lighthouse2"), "simulated_sensor_positions",
-                              sensor.first + id * sensor_position.size() + 7543, COLOR(1, 0, 0, 1), 0.01, 1);
+                RT_object2lighthouse[i] = RT_object2lighthouse_new[i];
+            }else{
+                pose_changed[i] = false;
             }
-            high_resolution_clock::time_point t1 = high_resolution_clock::now();
-            microseconds time_span = duration_cast<microseconds>(t1 - t0);
-            msg.timestamp.push_back(time_span.count());
-            msg.sensor_value.push_back(sensor_value);
-//            Vector3d origin(0,0,0);
-//            Vector3d dir(sensor_pos[0],sensor_pos[1],sensor_pos[2]);
-//            publishRay(origin, dir,(id==0?"lighthouse1":"lighthouse2"),"simulated_sensor_rays",
-//                       sensor.first+class_counter*sensor_position.size()+8543, COLOR(0,0,0,1), 0.01);
-            i++;
+
+            roboy_communication_middleware::DarkRoom msg;
+
+            msg.objectID = objectID[i];
+            int j= 0;
+            for (auto const &sensor:sensor_position[i]) {
+                Vector4d sensor_pos;
+                sensor_pos = RT_object2lighthouse[i] * sensor.second;
+                double distance = sqrt(pow(sensor_pos[0], 2.0) + pow(sensor_pos[1], 2.0) + pow(sensor_pos[2], 2.0));
+                double elevation = 180.0 - acos(sensor_pos[2] / distance) * 180.0 / M_PI;
+                double azimuth = atan2(sensor_pos[1], sensor_pos[0]) * 180.0 / M_PI;
+
+                if(pose_changed[i]){ // we gotta check if the sensor is visible
+                    Vector3d ray(sensor_pos[0],sensor_pos[1],sensor_pos[2]);
+                    sensor_visible[i][j] = checkIfSensorVisible(meshes[i].vertices_transformed,meshes[i].polygons,ray);
+                }
+
+                uint32_t sensor_value;
+                if (elevation >= 0 && elevation <= 180.0 && azimuth >= 0 &&
+                    azimuth <= 180.0 && sensor_visible[i][j]) { // if the sensor is visible by lighthouse
+
+                    if (!angle_switch) {
+                        uint32_t elevation_in_ticks = (uint32_t) (degreesToTicks(elevation));
+                        sensor_value = (uint32_t) (id << 31 | 1 << 30 | true << 29 | sensor.first<<19 | elevation_in_ticks & 0x7FFFF);
+                        if (sensor.first == 0)
+                            ROS_DEBUG_THROTTLE(1, "elevation: %lf in ticks: %d", elevation, elevation_in_ticks);
+                    } else {
+                        uint32_t azimuth_in_ticks = (uint32_t) (degreesToTicks(azimuth));
+                        sensor_value = (uint32_t) (id << 31 | 0 << 30 | true << 29 | sensor.first<<19 | azimuth_in_ticks & 0x7FFFF);
+                        if (sensor.first == 0)
+                            ROS_DEBUG_THROTTLE(1, "azimuth: %lf in ticks: %d", azimuth, azimuth_in_ticks);
+                    }
+                    Vector3d pos(sensor_pos[0], sensor_pos[1], sensor_pos[2]);
+                    publishSphere(pos, (id == 0 ? "lighthouse1" : "lighthouse2"), "simulated_sensor_positions",
+                                  sensor.first + id * sensor_position.size() + 6543, COLOR(0, 1, 0, 1), 0.01);
+                } else {
+                    Vector3d pos(sensor_pos[0], sensor_pos[1], sensor_pos[2]);
+                    publishSphere(pos, (id == 0 ? "lighthouse1" : "lighthouse2"), "simulated_sensor_positions",
+                                  sensor.first + id * sensor_position.size() + 7543, COLOR(1, 0, 0, 1), 0.01, 1);
+                }
+                high_resolution_clock::time_point t1 = high_resolution_clock::now();
+                microseconds time_span = duration_cast<microseconds>(t1 - t0);
+                msg.timestamp.push_back(time_span.count());
+                msg.sensor_value.push_back(sensor_value);
+
+                j++;
+    //            Vector3d origin(0,0,0);
+    //            Vector3d dir(sensor_pos[0],sensor_pos[1],sensor_pos[2]);
+    //            publishRay(origin, dir,(id==0?"lighthouse1":"lighthouse2"),"simulated_sensor_rays",
+    //                       sensor.first+class_counter*sensor_position.size()+8543, COLOR(0,0,0,1), 0.01);
+            }
+
+            if (!msg.sensor_value.empty())
+                sensors_pub.publish(msg);
         }
-        angle_switch = !angle_switch;
-
-        if (!msg.sensor_value.empty())
-            sensors_pub.publish(msg);
-
         rate.sleep();
+        angle_switch = !angle_switch;
     }
 }
 
@@ -150,45 +171,37 @@ void LighthouseSimulator::PublishImuData() {
     ros::Rate rate(1);
     high_resolution_clock::time_point t0 = high_resolution_clock::now();
     while (imu_publishing) {
-        Matrix4d RT_object2world;
-        if (!getTransform(name.c_str(), "world", RT_object2world))
-            continue;
+        for(int i=0;i<meshes.size();i++){
+            Matrix4d RT_object2world;
+            if (!getTransform(name[i].c_str(), "world", RT_object2world))
+                continue;
 
-        sensor_msgs::Imu msg;
-        msg.header.stamp = ros::Time::now();
-        msg.header.frame_id = "calibrationCube";
-        msg.orientation.w = 1;
-        msg.linear_acceleration_covariance = {
-                1, 0, 0,
-                0, 1, 0,
-                0, 0, 1
-        };
+            sensor_msgs::Imu msg;
+            msg.header.stamp = ros::Time::now();
+            msg.header.frame_id = name[i];
+            msg.orientation.w = 1;
+            msg.linear_acceleration_covariance = {
+                    1, 0, 0,
+                    0, 1, 0,
+                    0, 0, 1
+            };
 
-        msg.linear_acceleration.x = 0 + rand()/(double)RAND_MAX * IMU_ACC_NOISE;
-        msg.linear_acceleration.y = 0 + rand()/(double)RAND_MAX * IMU_ACC_NOISE;
-        msg.linear_acceleration.z = 9.81 + rand()/(double)RAND_MAX * IMU_ACC_NOISE;
+            msg.linear_acceleration.x = 0 + rand()/(double)RAND_MAX * IMU_ACC_NOISE;
+            msg.linear_acceleration.y = 0 + rand()/(double)RAND_MAX * IMU_ACC_NOISE;
+            msg.linear_acceleration.z = 9.81 + rand()/(double)RAND_MAX * IMU_ACC_NOISE;
 
-        imu_pub.publish(msg);
-        rate.sleep();
+            imu_pub.publish(msg);
+            rate.sleep();
+        }
     }
 }
 
-void LighthouseSimulator::interactiveMarkersFeedback(const visualization_msgs::InteractiveMarkerFeedback &msg) {
-    tf::Vector3 position(msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
-    tf::Quaternion orientation(msg.pose.orientation.x, msg.pose.orientation.y,
-                               msg.pose.orientation.z, msg.pose.orientation.w);
-    if (strcmp(msg.marker_name.c_str(), name.c_str()) == 0) {
-        relative_object_pose.setOrigin(position);
-        relative_object_pose.setRotation(orientation);
-    }
-}
-
-bool LighthouseSimulator::checkIfSensorVisible(vector<Vector4d> &vertices, Vector3d &ray){
+bool LighthouseSimulator::checkIfSensorVisible(vector<Vector4d> &vertices, vector<::pcl::Vertices> &polygons, Vector3d &ray){
     // the ray origin is the lighthouse origin
     Vector3d origin(0,0,0);
     int triangle_intersections = 0;
     int messageID = 6000+1000*id;
-    for(auto polygon:mesh.polygons){
+    for(auto polygon:polygons){
         double u, v, t;
         if(rayIntersectsTriangle(origin, ray, vertices[polygon.vertices[0]], vertices[polygon.vertices[1]],
                                  vertices[polygon.vertices[2]],u,v,t)){

@@ -220,7 +220,7 @@ private:
     static map<string, QPushButton*> button;
     bool simulate = false;
 
-    map<string, pair<LighthouseSimulatorPtr,LighthouseSimulatorPtr>> lighthouse_simulation;
+    vector<pair<LighthouseSimulatorPtr,LighthouseSimulatorPtr>> lighthouse_simulation;
 
     QFileSystemModel *model;
     struct TrackedObjectInfo{
@@ -231,4 +231,3 @@ private:
     };
     vector<TrackedObjectInfo> trackedObjectsInfo;
 };
-
