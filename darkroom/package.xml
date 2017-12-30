@@ -24,5 +24,6 @@
     <export>
         <rviz plugin="${prefix}/darkroom.xml"/>
         <darkroom plugin="${prefix}/LighthouseVisualPlugin.xml"/>
+        <darkroom plugin="${prefix}/ImuModelPlugin.xml"/>
     </export>
 </package>

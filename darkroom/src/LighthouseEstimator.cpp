@@ -806,7 +806,7 @@ bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
         };
         pose_pub.publish(msg);
 
-        publishMesh("darkroom","calibrated_objects/models", mesh.c_str(), origin, q, 0.001, "world", "mesh", 9999, 1);
+        publishMesh("roboy_models","Roboy2.0_Upper_Body_Xylophone_simplified/meshes/CAD", "xylophone.stl", origin, q, 0.001, "world", "mesh", 9999, 1);
 
 //        if(lm->fnorm>0.1) // arbitrary but very bad
 //            object_pose << 0, 0, 0, 0, 0, 0.1;

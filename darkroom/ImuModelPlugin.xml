@@ -1,0 +1,8 @@
+<library path="libImuModelPlugin">
+    <class type="gazebo::rendering::ImuModelPlugin"
+           base_class_type="gazebo::rendering::ImuModelPlugin">
+        <description>
+            This is a imu model plugin
+        </description>
+    </class>
+</library>
