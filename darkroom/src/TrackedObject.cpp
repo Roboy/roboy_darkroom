@@ -32,25 +32,35 @@ TrackedObject::TrackedObject() {
     ROS_DEBUG_STREAM("loading yaml file using this command: " << load_yaml_command);
     system(load_yaml_command.c_str());
 
+    trackeObjectInstance++;
+}
+
+TrackedObject::~TrackedObject() {
+    shutDown();
+    // delete all remaining markers
+    clearAll();
+}
+
+bool TrackedObject::init(const char* configFile){
+    ROS_INFO_STREAM("reading config of  " << configFile);
+    if(!readConfig(configFile, objectID, name, mesh, calibrated_sensors, sensors))
+        return false;
+
     imu.setOrigin(tf::Vector3(0,0,0));
     imu.setRotation(tf::Quaternion(0,0,0,1));
-//    publish_imu_transform.reset(new boost::thread(&TrackedObject::publishImuFrame, this));
-//    publish_imu_transform->detach();
 
-    // the default parameters for the kalman filter are loaded with the above command
     // some object specific parameters are set here:
 //    nh->setParam("map_frame", "odom");
 //    nh->setParam("world_frame", "world");
-//    nh->setParam("base_link_frame", name);
+    nh->setParam("base_link_frame", name);
 //    nh->setParam("odom_frame", "odom");
-    nh->setParam("imu0", "roboy/middleware/imu0");
-    nh->setParam("pose0", "roboy/middleware/pose0");
+    imu_topic_name = "roboy/middleware/"+name+"/imu";
+    pose_topic_name = "roboy/middleware/"+name+"/pose";
+
+    nh->setParam("imu0", imu_topic_name);
+    nh->setParam("pose0", pose_topic_name);
     nh->setParam("publish_tf", true);
     nh->setParam("print_diagnostics", true);
-
-//    nh->setParam("filter_type", "ekf");
-//    nh->setParam("frequency", 120);
-//    nh->setParam("sensor_timeout", 1);
 
 //    vector<float> process_noise_covariance = {
 //            0.05, 0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
@@ -104,20 +114,8 @@ TrackedObject::TrackedObject() {
 //    nh->setParam("publish_tf", true);
 //    nh->setParam("print_diagnostics", true);
 //    // start extended kalman filter
-//    kalman_filter_thread.reset(new boost::thread(&TrackedObject::run, this));
+    kalman_filter_thread.reset(new boost::thread(&TrackedObject::run, this));
 
-    trackeObjectInstance++;
-}
-
-TrackedObject::~TrackedObject() {
-    shutDown();
-    // delete all remaining markers
-    clearAll();
-}
-
-bool TrackedObject::init(const char* configFile){
-    ROS_INFO_STREAM("reading config of  " << configFile);
-    return readConfig(configFile, objectID, name, mesh, calibrated_sensors, sensors);
 }
 
 void TrackedObject::shutDown(){
@@ -179,9 +177,12 @@ void TrackedObject::switchLighthouses(bool switchID) {
 
 bool TrackedObject::record(bool start) {
     if (start) {
-        file.open("record.log");
+        char str[100];
+        sprintf(str, "record_%s.log", name.c_str());
+        file.open(str);
         if (file.is_open()) {
             ROS_INFO("start recording");
+            file << "timestamp, \tid, \tlighthouse, \trotor, \tsweepDuration[ticks]\n";
             recording = true;
             return true;
         } else {
@@ -197,6 +198,8 @@ bool TrackedObject::record(bool start) {
 }
 
 void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware::DarkRoom::ConstPtr &msg) {
+    if(msg->objectID != objectID) // only use messages for me
+        return;
     ROS_WARN_THROTTLE(10, "receiving sensor data");
     uint id = 0;
 
@@ -218,12 +221,9 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware:
 //                "sweepDuration: " << sweepDuration);
         if (valid == 1) {
             if (recording) {
-                file << "\n---------------------------------------------\n"
-                     << "timestamp:     " << msg->timestamp[sensorID] << endl
-                     << "id:            " << sensorID << endl
-                     << "lighthouse:    " << lighthouse << endl
-                     << "rotor:         " << rotor << endl
-                     << "sweepDuration: " << sweepDuration << endl;
+                lock_guard<mutex> lock(mux);
+                file << msg->timestamp[sensorID] << ",\t" << sensorID << ",\t"
+                     << lighthouse << ",\t" << rotor << ",\t" << sweepDuration << endl;
             }
             double angle = ticksToRadians(sweepDuration);
             sensors[sensorID].update(lighthouse, rotor, angle);
@@ -277,9 +277,15 @@ void TrackedObject::receiveSensorData(){
                                             "\tsweepDuration: " << sweepDuration[i]<<
                                             "\tangle: " << ticksToDegrees(sweepDuration[i]));
 
-                chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
-                chrono::microseconds time_span = chrono::duration_cast<chrono::microseconds>(t1 - t0);
+
                 sensors[id[i]].update(lighthouse[i], rotor[i], ticksToRadians(sweepDuration[i]));
+                if (recording) {
+                    chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
+                    chrono::microseconds time_span = chrono::duration_cast<chrono::microseconds>(t1 - t0);
+                    lock_guard<mutex> lock(mux);
+                    file << time_span.count() << ",\t" << id[i] << ",\t"
+                         << lighthouse[i] << ",\t" << rotor[i] << ",\t" << sweepDuration[i] << endl;
+                }
             }
 //            Vector2d angles;
 //            sensors[id].get(0,angles);

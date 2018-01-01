@@ -1,18 +1,15 @@
 #include "darkroom/Transform.hpp"
 #include "darkroom/Triangulation.hpp"
 #include "darkroom/PoseEstimatorSensorCloud.hpp"
-#include "darkroom/PoseEstimatorSensorDistance.hpp"
-#include "darkroom/PoseEstimatorSensorDistances.hpp"
-#include "darkroom/ParticleFilter.hpp"
 #include "darkroom/Sensor.hpp"
 #include <common_utilities/rviz_visualization.hpp>
+#include <common_utilities/CommonDefinitions.h>
 #include <roboy_communication_middleware/LighthousePoseCorrection.h>
 #include <roboy_communication_middleware/DarkRoomSensor.h>
 #include <roboy_communication_middleware/DarkRoomOOTX.h>
 #include <common_utilities/CommonDefinitions.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <boost/filesystem.hpp>
-#include <darkroom/epnp/epnp.h>
 #include <atomic>
 #include <mutex>
 
@@ -53,7 +50,10 @@ public:
      */
     bool lighthousePoseEstimationLeastSquares();
 
-    bool objectPoseEstimationLeastSquares();
+    /**
+     * Estimates the pose of an object using relative sensor position information and least square matching
+     */
+    void objectPoseEstimationLeastSquares();
 
     /**
     * Estimates the sensor distances of all active sensors (or a vector of specified sensor ids)
@@ -71,16 +71,6 @@ public:
     * @return success
     */
     bool estimateObjectPoseUsingRelativeDistances();
-
-    bool poseEstimationSensorDistance();
-
-    bool poseEstimationSensorDistances();
-
-    bool poseEstimationP3P();
-
-    bool poseEstimationEPnP();
-
-    bool poseEstimationParticleFilter();
 
     /**
      * Triangulates the sensor positions (the transform between lighthouse 1 and 2 needs to be known, otherwise the
@@ -128,6 +118,8 @@ public:
     fs::path mesh;
     bool has_mesh = false;
     string name = "bastiisdoff";
+    string imu_topic_name, pose_topic_name;
+    ros::Publisher pose_pub;
 private:
     void receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg);
     void applyCalibrationData(Vector2d &lighthouse0_angles, Vector2d &lighthouse1_angles);
@@ -136,7 +128,7 @@ private:
 private:
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
-    ros::Publisher sensor_location_pub, lighthouse_pose_correction, pose_pub;
+    ros::Publisher sensor_location_pub, lighthouse_pose_correction;
     ros::Subscriber ootx_sub;
     VectorXd object_pose;
     OOTXframe ootx[2];

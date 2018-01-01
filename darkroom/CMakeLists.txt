@@ -33,12 +33,11 @@ link_directories(${GAZEBO_LIBRARY_DIRS})
 catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware common_utilities robot_localization xmlrpcpp
 		pcl_ros
 		INCLUDE_DIRS include
-        LIBRARIES ParticleFilter PoseEstimatorSensorCloud PoseEstimatorSensorDistance PoseEstimatorSensorDistances
-        Transform Triangulate LighthouseEstimator LighthouseSimulator Sensor TrackedObject )
+        LIBRARIES ParticleFilter PoseEstimatorSensorCloud Transform Triangulate LighthouseEstimator LighthouseSimulator
+        Sensor TrackedObject )
 
 include_directories(
 		include/
-        include/darkroom/mavmap/src
         ${catkin_INCLUDE_DIRS}
         ${ncurses_INCLUDE_DIRS}
 )
@@ -46,13 +45,7 @@ include_directories(
 # Application
 #==============================================================================
 
-add_library( ParticleFilter src/ParticleFilter.cpp )
-
 add_library( PoseEstimatorSensorCloud src/PoseEstimatorSensorCloud.cpp )
-
-add_library( PoseEstimatorSensorDistance src/PoseEstimatorSensorDistance.cpp )
-
-add_library( PoseEstimatorSensorDistances src/PoseEstimatorSensorDistances.cpp )
 
 add_library( Sensor src/Sensor.cpp )
 target_link_libraries( Sensor ${catkin_LIBRARIES} )
@@ -70,11 +63,9 @@ add_library( LighthouseSimulator src/LighthouseSimulator.cpp )
 add_dependencies(LighthouseSimulator roboy_communication_middleware_gencpp )
 target_link_libraries( LighthouseSimulator ${catkin_LIBRARIES} Transform)
 
-add_library( LighthouseEstimator src/LighthouseEstimator.cpp  include/darkroom/mavmap/src/base3d/projection.cc
-        include/darkroom/epnp/epnp.cpp include/darkroom/mavmap/src/base3d/p3p.cc include/darkroom/mavmap/src/util/math.cc)
+add_library( LighthouseEstimator src/LighthouseEstimator.cpp )
 add_dependencies(LighthouseEstimator roboy_communication_middleware_gencpp )
-target_link_libraries( LighthouseEstimator ${catkin_LIBRARIES} PoseEstimatorSensorCloud PoseEstimatorSensorDistance
-		PoseEstimatorSensorDistances Transform Triangulate )
+target_link_libraries( LighthouseEstimator ${catkin_LIBRARIES} PoseEstimatorSensorCloud Transform Triangulate )
 
 add_library( TrackedObject src/TrackedObject.cpp )
 add_dependencies(TrackedObject roboy_communication_middleware_gencpp )
@@ -95,10 +86,7 @@ target_link_libraries( ImuModelPlugin ${catkin_LIBRARIES} )
 # Installation
 #==============================================================================
 install(TARGETS
-        ParticleFilter
 		PoseEstimatorSensorCloud
-        PoseEstimatorSensorDistance
-        PoseEstimatorSensorDistances
         Transform
         Triangulate
         LighthouseEstimator

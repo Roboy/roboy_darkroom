@@ -57,10 +57,6 @@ public Q_SLOTS:
      */
     void connectRoboy();
     /**
-     * connect simulated Roboy via ROS
-     */
-    void simulateRoboy();
-    /**
      * connect Object via UDP socket
      */
     void connectObject();
@@ -114,21 +110,9 @@ public Q_SLOTS:
      */
     void startEstimateObjectPoseUsingRelativeDistances();
     /**
-     * Toggles particle filter thread for pose correction
-     */
-    void startPoseEstimationParticleFilter();
-    /**
      * Toggles least squares pose estimation thread
      */
     void startObjectPoseEstimationLeastSquares();
-    /**
-     * Toggles epnp pose estimation thread
-     */
-    void startPoseEstimationEPnP();
-    /**
-     * Toggles p3p pose estimation thread
-     */
-    void startPoseEstimationP3P();
     /**
      * Plots the data
      */

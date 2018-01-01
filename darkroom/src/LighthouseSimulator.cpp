@@ -10,7 +10,6 @@ LighthouseSimulator::LighthouseSimulator(int id, vector<fs::path> &configFile) :
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
     sensors_pub = nh->advertise<roboy_communication_middleware::DarkRoom>(
             "/roboy/middleware/DarkRoom/sensors", 1);
-    imu_pub = nh->advertise<sensor_msgs::Imu>("/roboy/middleware/imu0", 1);
 
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
@@ -28,6 +27,7 @@ LighthouseSimulator::LighthouseSimulator(int id, vector<fs::path> &configFile) :
 
         if(!readConfig(configFile[i], objectID[i], name[i], meshPath, calibrated_sensors, sensors))
             return;
+        imu_pub.push_back(nh->advertise<sensor_msgs::Imu>(("/roboy/middleware/"+name[i]+"/imu").c_str(), 1));
 
         ROS_DEBUG_STREAM("loading mesh file " << meshPath);
         pcl::PolygonMesh m;
@@ -96,10 +96,12 @@ void LighthouseSimulator::PublishSensorData() {
 
             // because checking the visiblity of a sensor is costly, we only do it, when the pose has changed
             if(!RT_object2lighthouse_new[i].isApprox(RT_object2lighthouse[i])){
-                pose_changed[i] = true;
-                // apply transform to all vertices
-                for(int k=0;k<meshes[i].vertices.size();k++){
-                    meshes[i].vertices_transformed[k] = RT_object2lighthouse_new[i]*meshes[i].vertices[k];
+                if(nh->hasParam("check_visibility")) { // only check visibility if this parameter is defined
+                    pose_changed[i] = true;
+                    // apply transform to all vertices
+                    for (int k = 0; k < meshes[i].vertices.size(); k++) {
+                        meshes[i].vertices_transformed[k] = RT_object2lighthouse_new[i] * meshes[i].vertices[k];
+                    }
                 }
                 RT_object2lighthouse[i] = RT_object2lighthouse_new[i];
             }else{
@@ -117,7 +119,7 @@ void LighthouseSimulator::PublishSensorData() {
                 double elevation = 180.0 - acos(sensor_pos[2] / distance) * 180.0 / M_PI;
                 double azimuth = atan2(sensor_pos[1], sensor_pos[0]) * 180.0 / M_PI;
 
-                if(pose_changed[i]){ // we gotta check if the sensor is visible
+                if(pose_changed[i] && nh->hasParam("check_visibility")){ // we gotta check if the sensor is visible
                     Vector3d ray(sensor_pos[0],sensor_pos[1],sensor_pos[2]);
                     sensor_visible[i][j] = checkIfSensorVisible(meshes[i].vertices_transformed,meshes[i].polygons,ray);
                 }
@@ -139,11 +141,11 @@ void LighthouseSimulator::PublishSensorData() {
                     }
                     Vector3d pos(sensor_pos[0], sensor_pos[1], sensor_pos[2]);
                     publishSphere(pos, (id == 0 ? "lighthouse1" : "lighthouse2"), "simulated_sensor_positions",
-                                  sensor.first + id * sensor_position.size() + 6543, COLOR(0, 1, 0, 1), 0.01);
+                                  sensor.first + id * sensor_position.size() + i*1000000, COLOR(0, 1, 0, 1), 0.01);
                 } else {
                     Vector3d pos(sensor_pos[0], sensor_pos[1], sensor_pos[2]);
                     publishSphere(pos, (id == 0 ? "lighthouse1" : "lighthouse2"), "simulated_sensor_positions",
-                                  sensor.first + id * sensor_position.size() + 7543, COLOR(1, 0, 0, 1), 0.01, 1);
+                                  sensor.first + id * sensor_position.size() + i*1000000, COLOR(1, 0, 0, 1), 0.01, 1);
                 }
                 high_resolution_clock::time_point t1 = high_resolution_clock::now();
                 microseconds time_span = duration_cast<microseconds>(t1 - t0);
@@ -190,7 +192,7 @@ void LighthouseSimulator::PublishImuData() {
             msg.linear_acceleration.y = 0 + rand()/(double)RAND_MAX * IMU_ACC_NOISE;
             msg.linear_acceleration.z = 9.81 + rand()/(double)RAND_MAX * IMU_ACC_NOISE;
 
-            imu_pub.publish(msg);
+            imu_pub[i].publish(msg);
             rate.sleep();
         }
     }

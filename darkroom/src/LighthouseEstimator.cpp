@@ -1,4 +1,3 @@
-#include <common_utilities/CommonDefinitions.h>
 #include "darkroom/LighthouseEstimator.hpp"
 
 LighthouseEstimator::LighthouseEstimator() {
@@ -13,8 +12,6 @@ LighthouseEstimator::LighthouseEstimator() {
             "/roboy/middleware/DarkRoom/sensor_location", 1);
     lighthouse_pose_correction = nh->advertise<roboy_communication_middleware::LighthousePoseCorrection>(
             "/roboy/middleware/DarkRoom/LighthousePoseCorrection", 1);
-    pose_pub = nh->advertise<geometry_msgs::PoseWithCovarianceStamped>(
-            "/roboy/middleware/pose0", 1);
     ootx_sub = nh->subscribe("/roboy/middleware/DarkRoom/ootx", 1, &LighthouseEstimator::receiveOOTXData, this);
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
@@ -481,7 +478,7 @@ void LighthouseEstimator::triangulateSensors() {
             continue;
         }
 
-        active_sensors = 0;
+        int active_sensors_counter = 0;
 
         for (auto &sensor : sensors) {
             lighthouse_active[LIGHTHOUSE_A] = sensor.second.isActive(LIGHTHOUSE_A);
@@ -497,7 +494,7 @@ void LighthouseEstimator::triangulateSensors() {
                 Vector3d ray0, ray1;
 
                 if(lighthouse_active[LIGHTHOUSE_A] && lighthouse_active[LIGHTHOUSE_B] ) {
-                    active_sensors++;
+                    active_sensors_counter++;
 
                     Vector3d triangulated_position;
 
@@ -574,78 +571,10 @@ void LighthouseEstimator::triangulateSensors() {
                 }
             }
         }
+        active_sensors = active_sensors_counter;
         if (msg.ids.size() > 0)
             sensor_location_pub.publish(msg);
     }
-}
-
-bool LighthouseEstimator::poseEstimationEPnP() {
-    ros::Time start_time = ros::Time::now();
-    while (!estimateSensorPositionsUsingRelativeDistances(0, calibrated_sensors)) {
-        ROS_INFO_THROTTLE(1,
-                          "could not estimate relative distance to lighthouse 0, are the sensors visible to lighthouse 0?!");
-        if ((ros::Time::now() - start_time).sec > 10) {
-            ROS_WARN("time out");
-            return false;
-        }
-    }
-
-    epnp PnP;
-    PnP.reset_correspondences();
-    PnP.set_internal_parameters(0, 0, 1, 1);
-    PnP.set_maximum_number_of_correspondences(calibrated_sensors.size());
-    for (uint id:calibrated_sensors) {
-        Vector3d pos, ray;
-        Vector2d angles;
-        sensors[id].get(0, pos);
-        sensors[id].get(0, angles);
-        rayFromLighthouseAngles(angles, ray);
-        ROS_INFO("sensor %d\npos %f\t%f\t%f ray %f\t%f\t%f", id, pos[0], pos[1], pos[2],
-                 ray[0], ray[1], ray[2]);
-        Vector3d pos2(pos[0] / pos[1], 0, pos[2] / pos[1]);
-        PnP.add_correspondence(pos[0], -pos[2], -pos[1], pos[0] / pos[1], -pos[2] / pos[1]);
-        publishSphere(pos2, "world", "projected points", rand(), COLOR(0, 0, 1, 1), 0.05);
-    }
-
-    double R_est[3][3], t_est[3];
-    double err2 = PnP.compute_pose(R_est, t_est);
-    double rot_err, transl_err;
-
-    PnP.print_pose(R_est, t_est);
-    cout << "epnp error: " << err2 << endl;
-
-    tf::Transform tf;
-    tf.setOrigin(tf::Vector3(t_est[0], t_est[1], t_est[2]));
-    tf.setRotation(tf::Quaternion(1, 0, 0, 0));
-    publishTF(tf, "lighthouse1", "object_epnp");
-}
-
-bool LighthouseEstimator::poseEstimationP3P() {
-    // TODO: include p3p properly
-//    P3PEstimator p3PEstimator;
-//    std::vector<Eigen::MatrixXd> result;
-//    MatrixXd points2d(calibrated_sensors.size(), 2), points3d(calibrated_sensors.size(), 3);
-//    uint i = 0;
-//    for (uint id:calibrated_sensors) {
-//        Vector3d pos, ray;
-//        Vector2d angles;
-//        sensors[id].get(0, pos);
-//        sensors[id].get(0, angles);
-//        rayFromLighthouseAngles(angles, ray);
-//        points2d(i, 0) = ray(0) / ray(1);
-//        points2d(i, 1) = ray(2) / ray(1);
-//        points3d(i, 0) = pos(0);
-//        points3d(i, 1) = pos(1);
-//        points3d(i, 2) = pos(2);
-//    }
-//    result = p3PEstimator.estimate(points2d, points3d);
-//    tf::Transform tf;
-//    Vector3d position = result[0].topRightCorner(3, 1);
-//    cout << "p3p: " << endl << result[0] << endl;
-//    cout << "p3p position: " << endl << position << endl;
-//    tf.setOrigin(tf::Vector3(position(0), position(1), position(2)));
-//    tf.setRotation(tf::Quaternion(1, 0, 0, 0));
-//    publishTF(tf, "lighthouse1", "object_p3p");
 }
 
 bool LighthouseEstimator::lighthousePoseEstimationLeastSquares() {
@@ -715,9 +644,11 @@ bool LighthouseEstimator::lighthousePoseEstimationLeastSquares() {
 
 }
 
-bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
+void LighthouseEstimator::objectPoseEstimationLeastSquares() {
     ros::Rate rate(10);
     ros::Time t0 = ros::Time::now(), t1;
+
+    pose_pub = nh->advertise<geometry_msgs::PoseWithCovarianceStamped>( pose_topic_name.c_str(), 1);
 
     while (objectposeestimating) {
         t1 = ros::Time::now();
@@ -781,7 +712,8 @@ bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
 
         tf::Transform tf;
         getTFtransform(RT_object, tf);
-        publishTF(tf, "world", "object");
+        string tf_name = name + "_VO";
+        publishTF(tf, "world", tf_name.c_str());
 
         geometry_msgs::PoseWithCovarianceStamped msg;
         msg.header.stamp = ros::Time::now();
@@ -806,422 +738,15 @@ bool LighthouseEstimator::objectPoseEstimationLeastSquares() {
         };
         pose_pub.publish(msg);
 
-        publishMesh("roboy_models","Roboy2.0_Upper_Body_Xylophone_simplified/meshes/CAD", "xylophone.stl", origin, q, 0.001, "world", "mesh", 9999, 1);
+        if(has_mesh) // TODO mesh path not properly implemented yet
+            publishMesh("roboy_models","Roboy2.0_Upper_Body_Xylophone_simplified/meshes/CAD", "xylophone.stl", origin, q, 0.001, "world", "mesh", 9999, 1);
 
 //        if(lm->fnorm>0.1) // arbitrary but very bad
 //            object_pose << 0, 0, 0, 0, 0, 0.1;
         rate.sleep();
     }
-}
 
-bool LighthouseEstimator::poseEstimationSensorDistance() {
-    ros::Time start_time = ros::Time::now();
-    int numberOfSamples = 0;
-    ros::Rate rate(20);
-
-    MatrixXd rays0_A(3, NUMBER_OF_SAMPLES), rays1_A(3, NUMBER_OF_SAMPLES),
-            rays0_B(3, NUMBER_OF_SAMPLES), rays1_B(3, NUMBER_OF_SAMPLES);
-
-    while (numberOfSamples < NUMBER_OF_SAMPLES) {
-        Vector2d angles0, angles1;
-        Vector3d ray0, ray1;
-
-        // get the rays for the first sensor
-        sensors[17].get(0, angles0);
-        sensors[17].get(1, angles1);
-        rayFromLighthouseAngles(angles0, ray0);
-        rayFromLighthouseAngles(angles1, ray1);
-
-        rays0_A(0, numberOfSamples) = ray0(0);
-        rays0_A(1, numberOfSamples) = ray0(1);
-        rays0_A(2, numberOfSamples) = ray0(2);
-
-        rays0_B(0, numberOfSamples) = ray1(0);
-        rays0_B(1, numberOfSamples) = ray1(1);
-        rays0_B(2, numberOfSamples) = ray1(2);
-
-        Vector3d zero(0, 0, 0);
-        publishRay(zero, ray0, "lighthouse1", "rays0", 9000 * 1 + numberOfSamples, COLOR(0, 1, 0, 0.1));
-        publishRay(zero, ray1, "lighthouse2", "rays1", 9000 * 2 + numberOfSamples, COLOR(0, 1, 0, 0.1));
-
-        // get the rays for the second sensor
-        sensors[18].get(0, angles0);
-        sensors[18].get(1, angles1);
-        rayFromLighthouseAngles(angles0, ray0);
-        rayFromLighthouseAngles(angles1, ray1);
-
-        rays1_A(0, numberOfSamples) = ray0(0);
-        rays1_A(1, numberOfSamples) = ray0(1);
-        rays1_A(2, numberOfSamples) = ray0(2);
-
-        rays1_B(0, numberOfSamples) = ray1(0);
-        rays1_B(1, numberOfSamples) = ray1(1);
-        rays1_B(2, numberOfSamples) = ray1(2);
-
-        publishRay(zero, ray0, "lighthouse1", "rays0", 9000 * 3 + numberOfSamples, COLOR(0, 0, 1, 0.1));
-        publishRay(zero, ray1, "lighthouse2", "rays1", 9000 * 4 + numberOfSamples, COLOR(0, 0, 1, 0.1));
-
-        numberOfSamples++;
-        rate.sleep();
-    }
-
-    PoseEstimatorSensorDistance::PoseEstimator estimator(NUMBER_OF_SAMPLES, 0.237, rays0_A, rays0_B, rays1_A,
-                                                         rays1_B);
-    Matrix4d RT_0, RT_1;
-    getTransform("world", LIGHTHOUSE_A, RT_0);
-    getTransform("world", LIGHTHOUSE_B, RT_1);
-    estimator.RT_A = RT_0;
-    estimator.RT_B = RT_1;
-
-    VectorXd pose(6);
-    pose << 0, 0, 0, 0, 0, 0;
-
-    NumericalDiff<PoseEstimatorSensorDistance::PoseEstimator> *numDiff;
-    Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorSensorDistance::PoseEstimator>, double> *lm;
-    numDiff = new NumericalDiff<PoseEstimatorSensorDistance::PoseEstimator>(estimator);
-    lm = new LevenbergMarquardt<NumericalDiff<PoseEstimatorSensorDistance::PoseEstimator>, double>(*numDiff);
-    lm->parameters.maxfev = MAX_ITERATIONS;
-    lm->parameters.xtol = 1.0e-10;
-    int ret = lm->minimize(pose);
-
-    Eigen::Matrix<double, 3, 4> proj_matrix0, proj_matrix1;
-    proj_matrix0 = RT_0.topLeftCorner(3, 4);
-
-    Matrix4d RT_1_corrected = MatrixXd::Identity(4, 4);
-    // construct quaternion (cf unit-sphere projection Terzakis paper)
-    double alpha_squared = pow(pow(pose(0), 2.0) + pow(pose(1), 2.0) + pow(pose(2), 2.0), 2.0);
-    Quaterniond q((1 - alpha_squared) / (alpha_squared + 1),
-                  2.0 * pose(0) / (alpha_squared + 1),
-                  2.0 * pose(1) / (alpha_squared + 1),
-                  2.0 * pose(2) / (alpha_squared + 1));
-    q.normalize();
-    // construct RT matrix
-    RT_1_corrected.topLeftCorner(3, 3) = q.toRotationMatrix();
-    RT_1_corrected.topRightCorner(3, 1) << pose(3), pose(4), pose(5);
-    RT_1_corrected = RT_1_corrected * RT_1;
-    proj_matrix1 = RT_1_corrected.topLeftCorner(3, 4);
-
-//        cout << "fvec" << endl;
-    for (int i = 0; i < numberOfSamples; i++) {
-        // project onto image plane
-        Eigen::Vector2d projected_image_location0 = Eigen::Vector2d(rays0_A(0, i) / rays0_A(2, i),
-                                                                    rays0_A(1, i) / rays0_A(2, i));
-        Eigen::Vector2d projected_image_location1 = Eigen::Vector2d(rays0_B(0, i) / rays0_B(2, i),
-                                                                    rays0_B(1, i) / rays0_B(2, i));
-
-        // TODO: use simpler trinagulation
-//        Vector3d pos0 = triangulate_point(proj_matrix0, proj_matrix1,
-//                                          projected_image_location0, projected_image_location1);
-
-        projected_image_location0 = Eigen::Vector2d(rays1_A(0, i) / rays1_A(2, i),
-                                                    rays1_A(1, i) / rays1_A(2, i));
-        projected_image_location1 = Eigen::Vector2d(rays1_B(0, i) / rays1_B(2, i),
-                                                    rays1_B(1, i) / rays1_B(2, i));
-
-        // TODO: use simpler trinagulation
-//        Vector3d pos1 = triangulate_point(proj_matrix0, proj_matrix1,
-//                                          projected_image_location0, projected_image_location1);
-//        publishSphere(pos0, "world", "tri", rand(), COLOR(1, 0, 0, 1));
-//        publishSphere(pos1, "world", "tri", rand(), COLOR(1, 0, 0, 1));
-//        ROS_INFO_STREAM((pos1 - pos0).norm());
-    }
-
-
-    tf::Transform tf;
-    getTFtransform(pose, tf);
-
-    roboy_communication_middleware::LighthousePoseCorrection msg;
-    msg.id = LIGHTHOUSE_B;
-    msg.type = ABSOLUT;
-    tf::transformTFToMsg(tf, msg.tf);
-    lighthouse_pose_correction.publish(msg);
-
-    ROS_INFO("pose estimation finished with %d", ret);
-}
-
-bool LighthouseEstimator::poseEstimationSensorDistances() {
-    MatrixXd ray_A(4, 3), ray_B(4, 3);
-
-    Vector2d angles0, angles1;
-    Vector3d ray0, ray1;
-
-    // get the rays for the first sensor
-    sensors[16].get(0, angles0);
-    sensors[16].get(1, angles1);
-    rayFromLighthouseAngles(angles0, ray0);
-    rayFromLighthouseAngles(angles1, ray1);
-
-    ray_A(0, 0) = ray0(0);
-    ray_A(1, 0) = ray0(1);
-    ray_A(2, 0) = ray0(2);
-    ray_A(3, 0) = 1;
-
-    ray_B(0, 0) = ray1(0);
-    ray_B(1, 0) = ray1(1);
-    ray_B(2, 0) = ray1(2);
-    ray_B(3, 0) = 1;
-
-    Vector3d zero(0, 0, 0);
-    publishRay(zero, ray0, "lighthouse1", "rays0", 9000 * 1, COLOR(1, 0, 0, 0.1));
-    publishRay(zero, ray1, "lighthouse2", "rays1", 9000 * 2, COLOR(1, 0, 0, 0.1));
-
-    // get the rays for the second sensor
-    sensors[17].get(0, angles0);
-    sensors[17].get(1, angles1);
-    rayFromLighthouseAngles(angles0, ray0);
-    rayFromLighthouseAngles(angles1, ray1);
-
-    ray_A(0, 1) = ray0(0);
-    ray_A(1, 1) = ray0(1);
-    ray_A(2, 1) = ray0(2);
-    ray_A(3, 1) = 1;
-
-    ray_B(0, 1) = ray1(0);
-    ray_B(1, 1) = ray1(1);
-    ray_B(2, 1) = ray1(2);
-    ray_B(3, 1) = 1;
-
-    publishRay(zero, ray0, "lighthouse1", "rays0", 9000 * 3, COLOR(0, 1, 0, 0.1));
-    publishRay(zero, ray1, "lighthouse2", "rays1", 9000 * 4, COLOR(0, 1, 0, 0.1));
-
-    // get the rays for the third sensor
-    sensors[18].get(0, angles0);
-    sensors[18].get(1, angles1);
-    rayFromLighthouseAngles(angles0, ray0);
-    rayFromLighthouseAngles(angles1, ray1);
-
-    ray_A(0, 2) = ray0(0);
-    ray_A(1, 2) = ray0(1);
-    ray_A(2, 2) = ray0(2);
-    ray_A(3, 2) = 1;
-
-    ray_B(0, 2) = ray1(0);
-    ray_B(1, 2) = ray1(1);
-    ray_B(2, 2) = ray1(2);
-    ray_B(3, 2) = 1;
-
-    publishRay(zero, ray0, "lighthouse1", "rays0", 9000 * 5, COLOR(0, 0, 1, 0.1));
-    publishRay(zero, ray1, "lighthouse2", "rays1", 9000 * 6, COLOR(0, 0, 1, 0.1));
-
-    PoseEstimatorSensorDistances::PoseEstimator estimator(3, ray_A, ray_B);
-
-    VectorXd pose(6);
-    pose << 0, 0, 0, 0, 0, -2;
-
-    NumericalDiff<PoseEstimatorSensorDistances::PoseEstimator> *numDiff;
-    Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorSensorDistances::PoseEstimator>, double> *lm;
-    numDiff = new NumericalDiff<PoseEstimatorSensorDistances::PoseEstimator>(estimator);
-    lm = new LevenbergMarquardt<NumericalDiff<PoseEstimatorSensorDistances::PoseEstimator>, double>(*numDiff);
-    lm->parameters.maxfev = 100;
-    lm->parameters.xtol = 1.0e-10;
-    int ret = lm->minimize(pose);
-
-    tf::Transform tf;
-    getTFtransform(pose, tf);
-
-    roboy_communication_middleware::LighthousePoseCorrection msg;
-    msg.id = LIGHTHOUSE_B;
-    msg.type = ABSOLUT;
-    tf::transformTFToMsg(tf, msg.tf);
-    lighthouse_pose_correction.publish(msg);
-
-    ROS_INFO("pose estimation finished with %d", ret);
-}
-
-bool LighthouseEstimator::poseEstimationParticleFilter() {
-    Matrix4d RT_0, RT_1;
-    if (!getTransform(LIGHTHOUSE_A, "world", RT_0))
-        return false;
-    if (!getTransform(LIGHTHOUSE_B, "world", RT_1))
-        return false;
-
-    vector<int> ids;
-    vector<Vector3d> rays0, rays1;
-    Vector3d origin0, origin1;
-    origin0 = RT_0.topRightCorner(3, 1);
-    origin1 = RT_1.topRightCorner(3, 1);
-    MatrixXd distances(calibrated_sensors.size(), calibrated_sensors.size());
-    for (auto &sensor:calibrated_sensors) {
-        if (sensors[sensor].isActive(0) && sensors[sensor].isActive(1)) {
-            ids.push_back(sensor);
-            Vector2d angles0, angles1;
-            Vector3d ray0, ray1;
-            sensors[sensor].get(0, angles0);
-            sensors[sensor].get(1, angles1);
-            rayFromLighthouseAngles(angles0, ray0);
-            rayFromLighthouseAngles(angles1, ray1);
-            Vector3d ray0_worldFrame, ray1_worldFrame;
-            ray0_worldFrame = RT_0.topLeftCorner(3, 3) * ray0;
-            ray1_worldFrame = RT_1.topLeftCorner(3, 3) * ray1;
-            rays0.push_back(ray0_worldFrame);
-            rays1.push_back(ray1_worldFrame);
-        } else {
-            ROS_ERROR("sensor %d of the calibrated sensors is not visible, aborting", sensor);
-            return false;
-        }
-    }
-
-    int i = 0;
-    for (auto &sensor0:calibrated_sensors) {
-        int j = 0;
-        Vector3d rel0;
-        sensors[sensor0].getRelativeLocation(rel0);
-        for (auto &sensor1:calibrated_sensors) {
-            if (sensor0 != sensor1) {
-                Vector3d rel1;
-                sensors[sensor1].getRelativeLocation(rel1);
-                distances(i, j) = (rel0 - rel1).norm();
-            }
-            j++;
-        }
-        i++;
-    }
-
-    normal_distribution<double> distribution(0, 0.001);
-    default_random_engine generator;
-
-    VectorXd start(6);
-    start << 0, 0, 0, RT_1(0, 3), RT_1(1, 3), RT_1(2, 3);
-
-    {
-        double distanceBetweenRays = 0.0;
-        vector<Vector3d> triangulated_positions;
-        for (uint sensor = 0; sensor < rays0.size(); sensor++) {
-            Vector3d l0, l1;
-            distanceBetweenRays += pow(dist3D_Line_to_Line(origin0, rays0[sensor], origin1,
-                                                           rays1[sensor], l0, l1), 2.0);
-            triangulated_positions.push_back(l0 + origin0 + (l1 + origin1 - l0 - origin0) / 2.0);
-        }
-        distanceBetweenRays = sqrt(distanceBetweenRays);
-
-        double distanceBetweenSensors = 0.0;
-        for (uint i = 0; i < rays0.size(); i++) {
-            for (uint j = 0; j < rays1.size(); j++) {
-                if (i != j) {
-                    double dist = distances(i, j);
-                    double triangulated_dist = (triangulated_positions[i] - triangulated_positions[j]).norm();
-                    distanceBetweenSensors += pow(triangulated_dist - dist, 2.0);
-                }
-            }
-        }
-        distanceBetweenSensors = sqrt(distanceBetweenSensors);
-        ROS_INFO("\nerror rays: %f\n"
-                         "error sensor distances: %f", distanceBetweenRays, distanceBetweenSensors);
-    }
-
-    ParticleFilter<VectorXd> pf(NUMBER_OF_PARTICLES, 6,
-                                [&pf, &distribution, &generator](int id) {
-                                    double dx = distribution(generator), dy = distribution(
-                                            generator), dz = distribution(generator);
-                                    double droll = distribution(generator), dpitch = distribution(
-                                            generator), dyaw = distribution(generator);
-                                    pf.particles[id](0) += dx;
-                                    pf.particles[id](1) += dy;
-                                    pf.particles[id](2) += dz;
-                                    pf.particles[id](3) += droll;
-                                    pf.particles[id](4) += dpitch;
-                                    pf.particles[id](5) += dyaw;
-                                },
-                                [this, &pf, &rays0, &rays1, &origin0, &distances](int id) {
-                                    double distanceSensors = 0.0, distanceRays = 0.0;
-                                    vector<Vector3d> triangulated_positions;
-                                    Matrix4d RT = Matrix4d::Identity();
-                                    getRTmatrix(RT, pf.particles[id]);
-                                    for (uint sensor = 0; sensor < rays0.size(); sensor++) {
-                                        Vector3d new_origin = RT.topRightCorner(3, 1);
-                                        Vector3d new_ray = RT.topLeftCorner(3, 3) * rays1[sensor];
-                                        Vector3d l0, l1;
-                                        distanceSensors += pow(
-                                                dist3D_Line_to_Line(origin0, rays0[sensor], new_origin,
-                                                                    new_ray, l0, l1), 2.0);
-                                        triangulated_positions.push_back(
-                                                l0 + origin0 + (l1 + new_origin - l0 - origin0) / 2.0);
-//                                        this->publishSphere(new_origin, "world", "particle",rand(), COLOR(1,0,0,1), 0.1);
-//                                        this->publishRay(new_origin, new_ray, "world", "particle",rand(), COLOR(1,0,0,1), 0);
-                                    }
-                                    distanceSensors = sqrt(distanceSensors);
-                                    for (uint i = 0; i < rays0.size(); i++) {
-                                        for (uint j = 0; j < rays1.size(); j++) {
-                                            if (i != j) {
-                                                double dist = distances(i, j);
-                                                double triangulated_dist = (triangulated_positions[i] -
-                                                                            triangulated_positions[j]).norm();
-                                                distanceRays += pow(triangulated_dist - dist, 2.0);
-                                            }
-                                        }
-                                    }
-                                    distanceRays = sqrt(distanceRays);
-
-                                    return (distanceRays + distanceSensors);
-                                },
-                                start, 0.001);
-    uint iter = 0;
-    while (iter < 1000 && particle_filtering) {
-        pf.step();
-        ROS_INFO("particle iterations %d", iter);
-        for (uint i = 0; i < NUMBER_OF_PARTICLES; i++) {
-            tf::Transform tf;
-            getTFtransform(pf.particles[i], tf);
-            char str[100];
-            sprintf(str, "%d", i);
-            publishTF(tf, "world", str);
-        }
-        iter++;
-    }
-
-    VectorXd winner;
-    int index;
-    double cost = pf.result(winner, &index);
-
-
-    getRTmatrix(RT_1, pf.particles[index]);
-    origin1 = RT_1.topRightCorner(3, 1);
-
-    double distanceBetweenRays = 0.0;
-    vector<Vector3d> triangulated_positions;
-    for (uint sensor = 0; sensor < rays0.size(); sensor++) {
-        Vector3d l0, l1;
-        rays1[sensor] = RT_1.topRightCorner(3, 3) * rays1[sensor];
-        distanceBetweenRays += pow(dist3D_Line_to_Line(origin0, rays0[sensor], origin1,
-                                                       rays1[sensor], l0, l1), 2.0);
-        triangulated_positions.push_back(l0 + origin0 + (l1 + origin1 - l0 - origin0) / 2.0);
-    }
-    distanceBetweenRays = sqrt(distanceBetweenRays);
-
-    double distanceBetweenSensors = 0.0;
-    for (uint i = 0; i < rays0.size(); i++) {
-        for (uint j = 0; j < rays1.size(); j++) {
-            if (i != j) {
-                double dist = distances(i, j);
-                double triangulated_dist = (triangulated_positions[i] - triangulated_positions[j]).norm();
-                distanceBetweenSensors += pow(triangulated_dist - dist, 2.0);
-            }
-        }
-    }
-    distanceBetweenSensors = sqrt(distanceBetweenSensors);
-
-    ROS_INFO("particle filter terminated with %f cost and the winner is %d\n"
-                     "rot:\n"
-                     "%f\t%f\t%f\n"
-                     "%f\t%f\t%f\n"
-                     "%f\t%f\t%f\n"
-                     "trans: %f\t%f\t%f\n"
-                     "error rays %f\n"
-                     "error distance between sensors %f", cost, index,
-             RT_1(0, 0), RT_1(0, 1), RT_1(0, 2), RT_1(1, 0), RT_1(1, 1), RT_1(1, 2), RT_1(2, 0),
-             RT_1(2, 1), RT_1(2, 2), RT_1(0, 3), RT_1(1, 3), RT_1(2, 3), distanceBetweenRays, distanceBetweenSensors);
-
-
-    tf::Transform tf;
-    tf.setBasis(tf::Matrix3x3(RT_1(0, 0), RT_1(0, 1), RT_1(0, 2), RT_1(1, 0), RT_1(1, 1), RT_1(1, 2), RT_1(2, 0),
-                              RT_1(2, 1), RT_1(2, 2)));
-    tf.setOrigin(tf::Vector3(RT_1(0, 3), RT_1(1, 3), RT_1(2, 3)));
-
-    roboy_communication_middleware::LighthousePoseCorrection msg;
-    msg.id = LIGHTHOUSE_B;
-    msg.type = ABSOLUT;
-    tf::transformTFToMsg(tf, msg.tf);
-    lighthouse_pose_correction.publish(msg);
+    pose_pub.shutdown();
 }
 
 int LighthouseEstimator::getMessageID(int type, int sensor, bool lighthouse) {

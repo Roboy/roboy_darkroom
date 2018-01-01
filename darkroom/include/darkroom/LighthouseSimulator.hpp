@@ -10,6 +10,7 @@
 #include <Eigen/Core>
 #include <thread>
 #include <chrono>
+#include <cstdint>
 #include <sensor_msgs/Imu.h>
 #include "darkroom/Transform.hpp"
 #include "darkroom/Sensor.hpp"
@@ -74,11 +75,13 @@ public:
     int id;
 private:
     ros::NodeHandlePtr nh;
-    ros::Publisher sensors_pub, imu_pub;
+    ros::Publisher sensors_pub;
+    vector<ros::Publisher> imu_pub;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 
     vector<int32_t> objectID;
     vector<string> name;
+    vector<string> imu_topic_name;
     struct mesh{
         vector<::pcl::Vertices> polygons;
         vector<Vector4d> vertices;
