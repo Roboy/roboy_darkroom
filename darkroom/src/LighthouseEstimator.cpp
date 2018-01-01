@@ -510,7 +510,7 @@ void LighthouseEstimator::triangulateSensors() {
                         char str[100], str2[2];
                         sprintf(str, "sensor_%d", sensor.first);
                         publishSphere(triangulated_position, "world", str,
-                                      getMessageID(TRIANGULATED, sensor.first), COLOR(0, 1, 0, 0.8), 0.01f, 0.1);
+                                      getMessageID(TRIANGULATED, sensor.first), COLOR(0, 1, 0, 0.8), 0.01f,1);
                         sprintf(str2, "%d", sensor.first);
                         publishText(triangulated_position, str2, "world", str, getMessageID(SENSOR_NAME, sensor.first),
                                     COLOR(1, 1, 1, 0.7), 0.1, 0.04f);
@@ -526,10 +526,10 @@ void LighthouseEstimator::triangulateSensors() {
                         Vector3d pos(0, 0, 0);
                         ray0 *= 5;
                         publishRay(pos, ray0, "lighthouse1", "rays_lighthouse_1", getMessageID(RAY, sensor.first, 0),
-                                   COLOR(0, 1, 0, 1.0), 0.1);
+                                   COLOR(0, 1, 0, 1.0), 1);
                         ray1 *= 5;
                         publishRay(pos, ray1, "lighthouse2", "rays_lighthouse_2", getMessageID(RAY, sensor.first, 1),
-                                   COLOR(0, 1, 0, 1.0), 0.1);
+                                   COLOR(0, 1, 0, 1.0), 1);
 
                     }
                 }else{
@@ -538,14 +538,14 @@ void LighthouseEstimator::triangulateSensors() {
                         Vector3d pos(0, 0, 0);
                         ray0 *= 5;
                         publishRay(pos, ray0, "lighthouse1", "rays_lighthouse_1", getMessageID(RAY, sensor.first, 0),
-                                   COLOR(1, 0, 0, 0.3), 0.1);
+                                   COLOR(1, 0, 0, 0.3), 1);
                     }
                     if(lighthouse_active[LIGHTHOUSE_B] && rays) {
                         rayFromLighthouseAngles(lighthouse1_angles, ray1);
                         Vector3d pos(0, 0, 0);
                         ray1 *= 5;
                         publishRay(pos, ray1, "lighthouse2", "rays_lighthouse_2", getMessageID(RAY, sensor.first, 0),
-                                   COLOR(1, 0, 0, 0.3), 0.1);
+                                   COLOR(1, 0, 0, 0.3), 1);
                     }
                 }
 
@@ -645,7 +645,7 @@ bool LighthouseEstimator::lighthousePoseEstimationLeastSquares() {
 }
 
 void LighthouseEstimator::objectPoseEstimationLeastSquares() {
-    ros::Rate rate(10);
+    ros::Rate rate(30);
     ros::Time t0 = ros::Time::now(), t1;
 
     pose_pub = nh->advertise<geometry_msgs::PoseWithCovarianceStamped>( pose_topic_name.c_str(), 1);

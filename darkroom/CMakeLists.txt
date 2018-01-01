@@ -92,6 +92,7 @@ install(TARGETS
         LighthouseEstimator
         Sensor
         TrackedObject
+        ImuModelPlugin
 	    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         )
 

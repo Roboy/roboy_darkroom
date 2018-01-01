@@ -6,10 +6,13 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
 #include <Eigen/Dense>
+#include <sensor_msgs/Imu.h>
+#include <chrono>
 
 using namespace Eigen;
 using namespace gazebo;
 using namespace std;
+using namespace chrono;
 
 class ImuModelPlugin : public gazebo::ModelPlugin{
 public:
@@ -61,6 +64,7 @@ private:
     bool parseImuSDF(const string &sdf, vector<ImuInfo> &imu);
 
     vector<ImuInfo> imus;
+    vector<ros::Publisher> imu_pub;
 
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
@@ -77,4 +81,6 @@ private:
 
     ros::Time last_update_sim_time_ros;
     ros::Time last_write_sim_time_ros;
+
+    high_resolution_clock::time_point t0,t1;
 };

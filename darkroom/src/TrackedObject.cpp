@@ -59,7 +59,7 @@ bool TrackedObject::init(const char* configFile){
 
     nh->setParam("imu0", imu_topic_name);
     nh->setParam("pose0", pose_topic_name);
-    nh->setParam("publish_tf", true);
+//    nh->setParam("publish_tf", true);
     nh->setParam("print_diagnostics", true);
 
 //    vector<float> process_noise_covariance = {
@@ -115,7 +115,7 @@ bool TrackedObject::init(const char* configFile){
 //    nh->setParam("print_diagnostics", true);
 //    // start extended kalman filter
     kalman_filter_thread.reset(new boost::thread(&TrackedObject::run, this));
-
+    return true;
 }
 
 void TrackedObject::shutDown(){

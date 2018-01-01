@@ -273,7 +273,7 @@ void RoboyDarkRoom::connectRoboy() {
    //         package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/upper_arm_right.yaml"
    // };
     vector<fs::path> roboy_parts = {
-            package_path+"/Roboy2.0_Head_simplified/lighthouseSensors/plate.yaml"
+            package_path+"/Roboy2.0_Head_simplified/lighthouseSensors/head.yaml"
     };
     for(auto &part:roboy_parts){
         if(!fileExists(part.c_str())){
@@ -492,18 +492,18 @@ void RoboyDarkRoom::transformPublisher() {
 //                                                                                         : "lighthouse2"),
 //                                                              simulated.second->name.c_str()));
 //        }
-        if(ui.random_pose->isChecked()){
-            // randomly moves all objects
-            static float elevation = 0, azimuth = 0;
-            for (auto &object:trackedObjects) {
-                object->pose.setOrigin(tf::Vector3(0.5*sin(elevation)*cos(azimuth), 0.5*sin(elevation)*sin(azimuth), 0.5*cos(elevation)));
-                object->pose.setRotation(tf::Quaternion(0,0,0,1));
-                tf_broadcaster.sendTransform(tf::StampedTransform(object->pose, ros::Time::now(),
-                                                                  "world", object->name.c_str()));
-                elevation += 0.001;
-                azimuth += 0.002;
-            }
-        }
+//        if(ui.random_pose->isChecked()){
+//            // randomly moves all objects
+//            static float elevation = 0, azimuth = 0;
+//            for (auto &object:trackedObjects) {
+//                object->pose.setOrigin(tf::Vector3(0.5*sin(elevation)*cos(azimuth), 0.5*sin(elevation)*sin(azimuth), 0.5*cos(elevation)));
+//                object->pose.setRotation(tf::Quaternion(0,0,0,1));
+//                tf_broadcaster.sendTransform(tf::StampedTransform(object->pose, ros::Time::now(),
+//                                                                  "world", object->name.c_str()));
+//                elevation += 0.001;
+//                azimuth += 0.002;
+//            }
+//        }
         rate.sleep();
     }
 }
@@ -777,52 +777,54 @@ void RoboyDarkRoom::useFactoryCalibrationData(){
 }
 
 bool RoboyDarkRoom::addTrackedObject(const char* config_file_path){
+    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject());
     if(strlen(config_file_path)==0) {
         QModelIndexList indexList = ui.tracked_object_browser->selectionModel()->selectedIndexes();
         if (indexList.empty())
             return false;
-        config_file_path = model->filePath(indexList[0]).toStdString().c_str();
+        if(!newObject->init(model->filePath(indexList[0]).toStdString().c_str()))
+            return false;
+    }else{
+        if(!newObject->init(config_file_path))
+            return false;
     }
-    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject());
-    if(newObject->init(config_file_path)){
-        ROS_DEBUG_STREAM("adding tracked object " << config_file_path);
-        trackedObjects.push_back(newObject);
-        object_counter++;
 
-        TrackedObjectInfo info;
+    ROS_DEBUG_STREAM("adding tracked object " << config_file_path);
+    trackedObjects.push_back(newObject);
+    object_counter++;
 
-        QWidget *tracked_objects_scrollarea = widget_->findChild<QWidget *>("tracked_objects_scrollarea");
-        info.widget = new QWidget(tracked_objects_scrollarea);
-        char str[100];
-        sprintf(str, "%s", newObject->name.c_str());
-        info.widget->setObjectName(str);
-        info.widget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-        info.widget->setLayout(new QHBoxLayout(info.widget));
+    TrackedObjectInfo info;
 
-        QCheckBox *box = new QCheckBox;
-        box->setChecked(true);
-        info.widget->layout()->addWidget(box);
+    QWidget *tracked_objects_scrollarea = widget_->findChild<QWidget *>("tracked_objects_scrollarea");
+    info.widget = new QWidget(tracked_objects_scrollarea);
+    char str[100];
+    sprintf(str, "%s", newObject->name.c_str());
+    info.widget->setObjectName(str);
+    info.widget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    info.widget->setLayout(new QHBoxLayout(info.widget));
 
-        QLabel *name = new QLabel(info.widget);
-        name->setFixedSize(150,30);
-        name->setText(str);
-        info.widget->layout()->addWidget(name);
+    QCheckBox *box = new QCheckBox;
+    box->setChecked(true);
+    info.widget->layout()->addWidget(box);
 
-        QLabel *activeSensors = new QLabel(info.widget);
-        activeSensors->setFixedSize(50,30);
-        activeSensors->setText("active sensors");
-        info.widget->layout()->addWidget(activeSensors);
+    QLabel *name = new QLabel(info.widget);
+    name->setFixedSize(150,30);
+    name->setText(str);
+    info.widget->layout()->addWidget(name);
 
-        info.name = name;
-        info.activeSensors = activeSensors;
-        info.selected = box;
+    QLabel *activeSensors = new QLabel(info.widget);
+    activeSensors->setFixedSize(50,30);
+    activeSensors->setText("active sensors");
+    info.widget->layout()->addWidget(activeSensors);
 
-        trackedObjectsInfo.push_back(info);
+    info.name = name;
+    info.activeSensors = activeSensors;
+    info.selected = box;
 
-        tracked_objects_scrollarea->layout()->addWidget(info.widget);
-        return true;
-    }
-    return false;
+    trackedObjectsInfo.push_back(info);
+
+    tracked_objects_scrollarea->layout()->addWidget(info.widget);
+    return true;
 }
 /**
  * removes the selected tracked object

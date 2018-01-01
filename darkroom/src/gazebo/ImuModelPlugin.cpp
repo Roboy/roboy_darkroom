@@ -46,8 +46,15 @@ void ImuModelPlugin::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
         link_names.push_back(link_name);
     }
     ROS_INFO("Parsing Imu Plugin");
-    if (!parseImuSDF(sdf_->ToString(""), imus))
-        ROS_WARN("ERROR parsing Imu Plugin, check your sdf file.");
+    if (!parseImuSDF(sdf_->ToString(""), imus)){
+        ROS_ERROR("ERROR parsing Imu Plugin, check your sdf file.");
+        return;
+    }
+
+    for(ImuInfo imu:imus){
+        imu_pub.push_back(nh->advertise<sensor_msgs::Imu>(("/roboy/middleware/"+imu.link->GetName()+"/imu").c_str(), 1));
+    }
+
 
     physics::PhysicsEnginePtr physics_engine = parent_model->GetWorld()->GetPhysicsEngine();
 
@@ -60,6 +67,8 @@ void ImuModelPlugin::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
     // motor_status_publisher.reset(new boost::thread(&ImuModelPlugin::MotorStatusPublisher,this));
     // motor_status_publisher->detach();
 
+    t0 = high_resolution_clock::now();
+
     ROS_INFO("ImuModelPlugin ready");
 }
 
@@ -67,34 +76,57 @@ void ImuModelPlugin::Update() {
     // Get the simulation time and period
     gz_time_now = parent_model->GetWorld()->GetSimTime();
     ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
-    ros::Duration sim_period = sim_time_ros - last_update_sim_time_ros;
-    last_update_sim_time_ros = sim_time_ros;
+    ros::Duration update_period = sim_time_ros - last_update_sim_time_ros;
 
-    readSim(sim_time_ros, sim_period);
-    writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros);
+    t1 = high_resolution_clock::now();
+    microseconds time_span = duration_cast<microseconds>(t1-t0);
+
+    if(time_span.count()>100000){ // 10Hz
+        readSim(sim_time_ros, update_period);
+        last_update_sim_time_ros = sim_time_ros;
+        t0 = t1;
+    }
+
+//    writeSim(sim_time_ros, sim_time_ros - last_write_sim_time_ros);
 
     last_write_sim_time_ros = sim_time_ros;
 }
 
 void ImuModelPlugin::readSim(ros::Time time, ros::Duration period) {
     ROS_DEBUG("read simulation");
+    int i=0;
     for(ImuInfo imu:imus){
         switch(imu.type){
             case ACC:{
                 math::Vector3 acc = imu.link->GetWorldLinearAccel();
-                ROS_INFO_THROTTLE(1,"%f %f %f", acc[0], acc[1], acc[2]);
+                sensor_msgs::Imu msg;
+                msg.header.stamp = ros::Time::now();
+                msg.header.frame_id = imu.link->GetName();
+                msg.orientation.w = 1;
+                msg.linear_acceleration_covariance = {
+                        1, 0, 0,
+                        0, 1, 0,
+                        0, 0, 1
+                };
+
+                msg.linear_acceleration.x = acc.x;
+                msg.linear_acceleration.y = acc.y;
+                msg.linear_acceleration.z = acc.z;
+
+                imu_pub[i].publish(msg);
+                ROS_DEBUG_THROTTLE(1,"%f %f %f", acc[0], acc[1], acc[2]);
                 break;
             }
             case GYRO:{
-                ROS_WARN_ONCE("IMU tyoe GYRO not implemented");
+                ROS_WARN_ONCE("IMU type GYRO not implemented");
                 break;
             }
             case IMU:{
-                ROS_WARN_ONCE("IMU tyoe IMU not implemented");
+                ROS_WARN_ONCE("IMU type IMU not implemented");
                 break;
             }
         }
-
+        i++;
     }
 }
 
