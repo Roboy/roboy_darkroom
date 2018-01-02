@@ -44,8 +44,7 @@ find_package(OpenCV 3.1.0 COMPONENTS opencv_core opencv_highgui opencv_calib3d R
 include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}/..
     ${catkin_INCLUDE_DIRS}
-        ${OpenCV_INCLUDE_DIRS}
-        mavmap/src
+    ${OpenCV_INCLUDE_DIRS}
 )
 
 add_library( darkroom_rqt src/darkroom_rqt.cpp ${darkroom_rqt_MOCS} ${darkroom_rqt_UIS_H}

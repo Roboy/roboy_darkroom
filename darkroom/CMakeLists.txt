@@ -33,7 +33,7 @@ link_directories(${GAZEBO_LIBRARY_DIRS})
 catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware common_utilities robot_localization xmlrpcpp
 		pcl_ros
 		INCLUDE_DIRS include
-        LIBRARIES ParticleFilter PoseEstimatorSensorCloud Transform Triangulate LighthouseEstimator LighthouseSimulator
+        LIBRARIES PoseEstimatorSensorCloud Transform Triangulate LighthouseEstimator LighthouseSimulator
         Sensor TrackedObject )
 
 include_directories(

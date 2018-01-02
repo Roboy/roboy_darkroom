@@ -650,6 +650,8 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
 
     pose_pub = nh->advertise<geometry_msgs::PoseWithCovarianceStamped>( pose_topic_name.c_str(), 1);
 
+    object_pose << 0.001, 0.001, 0.001, 0.001, 0.001, 0.001;
+
     while (objectposeestimating) {
         t1 = ros::Time::now();
 
@@ -694,7 +696,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
 //            show = true;
 //        }
 
-        object_pose << 0.001, 0.001, 0.001, 0.001, 0.001, 0.001;
+//        object_pose << 0.001, 0.001, 0.001, 0.001, 0.001, 0.001;
 
         NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator> *numDiff;
         Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double> *lm;
@@ -707,42 +709,44 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
                           "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
                           visible_sensors.size(), lm->iter, lm->fnorm);
 
-        getRTmatrix(RT_correct, object_pose);
-        RT_object = RT_correct * RT_0;
+        if(lm->fnorm>0.001){
+            object_pose << 0, 0, 0, 0, 0, 0.1;
+        }else {
+            getRTmatrix(RT_correct, object_pose);
+            RT_object = RT_correct * RT_0;
 
-        tf::Transform tf;
-        getTFtransform(RT_object, tf);
-        string tf_name = name + "_VO";
-        publishTF(tf, "world", tf_name.c_str());
+            tf::Transform tf;
+            getTFtransform(RT_object, tf);
+            string tf_name = name + "_VO";
+            publishTF(tf, "world", tf_name.c_str());
 
-        geometry_msgs::PoseWithCovarianceStamped msg;
-        msg.header.stamp = ros::Time::now();
-        msg.header.frame_id = "world";
-        Quaterniond q;
-        Vector3d origin;
-        getPose(q,origin,object_pose);
-        msg.pose.pose.orientation.x = q.x();
-        msg.pose.pose.orientation.y = q.y();
-        msg.pose.pose.orientation.z = q.z();
-        msg.pose.pose.orientation.w = q.w();
-        msg.pose.pose.position.x = origin(0);
-        msg.pose.pose.position.y = origin(1);
-        msg.pose.pose.position.z = origin(2);
-        msg.pose.covariance = {
-                0.1, 0, 0, 0, 0, 0,
-                0, 0.1, 0, 0, 0, 0,
-                0, 0, 0.1, 0, 0, 0,
-                0, 0, 0, 0.1, 0, 0,
-                0, 0, 0, 0, 0.1, 0,
-                0, 0, 0, 0, 0, 0.1
-        };
-        pose_pub.publish(msg);
+            geometry_msgs::PoseWithCovarianceStamped msg;
+            msg.header.stamp = ros::Time::now();
+            msg.header.frame_id = "world";
+            Quaterniond q;
+            Vector3d origin;
+            getPose(q, origin, object_pose);
+            msg.pose.pose.orientation.x = q.x();
+            msg.pose.pose.orientation.y = q.y();
+            msg.pose.pose.orientation.z = q.z();
+            msg.pose.pose.orientation.w = q.w();
+            msg.pose.pose.position.x = origin(0);
+            msg.pose.pose.position.y = origin(1);
+            msg.pose.pose.position.z = origin(2);
+            msg.pose.covariance = {
+                    0.1, 0, 0, 0, 0, 0,
+                    0, 0.1, 0, 0, 0, 0,
+                    0, 0, 0.1, 0, 0, 0,
+                    0, 0, 0, 0.1, 0, 0,
+                    0, 0, 0, 0, 0.1, 0,
+                    0, 0, 0, 0, 0, 0.1
+            };
+            pose_pub.publish(msg);
 
-        if(has_mesh) // TODO mesh path not properly implemented yet
-            publishMesh("roboy_models","Roboy2.0_Upper_Body_Xylophone_simplified/meshes/CAD", "xylophone.stl", origin, q, 0.001, "world", "mesh", 9999, 1);
-
-//        if(lm->fnorm>0.1) // arbitrary but very bad
-//            object_pose << 0, 0, 0, 0, 0, 0.1;
+            if (has_mesh) // TODO mesh path not properly implemented yet
+                publishMesh("roboy_models", "Roboy2.0_Upper_Body_Xylophone_simplified/meshes/CAD", "xylophone.stl",
+                            origin, q, 0.001, "world", "mesh", 9999, 1);
+        }
 //        rate.sleep();
     }
 

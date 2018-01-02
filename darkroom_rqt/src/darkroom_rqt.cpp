@@ -496,18 +496,23 @@ void RoboyDarkRoom::transformPublisher() {
 //                                                                                         : "lighthouse2"),
 //                                                              simulated.second->name.c_str()));
 //        }
-//        if(ui.random_pose->isChecked()){
-//            // randomly moves all objects
-//            static float elevation = 0, azimuth = 0;
-//            for (auto &object:trackedObjects) {
-//                object->pose.setOrigin(tf::Vector3(0.5*sin(elevation)*cos(azimuth), 0.5*sin(elevation)*sin(azimuth), 0.5*cos(elevation)));
-//                object->pose.setRotation(tf::Quaternion(0,0,0,1));
-//                tf_broadcaster.sendTransform(tf::StampedTransform(object->pose, ros::Time::now(),
-//                                                                  "world", object->name.c_str()));
-//                elevation += 0.001;
-//                azimuth += 0.002;
-//            }
-//        }
+        if(ui.random_pose->isChecked()){
+            // randomly moves all objects
+            static float elevation = 0, azimuth = 0, roll = 0, pitch = 0, yaw = 0;
+            for (auto &object:trackedObjects) {
+                object->pose.setOrigin(tf::Vector3(0.5*sin(elevation)*cos(azimuth), 0.5*sin(elevation)*sin(azimuth), 0.5*cos(elevation)));
+                tf::Quaternion q(0,0,0,1);
+                q.setRPY(roll, pitch, yaw);
+                object->pose.setRotation(q);
+                tf_broadcaster.sendTransform(tf::StampedTransform(object->pose, ros::Time::now(),
+                                                                  "world", object->name.c_str()));
+                elevation += 0.001;
+                azimuth += 0.002;
+                roll += 0.001;
+                pitch += 0.002;
+                yaw += 0.003;
+            }
+        }
         rate.sleep();
     }
 }
