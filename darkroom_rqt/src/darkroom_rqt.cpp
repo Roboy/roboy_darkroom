@@ -274,6 +274,10 @@ void RoboyDarkRoom::connectRoboy() {
    // };
     vector<fs::path> roboy_parts = {
             package_path+"/Roboy2.0_Head_simplified/lighthouseSensors/head.yaml"
+//            package_path+"/Roboy2.0_Head_simplified/lighthouseSensors/upper_arm_left.yaml",
+//            package_path+"/Roboy2.0_Head_simplified/lighthouseSensors/lower_arm_left.yaml",
+//            package_path+"/Roboy2.0_Head_simplified/lighthouseSensors/upper_arm_right.yaml",
+//            package_path+"/Roboy2.0_Head_simplified/lighthouseSensors/lower_arm_right.yaml"
     };
     for(auto &part:roboy_parts){
         if(!fileExists(part.c_str())){

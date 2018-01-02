@@ -743,7 +743,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
 
 //        if(lm->fnorm>0.1) // arbitrary but very bad
 //            object_pose << 0, 0, 0, 0, 0, 0.1;
-        rate.sleep();
+//        rate.sleep();
     }
 
     pose_pub.shutdown();

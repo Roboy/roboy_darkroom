@@ -114,7 +114,7 @@ bool TrackedObject::init(const char* configFile){
 //    nh->setParam("publish_tf", true);
 //    nh->setParam("print_diagnostics", true);
 //    // start extended kalman filter
-    kalman_filter_thread.reset(new boost::thread(&TrackedObject::run, this));
+//    kalman_filter_thread.reset(new boost::thread(&TrackedObject::run, this));
     return true;
 }
 

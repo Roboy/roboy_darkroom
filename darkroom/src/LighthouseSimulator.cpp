@@ -82,7 +82,7 @@ void LighthouseSimulator::PublishSensorData() {
     ros::Duration d(1);
     d.sleep();
 
-    ros::Rate rate(120);
+//    ros::Rate rate(120);
     bool angle_switch = false;
     high_resolution_clock::time_point t0 = high_resolution_clock::now();
     vector<Matrix4d> RT_object2lighthouse(meshes.size()), RT_object2lighthouse_new(meshes.size());
@@ -162,7 +162,7 @@ void LighthouseSimulator::PublishSensorData() {
             if (!msg.sensor_value.empty())
                 sensors_pub.publish(msg);
         }
-        rate.sleep();
+//        rate.sleep();
         angle_switch = !angle_switch;
     }
 }
