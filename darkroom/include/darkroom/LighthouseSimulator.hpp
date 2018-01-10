@@ -13,12 +13,14 @@
 #include <cstdint>
 #include <sensor_msgs/Imu.h>
 #include "darkroom/Transform.hpp"
+#include "darkroom/Triangulation.hpp"
 #include "darkroom/Sensor.hpp"
 #include "darkroom/Utilities.hpp"
 #include <pcl/PolygonMesh.h>
 #include <pcl/io/vtk_lib_io.h>
 
 #define degreesToTicks(degrees) (degrees * 50.0 * 8333.0 / 180.0)
+#define radiansToTicks(radians) (radians * 50.0 * 8333.0 / M_PI)
 
 #define IMU_ACC_NOISE 0.1
 
@@ -26,7 +28,7 @@ using namespace std;
 using namespace Eigen;
 using namespace chrono;
 
-class LighthouseSimulator:public rviz_visualization, DarkRoom::Transform, Utilities{
+class LighthouseSimulator:public rviz_visualization, DarkRoom::Transform, Utilities, public Triangulation{
 public:
     /**
      * Constructor
@@ -82,6 +84,7 @@ private:
     vector<int32_t> objectID;
     vector<string> name;
     vector<string> imu_topic_name;
+    bool has_mesh = false;
     struct mesh{
         vector<::pcl::Vertices> polygons;
         vector<Vector4d> vertices;

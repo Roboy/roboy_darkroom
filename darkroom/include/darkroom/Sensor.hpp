@@ -24,6 +24,9 @@ enum ANGLE_TYPE{
     VERTICAL = 1
 };
 
+#define LIGHTHOUSE_A false
+#define LIGHTHOUSE_B true
+
 class Sensor{
 public:
     Sensor();

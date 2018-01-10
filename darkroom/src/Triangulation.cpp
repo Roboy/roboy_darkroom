@@ -1,9 +1,6 @@
 #include "darkroom/Triangulation.hpp"
 
-// dist3D_Line_to_Line(): get the 3D minimum distance between 2 lines
-//    Input:  two 3D lines L1 and L2
-//    Return: the shortest distance between L1 and L2
-double dist3D_Line_to_Line( Vector3d &pos0, Vector3d &dir1,
+double Triangulation::dist3D_Line_to_Line( Vector3d &pos0, Vector3d &dir1,
                             Vector3d &pos1, Vector3d &dir2,
                             Vector3d &tri0, Vector3d &tri1) {
     Vector3d   u = dir1;
@@ -34,7 +31,7 @@ double dist3D_Line_to_Line( Vector3d &pos0, Vector3d &dir1,
     return dP.norm();   // return the closest distance
 }
 
-double triangulateFromLighthouseAngles(Vector2d &angles0, Vector2d &angles1, Matrix4d &RT_0, Matrix4d &RT_1,
+double Triangulation::triangulateFromLighthouseAngles(Vector2d &angles0, Vector2d &angles1, Matrix4d &RT_0, Matrix4d &RT_1,
                                      Vector3d &triangulated_position, Vector3d &ray0, Vector3d &ray1) {
     ;
 
@@ -42,10 +39,8 @@ double triangulateFromLighthouseAngles(Vector2d &angles0, Vector2d &angles1, Mat
     rot0 = RT_0.topLeftCorner(3, 3);
     rot1 = RT_1.topLeftCorner(3, 3);
 
-    double azimuth0 = angles0(1), azimuth1 = angles1(1), elevation0 = angles0(0), elevation1 = angles1(0);
-
-    ray0 = Vector3d(sin(elevation0)*cos(azimuth0), sin(elevation0)*sin(azimuth0), cos(elevation0));
-    ray1 = Vector3d(sin(elevation1)*cos(azimuth1), sin(elevation1)*sin(azimuth1), cos(elevation1));
+    rayFromLighthouseAngles(angles0,ray0,LIGHTHOUSE_A);
+    rayFromLighthouseAngles(angles1,ray1,LIGHTHOUSE_B);
 
     Vector3d ray0_worldFrame, ray1_worldFrame;
 
@@ -62,7 +57,7 @@ double triangulateFromLighthouseAngles(Vector2d &angles0, Vector2d &angles1, Mat
     return distance;
 }
 
-double triangulateFromRays(Vector3d &ray0, Vector3d &ray1,
+double Triangulation::triangulateFromRays(Vector3d &ray0, Vector3d &ray1,
                            Matrix4d &RT_0, Matrix4d &RT_1,
                            Vector3d &triangulated_position) {
     Matrix3d rot0, rot1;
@@ -84,7 +79,11 @@ double triangulateFromRays(Vector3d &ray0, Vector3d &ray1,
     return distance;
 }
 
-void rayFromLighthouseAngles(Vector2d &angles, Vector3d &ray) {
+void Triangulation::rayFromLighthouseAngles(Vector2d &angles, Vector3d &ray, bool lighthouse) {
     double azimuth = angles(1), elevation = angles(0);
+    elevation += phase[lighthouse][VERTICAL] + curve[lighthouse][VERTICAL]*pow(sin(elevation)*cos(azimuth),2.0)
+                 + gibmag[lighthouse][VERTICAL]*cos(elevation+gibphase[lighthouse][VERTICAL]);
+    azimuth += phase[lighthouse][HORIZONTAL] + curve[lighthouse][HORIZONTAL]*pow(cos(elevation),2.0)
+               + gibmag[lighthouse][HORIZONTAL]*cos(azimuth+gibphase[lighthouse][HORIZONTAL]);
     ray = Vector3d(sin(elevation)*cos(azimuth), sin(elevation)*sin(azimuth), cos(elevation));
 }

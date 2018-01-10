@@ -24,24 +24,28 @@ LighthouseSimulator::LighthouseSimulator(int id, vector<fs::path> &configFile) :
         fs::path meshPath;
         vector<int> calibrated_sensors;
         map<int, Sensor> sensors;
+        map<int,vector<double>> calibrationAngles;
 
-        if(!readConfig(configFile[i], objectID[i], name[i], meshPath, calibrated_sensors, sensors))
+        if(!readConfig(configFile[i], objectID[i], name[i], meshPath, calibrated_sensors, sensors, calibrationAngles))
             return;
         imu_pub.push_back(nh->advertise<sensor_msgs::Imu>(("/roboy/middleware/"+name[i]+"/imu").c_str(), 1));
 
-        ROS_DEBUG_STREAM("loading mesh file " << meshPath);
-        pcl::PolygonMesh m;
-        pcl::io::loadPolygonFile(meshPath.c_str(),m);
-        pcl::PointCloud<pcl::PointXYZ> vertices;
-        pcl::fromPCLPointCloud2(m.cloud, vertices);
-        meshes[i].polygons = m.polygons;
-        for(int j=0;j<vertices.size();j++){
-            // convert from mm to meter
-            meshes[i].vertices.push_back(Vector4d(vertices.at(j).x*0.001, vertices.at(j).y*0.001, vertices.at(j).z*0.001, 1));
+        if(!meshPath.empty()){
+            ROS_DEBUG_STREAM("loading mesh file " << meshPath);
+            pcl::PolygonMesh m;
+            pcl::io::loadPolygonFile(meshPath.c_str(),m);
+            pcl::PointCloud<pcl::PointXYZ> vertices;
+            pcl::fromPCLPointCloud2(m.cloud, vertices);
+            meshes[i].polygons = m.polygons;
+            for(int j=0;j<vertices.size();j++){
+                // convert from mm to meter
+                meshes[i].vertices.push_back(Vector4d(vertices.at(j).x*0.001, vertices.at(j).y*0.001, vertices.at(j).z*0.001, 1));
+            }
+            meshes[i].vertices_transformed = meshes[i].vertices;
+            ROS_INFO("done loading mesh %s: %ld triangles, %ld vertices", meshPath.filename().c_str(),
+                     meshes[i].polygons.size(), meshes[i].vertices.size());
+            has_mesh = true;
         }
-        meshes[i].vertices_transformed = meshes[i].vertices;
-        ROS_INFO("done loading mesh %s: %ld triangles, %ld vertices", meshPath.filename().c_str(),
-               meshes[i].polygons.size(), meshes[i].vertices.size());
 
         for (auto &sensor:sensors) {
             Vector3d rel_location;
@@ -82,11 +86,12 @@ void LighthouseSimulator::PublishSensorData() {
     ros::Duration d(1);
     d.sleep();
 
-//    ros::Rate rate(120);
-    bool angle_switch = false;
+    ros::Rate rate(120);
+    bool motor = false;
     high_resolution_clock::time_point t0 = high_resolution_clock::now();
     vector<Matrix4d> RT_object2lighthouse(meshes.size()), RT_object2lighthouse_new(meshes.size());
     vector<bool> pose_changed(meshes.size(),true);
+    int optical_model = 0;
 
     while (sensor_publishing) {
         for (int i=0; i<meshes.size();i++) {
@@ -96,7 +101,8 @@ void LighthouseSimulator::PublishSensorData() {
 
             // because checking the visiblity of a sensor is costly, we only do it, when the pose has changed
             if(!RT_object2lighthouse_new[i].isApprox(RT_object2lighthouse[i])){
-                if(nh->hasParam("check_visibility")) { // only check visibility if this parameter is defined
+                // only check visibility if this parameter is defined and only if we have a mesh obviously
+                if(nh->hasParam("check_visibility") && has_mesh) {
                     pose_changed[i] = true;
                     // apply transform to all vertices
                     for (int k = 0; k < meshes[i].vertices.size(); k++) {
@@ -115,33 +121,69 @@ void LighthouseSimulator::PublishSensorData() {
             for (auto const &sensor:sensor_position[i]) {
                 Vector4d sensor_pos;
                 sensor_pos = RT_object2lighthouse[i] * sensor.second;
-                double distance = sqrt(pow(sensor_pos[0], 2.0) + pow(sensor_pos[1], 2.0) + pow(sensor_pos[2], 2.0));
-                double elevation = 180.0 - acos(sensor_pos[2] / distance) * 180.0 / M_PI;
-                double azimuth = atan2(sensor_pos[1], sensor_pos[0]) * 180.0 / M_PI;
 
-                if(pose_changed[i] && nh->hasParam("check_visibility")){ // we gotta check if the sensor is visible
-                    Vector3d ray(sensor_pos[0],sensor_pos[1],sensor_pos[2]);
-                    sensor_visible[i][j] = checkIfSensorVisible(meshes[i].vertices_transformed,meshes[i].polygons,ray);
+                Vector4d sensor_pos_measured;
+
+                int temp_optical_model;
+                nh->getParam("optical_model",temp_optical_model);
+                if(temp_optical_model!=optical_model){
+                    optical_model = temp_optical_model;
+                    ROS_WARN("switching to optical model %d", optical_model);
                 }
+
+                Matrix4d tilt_trafo = Matrix4d::Identity();
+                tilt_trafo.block(0, 0, 3, 3) << cos(tilt[id][motor]), 0, sin(tilt[id][motor]),
+                        0, 1, 0,
+                        -sin(tilt[id][motor]), 0, cos(tilt[id][motor]);
+                switch(optical_model){
+                    case 0:{ // pin hole camera
+                        // tilt is around lighthouse y axis
+                        sensor_pos_measured = tilt_trafo*sensor_pos;
+                        break;
+                    }
+                    case 1:{ // motor offset from central axis
+                        if(motor==HORIZONTAL)
+                            sensor_pos_measured = sensor_pos + Vector4d(0,0,AXIS_OFFSET,1);
+                        else
+                            sensor_pos_measured = sensor_pos + Vector4d(-AXIS_OFFSET,0,0,1);
+
+                        // tilt is around respective motor y axis
+                        sensor_pos_measured = tilt_trafo*sensor_pos_measured;
+                        break;
+                    }
+                }
+
+                double distance = sqrt(pow(sensor_pos_measured[0], 2.0) + pow(sensor_pos_measured[1], 2.0) + pow(sensor_pos_measured[2], 2.0));
+
+                double elevation = M_PI - acos(sensor_pos_measured[2] / distance);
+                double azimuth = atan2(sensor_pos_measured[1], sensor_pos_measured[0]);
+
+                ROS_INFO_STREAM_THROTTLE(1,"measured sensor pos: " << sensor_pos.transpose() << "\t elevation " << elevation << "\t azimuth " <<azimuth);
+
+                // excentric parameters, assumed to be from y axis -> cos
+                elevation += phase[id][motor] + curve[id][motor]*pow(sin(elevation)*cos(azimuth),2.0)
+                             + gibmag[id][motor]*cos(elevation+gibphase[id][motor]);
+                azimuth += phase[id][motor] + curve[id][motor]*pow(cos(elevation),2.0)
+                           + gibmag[id][motor]*cos(azimuth+gibphase[id][motor]);
 
                 uint32_t sensor_value;
                 if (elevation >= 0 && elevation <= 180.0 && azimuth >= 0 &&
                     azimuth <= 180.0 && sensor_visible[i][j]) { // if the sensor is visible by lighthouse
 
-                    if (!angle_switch) {
-                        uint32_t elevation_in_ticks = (uint32_t) (degreesToTicks(elevation));
+                    if (!motor) {
+                        uint32_t elevation_in_ticks = (uint32_t) (radiansToTicks(elevation));
                         sensor_value = (uint32_t) (id << 31 | 1 << 30 | true << 29 | sensor.first<<19 | elevation_in_ticks & 0x7FFFF);
                         if (sensor.first == 0)
                             ROS_DEBUG_THROTTLE(1, "elevation: %lf in ticks: %d", elevation, elevation_in_ticks);
                     } else {
-                        uint32_t azimuth_in_ticks = (uint32_t) (degreesToTicks(azimuth));
+                        uint32_t azimuth_in_ticks = (uint32_t) (radiansToTicks(azimuth));
                         sensor_value = (uint32_t) (id << 31 | 0 << 30 | true << 29 | sensor.first<<19 | azimuth_in_ticks & 0x7FFFF);
                         if (sensor.first == 0)
                             ROS_DEBUG_THROTTLE(1, "azimuth: %lf in ticks: %d", azimuth, azimuth_in_ticks);
                     }
                     Vector3d pos(sensor_pos[0], sensor_pos[1], sensor_pos[2]);
                     publishSphere(pos, (id == 0 ? "lighthouse1" : "lighthouse2"), "simulated_sensor_positions",
-                                  sensor.first + id * sensor_position.size() + i*1000000, COLOR(0, 1, 0, 1), 0.01);
+                                  sensor.first + id * sensor_position.size() + i*1000000, COLOR(0.5, 0, 0.5, 1), 0.01);
                 } else {
                     Vector3d pos(sensor_pos[0], sensor_pos[1], sensor_pos[2]);
                     publishSphere(pos, (id == 0 ? "lighthouse1" : "lighthouse2"), "simulated_sensor_positions",
@@ -152,18 +194,21 @@ void LighthouseSimulator::PublishSensorData() {
                 msg.timestamp.push_back(time_span.count());
                 msg.sensor_value.push_back(sensor_value);
 
+
+                // we gotta check if the sensor is visible
+                if(pose_changed[i] && nh->hasParam("check_visibility") && has_mesh){
+                    Vector3d ray(sensor_pos[0],sensor_pos[1],sensor_pos[2]);
+                    sensor_visible[i][j] = checkIfSensorVisible(meshes[i].vertices_transformed,meshes[i].polygons,ray);
+                }
+
                 j++;
-    //            Vector3d origin(0,0,0);
-    //            Vector3d dir(sensor_pos[0],sensor_pos[1],sensor_pos[2]);
-    //            publishRay(origin, dir,(id==0?"lighthouse1":"lighthouse2"),"simulated_sensor_rays",
-    //                       sensor.first+class_counter*sensor_position.size()+8543, COLOR(0,0,0,1), 0.01);
             }
 
             if (!msg.sensor_value.empty())
                 sensors_pub.publish(msg);
         }
-//        rate.sleep();
-        angle_switch = !angle_switch;
+        rate.sleep();
+        motor = !motor;
     }
 }
 

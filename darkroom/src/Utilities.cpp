@@ -22,7 +22,7 @@ bool Utilities::readModelDirectory(string modelDirectory, ModelInformation &info
             }
         }
     }else{
-        ROS_ERROR("mesh directory %s does not exist", info.meshDirectory);
+        ROS_ERROR("mesh directory %s does not exist", info.meshDirectory.c_str());
         return false;
     }
     info.lighthouseDirectory = fs::path(modelDirectory+"/lighthouseSensors");
@@ -40,13 +40,13 @@ bool Utilities::readModelDirectory(string modelDirectory, ModelInformation &info
             }
         }
     }else{
-        ROS_ERROR("lighthouse directory %s does not exist", info.lighthouseDirectory);
+        ROS_ERROR("lighthouse directory %s does not exist", info.lighthouseDirectory.c_str());
         return false;
     }
 }
 
 bool Utilities::readConfig(fs::path filepath, int &objectID, string &name, fs::path &mesh,
-                           vector<int> &calibrated_sensors, map<int, Sensor> &sensors) {
+                           vector<int> &calibrated_sensors, map<int, Sensor> &sensors, map<int,vector<double>> &calibrationAngles) {
     if(!file_exists(filepath.c_str()))
         return false;
     try {
@@ -57,8 +57,8 @@ bool Utilities::readConfig(fs::path filepath, int &objectID, string &name, fs::p
         mesh = filepath.remove_filename().c_str();
         mesh += "/" + config["mesh"].as<string>();
         if(!file_exists(mesh.c_str())){
-            ROS_ERROR("mesh %s does not exist", mesh.c_str());
-            return false;
+            ROS_WARN("mesh %s does not exist", mesh.c_str());
+            mesh.clear();
         }
         vector<vector<float>> relative_locations =
                 config["sensor_relative_locations"].as<vector<vector<float >>>();
@@ -72,6 +72,15 @@ bool Utilities::readConfig(fs::path filepath, int &objectID, string &name, fs::p
             cout << "\t" << calibrated_sensors.back();
         }
         cout << endl;
+        if(config["calibration_angles"]){
+            ROS_INFO("found calibration angles");
+            vector<vector<float>> calAngles = config["calibration_angles"].as<vector<vector<float >>>();
+            for(int i=0;i<calAngles.size();i++){
+                calibrationAngles[calAngles[i][0]].push_back(calAngles[i][2]);
+                calibrationAngles[calAngles[i][0]].push_back(calAngles[i][1]);
+                ROS_INFO_STREAM(calibrationAngles[calAngles[i][0]][VERTICAL]<<" "<<calibrationAngles[calAngles[i][0]][HORIZONTAL]);
+            }
+        }
     } catch (YAML::Exception &e) {
         ROS_ERROR_STREAM(e.what());
         return false;

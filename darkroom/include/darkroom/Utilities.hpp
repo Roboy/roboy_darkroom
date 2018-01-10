@@ -22,7 +22,7 @@ struct ModelInformation{
 class Utilities{
 public:
     /**
-     * Scans the provides directory for a model and fills a structure with information about it
+     * Scans the provided directory for a model and fills a structure with information about it
      * @param modelDirectory path to model
      * @param info filled with information about the model
      * @return success
@@ -34,7 +34,8 @@ public:
      * @return success
      */
     bool readConfig(fs::path filepath, int &objectID, string &name, fs::path &mesh,
-                           vector<int> &calibrated_sensors, map<int, Sensor> &sensors);
+                           vector<int> &calibrated_sensors, map<int, Sensor> &sensors,
+                    map<int,vector<double>> &calibrationAngles);
 
     /**
      * Writes a tracked object to file

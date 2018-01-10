@@ -135,6 +135,23 @@ public Q_SLOTS:
      * removes the selected tracked object
      */
     void removeTrackedObject();
+    /**
+     * Updates calibration values
+     */
+    void updateCalibrationValues();
+
+    /**
+     * Estimates the factory calibration values
+     */
+    void estimateFactoryCalibration();
+    /**
+     * Resets all tracked objects calibration values
+     */
+    void resetFactoryCalibration();
+    /**
+     * Resets all tracked objects poses
+     */
+    void resetPose();
 private:
     /**
      * Is regularily publishing the tf frames (lighthouse1, lighthouse2)
@@ -203,7 +220,7 @@ private:
     static map<string, QSlider*> slider;
     static map<string, QPushButton*> button;
     bool simulate = false;
-
+    float random_pose_x = 0, random_pose_y = 0, random_pose_z = 0, random_pose_roll = 0, random_pose_pitch = 0, random_pose_yaw = 0;
     vector<pair<LighthouseSimulatorPtr,LighthouseSimulatorPtr>> lighthouse_simulation;
 
     QFileSystemModel *model;

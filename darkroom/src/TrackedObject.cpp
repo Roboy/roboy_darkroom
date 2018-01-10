@@ -43,7 +43,7 @@ TrackedObject::~TrackedObject() {
 
 bool TrackedObject::init(const char* configFile){
     ROS_INFO_STREAM("reading config of  " << configFile);
-    if(!readConfig(configFile, objectID, name, mesh, calibrated_sensors, sensors))
+    if(!readConfig(configFile, objectID, name, mesh, calibrated_sensors, sensors, calibration_angles))
         return false;
 
     imu.setOrigin(tf::Vector3(0,0,0));

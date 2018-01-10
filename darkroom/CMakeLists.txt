@@ -46,6 +46,7 @@ include_directories(
 #==============================================================================
 
 add_library( PoseEstimatorSensorCloud src/PoseEstimatorSensorCloud.cpp )
+add_library( InYourGibbousPhase src/InYourGibbousPhase.cpp )
 
 add_library( Sensor src/Sensor.cpp )
 target_link_libraries( Sensor ${catkin_LIBRARIES} )
@@ -65,7 +66,7 @@ target_link_libraries( LighthouseSimulator ${catkin_LIBRARIES} Transform)
 
 add_library( LighthouseEstimator src/LighthouseEstimator.cpp )
 add_dependencies(LighthouseEstimator roboy_communication_middleware_gencpp )
-target_link_libraries( LighthouseEstimator ${catkin_LIBRARIES} PoseEstimatorSensorCloud Transform Triangulate )
+target_link_libraries( LighthouseEstimator ${catkin_LIBRARIES} PoseEstimatorSensorCloud Transform Triangulate InYourGibbousPhase)
 
 add_library( TrackedObject src/TrackedObject.cpp )
 add_dependencies(TrackedObject roboy_communication_middleware_gencpp )

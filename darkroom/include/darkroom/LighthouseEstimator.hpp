@@ -12,11 +12,9 @@
 #include <boost/filesystem.hpp>
 #include <atomic>
 #include <mutex>
+#include "darkroom/InYourGibbousPhase.hpp"
 
 namespace fs = boost::filesystem;
-
-#define LIGHTHOUSE_A false
-#define LIGHTHOUSE_B true
 
 #define MAX_ITERATIONS 100
 #define ERROR_THRESHOLD 0.00001
@@ -27,7 +25,7 @@ namespace fs = boost::filesystem;
 
 static vector<int> DEFAULT_VECTOR;
 
-class LighthouseEstimator : public DarkRoom::Transform, public rviz_visualization {
+class LighthouseEstimator : public DarkRoom::Transform, public rviz_visualization, public Triangulation {
 public:
     LighthouseEstimator();
 
@@ -85,6 +83,11 @@ public:
     void calibrateRelativeSensorDistances();
 
     /**
+     * Estimates calibration values based on known sensor angles
+     */
+    void estimateFactoryCalibration(bool lighthouse1, bool lighthouse2);
+
+    /**
      * Returns a unique id for #MESSAGE_ID sensor and lighthouse
      * @param type the message type #MESSAGE_ID
      * @param sensor the sensor id
@@ -109,6 +112,7 @@ public:
 
     map<int, Sensor> sensors;
     vector<int> calibrated_sensors;
+    map<int,vector<double>> calibration_angles;
     int active_sensors = 0;
     atomic<bool> tracking, calibrating, poseestimating, objectposeestimating,
             distances, rays, particle_filtering, use_lighthouse_calibration_data_phase[2],
