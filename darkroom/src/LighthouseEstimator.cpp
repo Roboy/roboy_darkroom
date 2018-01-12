@@ -755,7 +755,6 @@ void LighthouseEstimator::calibrateRelativeSensorDistances() {
 }
 
 void LighthouseEstimator::estimateFactoryCalibration(bool lighthouse1, bool lighthouse2) {
-
     InYourGibbousPhase::InYourGibbousPhase estimator(calibration_angles.size());
     vector<double> elevation_measured[2], azimuth_measured[2], elevation_truth[2], azimuth_truth[2];
     stringstream str;

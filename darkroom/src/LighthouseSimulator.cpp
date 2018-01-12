@@ -158,7 +158,7 @@ void LighthouseSimulator::PublishSensorData() {
                 double elevation = M_PI - acos(sensor_pos_measured[2] / distance);
                 double azimuth = atan2(sensor_pos_measured[1], sensor_pos_measured[0]);
 
-                ROS_INFO_STREAM_THROTTLE(1,"measured sensor pos: " << sensor_pos.transpose() << "\t elevation " << elevation << "\t azimuth " <<azimuth);
+                ROS_DEBUG_STREAM_THROTTLE(1,"measured sensor pos: " << sensor_pos.transpose() << "\t elevation " << elevation << "\t azimuth " <<azimuth);
 
                 // excentric parameters, assumed to be from y axis -> cos
                 elevation += phase[id][motor] + curve[id][motor]*pow(sin(elevation)*cos(azimuth),2.0)

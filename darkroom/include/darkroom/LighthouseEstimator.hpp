@@ -7,6 +7,7 @@
 #include <roboy_communication_middleware/LighthousePoseCorrection.h>
 #include <roboy_communication_middleware/DarkRoomSensor.h>
 #include <roboy_communication_middleware/DarkRoomOOTX.h>
+#include <roboy_communication_middleware/ArucoPose.h>
 #include <common_utilities/CommonDefinitions.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <boost/filesystem.hpp>

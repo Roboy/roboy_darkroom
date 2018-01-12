@@ -244,6 +244,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     sensor_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensors", 1, &RoboyDarkRoom::receiveSensorData, this);
     statistics_sub = nh->subscribe("/roboy/middleware/DarkRoom/Statistics", 2, &RoboyDarkRoom::receiveStatistics, this);
     ootx_sub = nh->subscribe("/roboy/middleware/DarkRoom/ootx", 1, &RoboyDarkRoom::receiveOOTXData, this);
+    aruco_pose_sub = nh->subscribe("/roboy/middleware/ArucoPose", 1, &RoboyDarkRoom::receiveArucoPose, this);
 
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
@@ -742,6 +743,39 @@ void RoboyDarkRoom::updateTrackedObjectInfo() {
     }
 }
 
+void RoboyDarkRoom::receiveArucoPose(const roboy_communication_middleware::ArucoPose::ConstPtr &msg){
+    int i=0;
+    // running mean and variance (cf https://www.johndcook.com/blog/standard_deviation/ )
+    stringstream str;
+    for(int id:msg->id){
+        if(receive_counter.find(id)==receive_counter.end()){
+            receive_counter[id] = 1;
+            aruco_position_mean[id].setZero();
+            aruco_position_variance[id].setZero();
+        }
+
+        Vector3d pos(msg->pose[i].position.x,
+                     msg->pose[i].position.y,
+                     msg->pose[i].position.z);
+        // using lazy average at this point
+        Vector3d new_mean = aruco_position_mean[id]*0.9 + pos * 0.1;
+        aruco_position_variance[id](0) += (pos(0)-aruco_position_mean[id](0))*(pos(0)-new_mean(0));
+        aruco_position_variance[id](1) += (pos(1)-aruco_position_mean[id](1))*(pos(1)-new_mean(1));
+        aruco_position_variance[id](2) += (pos(2)-aruco_position_mean[id](2))*(pos(2)-new_mean(2));
+        aruco_position_mean[id] = new_mean;
+        str << "\naruco id " << id << " \nmean " << aruco_position_mean[id].transpose() << " \nvariance " << aruco_position_variance[id].transpose() << endl;
+        i++;
+        receive_counter[id]++;
+    }
+    if(!ui.random_pose->isChecked()){
+        for(auto &object:trackedObjects){
+            object->pose.setOrigin(tf::Vector3(aruco_position_mean[282](0),aruco_position_mean[282](1),aruco_position_mean[282](2)));
+        }
+    }
+
+    ROS_INFO_STREAM_THROTTLE(1,str.str());
+}
+
 void RoboyDarkRoom::plotData() {
     ui.horizontal_angle_lighthouse_1->graph(0)->setData(time[0], horizontal_angle[0]);
     ui.horizontal_angle_lighthouse_2->graph(0)->setData(time[3], horizontal_angle[1]);
@@ -1001,9 +1035,10 @@ void RoboyDarkRoom::updateCalibrationValues(){
 
 void RoboyDarkRoom::estimateFactoryCalibration(){
     ROS_DEBUG("estimate_factory_calibration clicked");
-    for(auto &object:trackedObjects){
-        object->estimateFactoryCalibration(ui.estimate_lighthouse_1->isChecked(),ui.estimate_lighthouse_2->isChecked());
-    }
+    QDialog *dialog = new QDialog(this);
+//    for(auto &object:trackedObjects){
+//        object->estimateFactoryCalibration(ui.estimate_lighthouse_1->isChecked(),ui.estimate_lighthouse_2->isChecked());
+//    }
 }
 
 void RoboyDarkRoom::resetFactoryCalibration(){

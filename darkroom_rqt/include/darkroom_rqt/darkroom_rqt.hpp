@@ -13,6 +13,7 @@
 #include <darkroom/TrackedObject.hpp>
 #include <darkroom/Transform.hpp>
 #include <roboy_communication_middleware/LighthousePoseCorrection.h>
+#include <roboy_communication_middleware/ArucoPose.h>
 #include <roboy_communication_middleware/DarkRoom.h>
 #include <roboy_communication_middleware/DarkRoomStatistics.h>
 #include <roboy_communication_middleware/DarkRoomOOTX.h>
@@ -29,6 +30,7 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <utility>
+#include <QDialog>
 
 #endif
 
@@ -192,6 +194,8 @@ private:
     inline bool fileExists(const string &filepath);
 
     void updateTrackedObjectInfo();
+
+    void receiveArucoPose(const roboy_communication_middleware::ArucoPose::ConstPtr &msg);
 Q_SIGNALS:
     void newData();
     void newStatisticsData();
@@ -207,7 +211,7 @@ private:
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     boost::shared_ptr<std::thread> transform_thread = nullptr, update_tracked_object_info_thread = nullptr;
-    ros::Subscriber pose_correction_sub, interactive_marker_sub, sensor_sub, statistics_sub, ootx_sub;
+    ros::Subscriber pose_correction_sub, interactive_marker_sub, sensor_sub, statistics_sub, ootx_sub, aruco_pose_sub;
     tf::TransformListener tf_listener;
     tf::TransformBroadcaster tf_broadcaster;
     static tf::Transform lighthouse1, lighthouse2, tf_world, tf_map,
@@ -231,4 +235,7 @@ private:
         QLabel* activeSensors;
     };
     vector<TrackedObjectInfo> trackedObjectsInfo;
+    map<int,Vector3d> aruco_position_mean;
+    map<int,Vector3d> aruco_position_variance;
+    map<int,long> receive_counter;
 };

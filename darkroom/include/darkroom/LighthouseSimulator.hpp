@@ -78,6 +78,7 @@ public:
 private:
     ros::NodeHandlePtr nh;
     ros::Publisher sensors_pub;
+    ros::Subscriber aruco_pose_sub;
     vector<ros::Publisher> imu_pub;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 
