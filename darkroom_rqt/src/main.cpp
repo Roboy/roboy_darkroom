@@ -113,11 +113,13 @@ int main(int argc, char *argv[])
     vector<vector<double>> angles;
     int number_points = atoi(argv[1]);
     for(int i=0;i<number_points;i++){
-//        vector<double> p = {(rand()/(double)RAND_MAX)-0.5,0,0};
-//        vector<double> p = {(rand()/(double)RAND_MAX)-0.5,0,(rand()/(double)RAND_MAX)-0.5};
-        vector<double> p = {(rand()/(double)RAND_MAX)-0.5,(rand()/(double)RAND_MAX),(rand()/(double)RAND_MAX)-0.5};
-//        vector<double> p = {-0.4,0,0};
-
+        vector<double> p;
+        if(strcmp(argv[2],"x")==0)
+                p = {(rand()/(double)RAND_MAX)-0.5,0,0};
+        else if(strcmp(argv[2],"xz")==0)
+                p = {(rand()/(double)RAND_MAX)-0.5,0,(rand()/(double)RAND_MAX)-0.5};
+        else if(strcmp(argv[2],"xyz")==0)
+                p = {(rand()/(double)RAND_MAX)-0.5,(rand()/(double)RAND_MAX),(rand()/(double)RAND_MAX)-0.5};
         pos.push_back(p);
         double distance = sqrt(pow(p[0], 2.0) + pow(1+p[1], 2.0) + pow(p[2], 2.0));
 

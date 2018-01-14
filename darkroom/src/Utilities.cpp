@@ -127,9 +127,9 @@ bool Utilities::writeCalibrationConfig(string filepath, int lighthouse, Lighthou
         return false;
     }
 
-    YAML::Node config;
+    YAML::Node config = YAML::LoadFile(filepath.c_str());
 
-    YAML::Node node = YAML::Load("[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]");
+    YAML::Node node = YAML::Load("");
     node[0] = calib[VERTICAL].phase;
     node[1] = calib[HORIZONTAL].phase;
     node[2] = calib[VERTICAL].tilt;
@@ -142,7 +142,7 @@ bool Utilities::writeCalibrationConfig(string filepath, int lighthouse, Lighthou
     node[9] = calib[HORIZONTAL].gibmag;
     char str[100];
     sprintf(str,"ligthhouse%d", lighthouse);
-    config[str].push_back(node);
+    config[str] = node;
 
     fout << config;
     fout.close();

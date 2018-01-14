@@ -80,6 +80,11 @@ public:
     void triangulateSensors();
 
     /**
+     * Publishes the lighthouse rays
+     */
+    void publishRays();
+
+    /**
      * Measures triangulated sensor locations for 30 seconds. Calculates mean sensor locations and generates
      * relative sensor positions which are saved to a yaml file
      */

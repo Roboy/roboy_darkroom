@@ -230,7 +230,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
 
 bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lighthouse, vector<int> &specificIds) {
     ROS_INFO_STREAM("estimating distance of sensors to lighthouse " << lighthouse + 1);
-    vector<Vector3d> relPos;
+    vector <Vector3d> relPos;
     vector<double> elevations, azimuths;
     vector<double> distanceToLighthouse;
     vector<int> ids;
@@ -308,7 +308,7 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
     J = J.setZero();
     VectorXd v(n * (n - 1) / 2), d_old(ids.size());
 
-    double error;
+    double error, error_prev = 10000000;
     while (iterations < MAX_ITERATIONS) {
 
         // construct jacobian and function vector
@@ -332,11 +332,13 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
 //        }
 
         error = v.norm() / (double) ids.size();
-        if (error < ERROR_THRESHOLD) {
+        if (error < ERROR_THRESHOLD || (error - error_prev) < 0.00000001) {
             break;
         }
+        error_prev = error;
+        ROS_INFO_THROTTLE(5, "iteration %d error %lf", iterations, error);
         // construct distance new vector, sharing data with the stl container
-        Map<VectorXd> d_new(distanceToLighthouse.data(), distanceToLighthouse.size());
+        Map <VectorXd> d_new(distanceToLighthouse.data(), distanceToLighthouse.size());
         d_new = d_old - (J.transpose() * J).inverse() * J.transpose() * v;
         iterations++;
     }
@@ -392,13 +394,21 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
     }
 
     if (iterations < MAX_ITERATIONS)
-        ROS_WARN_STREAM(
-                "mean squared error " << error << " below threshold " << ERROR_THRESHOLD << " in " << iterations
-                                      << " iterations");
-    else
-        ROS_WARN_STREAM(
-                "maximal number of iterations reached, mean squared error " << error << " in " << iterations
-                                                                            << " iterations");
+        if (error < ERROR_THRESHOLD) {
+            ROS_WARN_STREAM(
+                    "mean squared error " << error << " below threshold " << ERROR_THRESHOLD << " in " << iterations
+                                          << " iterations for lighthouse " << lighthouse + 1);
+        } else if ((error - error_prev) < 0.00000001) {
+            ROS_WARN_STREAM(
+                    "mean squared error " << error << " previous " << error_prev << " doesn't get lower after "
+                                          << iterations << " iterations for lighthouse " << lighthouse + 1
+            );
+        } else
+            ROS_WARN_STREAM(
+                    "maximal number of iterations reached, mean squared error " << error << " in " << iterations
+                                                                                << " iterations for lighthouse "
+                                                                                << lighthouse + 1
+            );
     return true;
 }
 
@@ -510,7 +520,7 @@ bool LighthouseEstimator::estimateObjectPoseUsingRelativeDistances() {
 
 void LighthouseEstimator::triangulateSensors() {
     high_resolution_clock::time_point timestamp_new[4];
-    map<int, high_resolution_clock::time_point[4]> timestamps_old;
+    map < int, high_resolution_clock::time_point[4] > timestamps_old;
 
     ros::Rate rate(30);
     bool lighthouse_active[2];
@@ -581,21 +591,6 @@ void LighthouseEstimator::triangulateSensors() {
                                    COLOR(0, 1, 0, 1.0), 1);
 
                     }
-                } else {
-                    if (lighthouse_active[LIGHTHOUSE_A] && rays) {
-                        rayFromLighthouseAngles(lighthouse0_angles, ray0, LIGHTHOUSE_A);
-                        Vector3d pos(0, 0, 0);
-                        ray0 *= 2;
-                        publishRay(pos, ray0, "lighthouse1", "rays_lighthouse_1", getMessageID(RAY, sensor.first, 0),
-                                   COLOR(1, 0, 0, 0.3), 1);
-                    }
-                    if (lighthouse_active[LIGHTHOUSE_B] && rays) {
-                        rayFromLighthouseAngles(lighthouse1_angles, ray1, LIGHTHOUSE_B);
-                        Vector3d pos(0, 0, 0);
-                        ray1 *= 2;
-                        publishRay(pos, ray1, "lighthouse2", "rays_lighthouse_2", getMessageID(RAY, sensor.first, 0),
-                                   COLOR(1, 0, 0, 0.3), 1);
-                    }
                 }
 
                 if (distances) {
@@ -626,6 +621,47 @@ void LighthouseEstimator::triangulateSensors() {
     }
 }
 
+void LighthouseEstimator::publishRays() {
+    high_resolution_clock::time_point timestamp_new[4];
+    map < int, high_resolution_clock::time_point[4] > timestamps_old;
+
+    ros::Rate rate(30);
+    bool lighthouse_active[2];
+
+    while (rays) {
+        for (auto &sensor : sensors) {
+            lighthouse_active[LIGHTHOUSE_A] = sensor.second.isActive(LIGHTHOUSE_A);
+            lighthouse_active[LIGHTHOUSE_B] = sensor.second.isActive(LIGHTHOUSE_B);
+            if (sensor.second.hasNewData(timestamps_old[sensor.first])) {
+                Vector2d lighthouse0_angles;
+                Vector2d lighthouse1_angles;
+                sensor.second.get(LIGHTHOUSE_A, lighthouse0_angles, &timestamp_new[LIGHTHOUSE_A * 2]);
+                sensor.second.get(LIGHTHOUSE_B, lighthouse1_angles, &timestamp_new[LIGHTHOUSE_B * 2]);
+
+                memcpy(timestamps_old[sensor.first], timestamp_new, sizeof(timestamp_new));
+
+                if (lighthouse_active[LIGHTHOUSE_A]) {
+                    Vector3d ray;
+                    rayFromLighthouseAngles(lighthouse0_angles, ray, LIGHTHOUSE_A);
+                    Vector3d pos(0, 0, 0);
+                    ray *= 5;
+                    publishRay(pos, ray, "lighthouse1", "rays_lighthouse_1", getMessageID(RAY, sensor.first, 0),
+                               COLOR(1, 0, 0, 0.5), 1);
+                }
+                if (lighthouse_active[LIGHTHOUSE_B]) {
+                    Vector3d ray;
+                    rayFromLighthouseAngles(lighthouse1_angles, ray, LIGHTHOUSE_B);
+                    Vector3d pos(0, 0, 0);
+                    ray *= 5;
+                    publishRay(pos, ray, "lighthouse2", "rays_lighthouse_2", getMessageID(RAY, sensor.first, 0),
+                               COLOR(1, 0, 0, 0.5), 1);
+                }
+            }
+        }
+        rate.sleep();
+    }
+}
+
 void LighthouseEstimator::calibrateRelativeSensorDistances() {
     map<int, vector<Vector3d>> sensorPosition3d;
     map<int, int> number_of_samples;
@@ -635,7 +671,7 @@ void LighthouseEstimator::calibrateRelativeSensorDistances() {
     clearAll();
 
     high_resolution_clock::time_point timestamp0_new[2], timestamp1_new[2];
-    map<int, high_resolution_clock::time_point[2]> timestamps0_old, timestamps1_old;
+    map < int, high_resolution_clock::time_point[2] > timestamps0_old, timestamps1_old;
 
     clearAll();
     ROS_INFO("measuring mean sensor positions for 10 seconds");
@@ -760,9 +796,10 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
     // get the transform from object to lighthouse
     Matrix4d RT_object2lighthouse;
     ros::Time t0 = ros::Time::now();
-    while(!getTransform(name.c_str(),(lighthouse?"lighthouse2":"lighthouse1"),RT_object2lighthouse)){
-        ROS_ERROR_THROTTLE(1,"could not get transform between %s and %s", name.c_str(),(lighthouse?"lighthouse2":"lighthouse1"));
-        if((ros::Duration(ros::Time::now()-t0).toSec()>5)){
+    while (!getTransform(name.c_str(), (lighthouse ? "lighthouse2" : "lighthouse1"), RT_object2lighthouse)) {
+        ROS_ERROR_THROTTLE(1, "could not get transform between %s and %s", name.c_str(),
+                           (lighthouse ? "lighthouse2" : "lighthouse1"));
+        if ((ros::Duration(ros::Time::now() - t0).toSec() > 5)) {
             ROS_ERROR("giving up");
             return false;
         }
@@ -772,9 +809,9 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
     // lets see who is active
     vector<int> active_sensors;
     t0 = ros::Time::now();
-    while(active_sensors.size()<20) {
+    while (active_sensors.size() < 20) {
         getVisibleCalibratedSensors(lighthouse, active_sensors);
-        if(active_sensors.size()<20 && (ros::Duration(ros::Time::now()-t0).toSec()>5)){
+        if (active_sensors.size() < 20 && (ros::Duration(ros::Time::now() - t0).toSec() > 5)) {
             ROS_ERROR("no active sensors, giving up");
             return false;
         }
@@ -786,16 +823,18 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
         Vector4d rel_pos;
         sensors[active_sensor].getRelativeLocation(rel_pos);
         // transform into lighthouse frame
-        Vector4d pos_in_lighthouse_frame = RT_object2lighthouse*rel_pos;
+        Vector4d pos_in_lighthouse_frame = RT_object2lighthouse * rel_pos;
 
-        double distance = sqrt(pow(pos_in_lighthouse_frame[0], 2.0) + pow(pos_in_lighthouse_frame[1], 2.0) + pow(pos_in_lighthouse_frame[2], 2.0));
+        double distance = sqrt(pow(pos_in_lighthouse_frame[0], 2.0) + pow(pos_in_lighthouse_frame[1], 2.0) +
+                               pow(pos_in_lighthouse_frame[2], 2.0));
 
-        str << active_sensor << " sensor position in ligthhouse frame: " <<  pos_in_lighthouse_frame[0] << " " << pos_in_lighthouse_frame[1] << " " << pos_in_lighthouse_frame[2] << endl;
+        str << active_sensor << " sensor position in ligthhouse frame: " << pos_in_lighthouse_frame[0] << " "
+            << pos_in_lighthouse_frame[1] << " " << pos_in_lighthouse_frame[2] << endl;
 
         // calculate ground truth ligthhouse angles
         double elevation = M_PI - acos(pos_in_lighthouse_frame[2] / distance);
         double azimuth = atan2(pos_in_lighthouse_frame[1], pos_in_lighthouse_frame[0]);
-        vector<double> a = {M_PI - elevation,azimuth};
+        vector<double> a = {M_PI - elevation, azimuth};
         elevation_truth.push_back(M_PI - elevation);
         azimuth_truth.push_back(azimuth);
 
@@ -823,36 +862,45 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
     lm->parameters.maxfev = 100000;
     lm->parameters.xtol = 1e-10;
     VectorXd calibrationValues(10);
-    calibrationValues << 0.0000001,0,0,0,0,0,0,0,0,0;
+    calibrationValues << 0.0000001, 0, 0, 0, 0, 0, 0, 0, 0, 0;
     int ret = lm->minimize(calibrationValues);
 
-    ROS_INFO_STREAM("calibration value estimation for terminated with error "
-                            << lm->fnorm << endl
-                            << "phase horizontal    " << calibrationValues(0) << endl
-                            << "phase vertical      " << calibrationValues(1) << endl
-                            << "tilt horizontal     " << calibrationValues(2) << endl
-                            << "tilt vertical       " << calibrationValues(3) << endl
-                            << "curve horizontal    " << calibrationValues(4) << endl
-                            << "curve vertical      " << calibrationValues(5) << endl
-                            << "gibphase horizontal " << calibrationValues(6) << endl
-                            << "gibphase vertical   " << calibrationValues(7) << endl
-                            << "gibmag horizontal   " << calibrationValues(8) << endl
-                            << "gibmag vertical     " << calibrationValues(9));
-    calibration[lighthouse][VERTICAL].phase = calibrationValues(0);
-    calibration[lighthouse][HORIZONTAL].phase = calibrationValues(1);
-    calibration[lighthouse][VERTICAL].tilt = calibrationValues(2);
-    calibration[lighthouse][HORIZONTAL].tilt = calibrationValues(3);
-    calibration[lighthouse][VERTICAL].curve = calibrationValues(4);
-    calibration[lighthouse][HORIZONTAL].curve = calibrationValues(5);
-    calibration[lighthouse][VERTICAL].gibphase = calibrationValues(6);
-    calibration[lighthouse][HORIZONTAL].gibphase = calibrationValues(7);
-    calibration[lighthouse][VERTICAL].gibmag = calibrationValues(8);
-    calibration[lighthouse][HORIZONTAL].gibmag = calibrationValues(9);
+    ROS_INFO_STREAM("calibration value estimation for lighthouse " << lighthouse + 1 << " terminated with error "
+                                                                   << lm->fnorm << endl
+                                                                   << "phase vertical    " << calibrationValues(phase0)
+                                                                   << endl
+                                                                   << "phase horizontal      " << calibrationValues(phase1)
+                                                                   << endl
+                                                                   << "tilt vertical     " << calibrationValues(tilt0)
+                                                                   << endl
+                                                                   << "tilt horizontal       " << calibrationValues(tilt1)
+                                                                   << endl
+                                                                   << "curve vertical    " << calibrationValues(curve0)
+                                                                   << endl
+                                                                   << "curve horizontal      " << calibrationValues(curve1)
+                                                                   << endl
+                                                                   << "gibphase vertical " << calibrationValues(gibphase0)
+                                                                   << endl
+                                                                   << "gibphase horizontal   " << calibrationValues(gibphase1)
+                                                                   << endl
+                                                                   << "gibmag vertical   " << calibrationValues(gibmag0)
+                                                                   << endl
+                                                                   << "gibmag horizontal     " << calibrationValues(gibmag1));
+    calibration[lighthouse][VERTICAL].phase = calibrationValues(phase0);
+    calibration[lighthouse][HORIZONTAL].phase = calibrationValues(phase1);
+    calibration[lighthouse][VERTICAL].tilt = calibrationValues(tilt0);
+    calibration[lighthouse][HORIZONTAL].tilt = calibrationValues(tilt1);
+    calibration[lighthouse][VERTICAL].curve = calibrationValues(curve0);
+    calibration[lighthouse][HORIZONTAL].curve = calibrationValues(curve1);
+    calibration[lighthouse][VERTICAL].gibphase = calibrationValues(gibphase0);
+    calibration[lighthouse][HORIZONTAL].gibphase = calibrationValues(gibphase1);
+    calibration[lighthouse][VERTICAL].gibmag = calibrationValues(gibmag0);
+    calibration[lighthouse][HORIZONTAL].gibmag = calibrationValues(gibmag1);
 
     string package_path = ros::package::getPath("darkroom");
     string calibration_result_path = package_path + "/params/lighthouse_calibration.yaml";
 
-    return writeCalibrationConfig(calibration_result_path,lighthouse,calibration[lighthouse]);
+    return writeCalibrationConfig(calibration_result_path, lighthouse, calibration[lighthouse]);
 }
 
 int LighthouseEstimator::getMessageID(int type, int sensor, bool lighthouse) {

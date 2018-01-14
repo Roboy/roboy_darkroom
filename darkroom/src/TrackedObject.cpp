@@ -129,6 +129,7 @@ void TrackedObject::shutDown(){
     poseestimating = false;
     receiveData = false;
     publish_transform = false;
+    rays = false;
     if (sensor_thread != nullptr) {
         if (sensor_thread->joinable()) {
             ROS_INFO("Waiting for sensor thread to terminate");
@@ -139,6 +140,12 @@ void TrackedObject::shutDown(){
         if (tracking_thread->joinable()) {
             ROS_INFO("Waiting for tracking thread to terminate");
             tracking_thread->join();
+        }
+    }
+    if (rays_thread != nullptr) {
+        if (rays_thread->joinable()) {
+            ROS_INFO("Waiting for rays thread to terminate");
+            rays_thread->join();
         }
     }
     if (calibrate_thread != nullptr) {

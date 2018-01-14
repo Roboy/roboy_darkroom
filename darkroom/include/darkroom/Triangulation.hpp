@@ -11,6 +11,7 @@ struct LighthouseCalibration{
     double tilt = 0;
     double gibmag = 0;
     double gibphase = 0;
+    void reset(){ phase = 0; curve = 0; tilt = 0; gibmag = 0; gibphase = 0; }
 };
 
 // offset from center of laser rotation

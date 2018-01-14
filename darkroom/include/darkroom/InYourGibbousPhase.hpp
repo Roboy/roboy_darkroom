@@ -12,6 +12,9 @@
 
 using namespace Eigen;
 using namespace std;
+
+enum {phase0 , phase1, tilt0, tilt1, curve0, curve1, gibphase0, gibphase1, gibmag0, gibmag1};
+
 namespace InYourGibbousPhase {
 // Generic functor for Eigen Levenberg-Marquardt minimizer
     template<typename _Scalar, int NX = Dynamic, int NY = Dynamic>
