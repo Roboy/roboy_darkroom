@@ -81,9 +81,9 @@ bool Sensor::isActive(bool lighthouse){
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     microseconds time_span[2] = {duration_cast<microseconds>(t1-m_angleUpdateTime_cur[lighthouse][HORIZONTAL]),
                                  duration_cast<microseconds>(t1-m_angleUpdateTime_cur[lighthouse][VERTICAL])};
-    return true;
-//    return (time_span[HORIZONTAL].count() > 0 && time_span[HORIZONTAL].count() < 100000 &&
-//            time_span[VERTICAL].count() > 0 && time_span[VERTICAL].count() < 100000 );
+//    return true;
+    return (time_span[HORIZONTAL].count() > 0 && time_span[HORIZONTAL].count() < 100000 &&
+            time_span[VERTICAL].count() > 0 && time_span[VERTICAL].count() < 100000 );
 }
 
 bool Sensor::hasNewData(high_resolution_clock::time_point *timestamp){
@@ -100,6 +100,10 @@ void Sensor::setRelativeLocation(Vector3d &relative_location){
 
 void Sensor::getRelativeLocation(Vector3d &relative_location){
     relative_location = m_relative_location;
+}
+
+void Sensor::getRelativeLocation(Vector4d &relative_location){
+    relative_location  << m_relative_location, 1;
 }
 
 bool Sensor::isCalibrated(){

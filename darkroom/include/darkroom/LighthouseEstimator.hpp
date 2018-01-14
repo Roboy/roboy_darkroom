@@ -14,6 +14,8 @@
 #include <atomic>
 #include <mutex>
 #include "darkroom/InYourGibbousPhase.hpp"
+#include <ros/package.h>
+#include "darkroom/Utilities.hpp"
 
 namespace fs = boost::filesystem;
 
@@ -26,7 +28,7 @@ namespace fs = boost::filesystem;
 
 static vector<int> DEFAULT_VECTOR;
 
-class LighthouseEstimator : public DarkRoom::Transform, public rviz_visualization, public Triangulation {
+class LighthouseEstimator : public DarkRoom::Transform, public rviz_visualization, public Triangulation, public Utilities {
 public:
     LighthouseEstimator();
 
@@ -85,8 +87,10 @@ public:
 
     /**
      * Estimates calibration values based on known sensor angles
+     * @param lighthouse for this lighthouse
+     * @return success
      */
-    void estimateFactoryCalibration(bool lighthouse1, bool lighthouse2);
+    bool estimateFactoryCalibration(int lighthouse);
 
     /**
      * Returns a unique id for #MESSAGE_ID sensor and lighthouse
@@ -125,6 +129,7 @@ public:
     string name = "bastiisdoff";
     string imu_topic_name, pose_topic_name;
     ros::Publisher pose_pub;
+    tf::Transform pose;
 private:
     void receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg);
     void applyCalibrationData(Vector2d &lighthouse0_angles, Vector2d &lighthouse1_angles);

@@ -404,9 +404,9 @@ void RoboyDarkRoom::resetLighthousePoses() {
     tf_map.setRotation(quat);
     bool ok;
     lighthouse1.setRotation(quat);
-    lighthouse1.setOrigin(tf::Vector3(0, -1, 0));
+    lighthouse1.setOrigin(tf::Vector3(0, -1.925, 0));
     lighthouse2.setRotation(quat);
-    lighthouse2.setOrigin(tf::Vector3(10, -1, 0));
+    lighthouse2.setOrigin(tf::Vector3(0, -1.925, 0));
 }
 
 void RoboyDarkRoom::record() {
@@ -925,6 +925,7 @@ bool RoboyDarkRoom::addTrackedObject(const char *config_file_path) {
     trackedObjects.push_back(newObject);
     object_counter++;
 
+
     TrackedObjectInfo info;
 
     QWidget *tracked_objects_scrollarea = widget_->findChild<QWidget *>("tracked_objects_scrollarea");
@@ -1009,62 +1010,77 @@ void RoboyDarkRoom::updateCalibrationValues(){
     text["lighthouse_gibmag_vertical_2"]->setText(QString::number((slider["lighthouse_gibmag_vertical_2"]->value()-50)/50.0/3.0));
 
     for(auto &lighthouse:lighthouse_simulation){
-        lighthouse.first->phase[LIGHTHOUSE_A][HORIZONTAL] = text["lighthouse_phase_horizontal_1"]->text().toDouble();
-        lighthouse.first->phase[LIGHTHOUSE_A][VERTICAL] = text["lighthouse_phase_vertical_1"]->text().toDouble();
-        lighthouse.first->tilt[LIGHTHOUSE_A][HORIZONTAL] = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
-        lighthouse.first->tilt[LIGHTHOUSE_A][VERTICAL] = text["lighthouse_tilt_vertical_1"]->text().toDouble();
-        lighthouse.first->curve[LIGHTHOUSE_A][HORIZONTAL] = text["lighthouse_curve_horizontal_1"]->text().toDouble();
-        lighthouse.first->curve[LIGHTHOUSE_A][VERTICAL] = text["lighthouse_curve_vertical_1"]->text().toDouble();
-        lighthouse.first->gibphase[LIGHTHOUSE_A][HORIZONTAL] = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
-        lighthouse.first->gibphase[LIGHTHOUSE_A][VERTICAL] = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
-        lighthouse.first->gibmag[LIGHTHOUSE_A][HORIZONTAL] = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
-        lighthouse.first->gibmag[LIGHTHOUSE_A][VERTICAL] = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
+        lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
+        lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
+        lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
+        lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
+        lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
+        lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
+        lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
+        lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
+        lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
+        lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
 
-        lighthouse.second->phase[LIGHTHOUSE_B][HORIZONTAL] = text["lighthouse_phase_horizontal_2"]->text().toDouble();
-        lighthouse.second->phase[LIGHTHOUSE_B][VERTICAL] = text["lighthouse_phase_vertical_2"]->text().toDouble();
-        lighthouse.second->tilt[LIGHTHOUSE_B][HORIZONTAL] = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
-        lighthouse.second->tilt[LIGHTHOUSE_B][VERTICAL] = text["lighthouse_tilt_vertical_2"]->text().toDouble();
-        lighthouse.second->curve[LIGHTHOUSE_B][HORIZONTAL] = text["lighthouse_curve_horizontal_2"]->text().toDouble();
-        lighthouse.second->curve[LIGHTHOUSE_B][VERTICAL] = text["lighthouse_curve_vertical_2"]->text().toDouble();
-        lighthouse.second->gibphase[LIGHTHOUSE_B][HORIZONTAL] = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
-        lighthouse.second->gibphase[LIGHTHOUSE_B][VERTICAL] = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
-        lighthouse.second->gibmag[LIGHTHOUSE_B][HORIZONTAL] = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
-        lighthouse.second->gibmag[LIGHTHOUSE_B][VERTICAL] = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
+        lighthouse.second->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
+        lighthouse.second->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
+        lighthouse.second->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
+        lighthouse.second->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
+        lighthouse.second->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
+        lighthouse.second->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
+        lighthouse.second->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
+        lighthouse.second->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
+        lighthouse.second->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
+        lighthouse.second->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
     }
 }
 
 void RoboyDarkRoom::estimateFactoryCalibration(){
     ROS_DEBUG("estimate_factory_calibration clicked");
-    QDialog *dialog = new QDialog(this);
-//    for(auto &object:trackedObjects){
-//        object->estimateFactoryCalibration(ui.estimate_lighthouse_1->isChecked(),ui.estimate_lighthouse_2->isChecked());
-//    }
+    string package_path = ros::package::getPath("darkroom");
+    string calibration_object_path = package_path + "/calibrated_objects/calibration.yaml";
+    if (!fileExists(calibration_object_path.c_str())) {
+        ROS_ERROR("could not load calibration object, check the path %s", calibration_object_path.c_str());
+        return;
+    }
+    addTrackedObject(calibration_object_path.c_str());
+
+    TrackedObjectPtr calibration_object = trackedObjects.back();
+
+    calibration_object->pose.setOrigin(tf::Vector3(0,0,0));
+    tf::Quaternion q;
+    q.setRPY(0,0,0);
+    calibration_object->pose.setRotation(q);
+
+    if(ui.estimate_lighthouse_1->isChecked())
+        calibration_object->estimateFactoryCalibration(LIGHTHOUSE_A);
+    if(ui.estimate_lighthouse_2->isChecked())
+        calibration_object->estimateFactoryCalibration(LIGHTHOUSE_B);
 }
 
 void RoboyDarkRoom::resetFactoryCalibration(){
     ROS_DEBUG("reset_factory_calibration_values clicked");
     for(auto &object:trackedObjects){
-        object->phase[LIGHTHOUSE_A][HORIZONTAL] = text["lighthouse_phase_horizontal_1"]->text().toDouble();
-        object->phase[LIGHTHOUSE_A][VERTICAL] = text["lighthouse_phase_vertical_1"]->text().toDouble();
-        object->tilt[LIGHTHOUSE_A][HORIZONTAL] = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
-        object->tilt[LIGHTHOUSE_A][VERTICAL] = text["lighthouse_tilt_vertical_1"]->text().toDouble();
-        object->curve[LIGHTHOUSE_A][HORIZONTAL] = text["lighthouse_curve_horizontal_1"]->text().toDouble();
-        object->curve[LIGHTHOUSE_A][VERTICAL] = text["lighthouse_curve_vertical_1"]->text().toDouble();
-        object->gibphase[LIGHTHOUSE_A][HORIZONTAL] = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
-        object->gibphase[LIGHTHOUSE_A][VERTICAL] = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
-        object->gibmag[LIGHTHOUSE_A][HORIZONTAL] = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
-        object->gibmag[LIGHTHOUSE_A][VERTICAL] = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
 
-        object->phase[LIGHTHOUSE_B][HORIZONTAL] = text["lighthouse_phase_horizontal_2"]->text().toDouble();
-        object->phase[LIGHTHOUSE_B][VERTICAL] = text["lighthouse_phase_vertical_2"]->text().toDouble();
-        object->tilt[LIGHTHOUSE_B][HORIZONTAL] = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
-        object->tilt[LIGHTHOUSE_B][VERTICAL] = text["lighthouse_tilt_vertical_2"]->text().toDouble();
-        object->curve[LIGHTHOUSE_B][HORIZONTAL] = text["lighthouse_curve_horizontal_2"]->text().toDouble();
-        object->curve[LIGHTHOUSE_B][VERTICAL] = text["lighthouse_curve_vertical_2"]->text().toDouble();
-        object->gibphase[LIGHTHOUSE_B][HORIZONTAL] = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
-        object->gibphase[LIGHTHOUSE_B][VERTICAL] = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
-        object->gibmag[LIGHTHOUSE_B][HORIZONTAL] = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
-        object->gibmag[LIGHTHOUSE_B][VERTICAL] = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_B][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_B][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_B][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
+        object->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
     }
 }
 

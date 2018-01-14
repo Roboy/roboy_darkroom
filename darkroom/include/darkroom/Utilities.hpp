@@ -1,7 +1,7 @@
 #pragma once
 
 #include <fstream>
-#include "darkroom/Sensor.hpp"
+#include "darkroom/Triangulation.hpp"
 #include "yaml-cpp/yaml.h"
 #include <sys/stat.h>
 #include <boost/filesystem.hpp>
@@ -44,6 +44,25 @@ public:
      */
     bool writeConfig(fs::path filepath, int &objectID, string &name, fs::path &mesh,
                      vector<int> &calibrated_sensors, map<int, Sensor> &sensors);
+
+    /**
+     * Writes lighthouse calibration to file
+     * @param filepath
+     * @param lighthouse of this lighthouse
+     * @param calib those values
+     * @return success
+     */
+    bool writeCalibrationConfig(string filepath, int lighthouse, LighthouseCalibration *calib);
+
+    /**
+     * Reads lighthouse calibration from file
+     * @param filepath
+     * @param lighthouse of this lighthouse
+     * @param calib will be filled with the data
+     * @return success
+     */
+    bool readCalibrationConfig(fs::path filepath, int lighthouse, LighthouseCalibration *calib);
+
     /**
      * Checks if the provided directory exists and is actually a directory
      * @param directory_path

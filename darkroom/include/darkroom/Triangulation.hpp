@@ -5,6 +5,14 @@
 #include <Eigen/Dense>
 #include "darkroom/Sensor.hpp"
 
+struct LighthouseCalibration{
+    double phase = 0;
+    double curve = 0;
+    double tilt = 0;
+    double gibmag = 0;
+    double gibphase = 0;
+};
+
 // offset from center of laser rotation
 #define AXIS_OFFSET 0.015
 
@@ -45,6 +53,5 @@ public:
     void rayFromLighthouseAngles(Vector2d &angles, Vector3d &ray, bool lighthouse);
 
     // for each motor and each lighthouse
-    double phase[2][2] = {{0,0},{0,0}}, tilt[2][2] = {{0,0},{0,0}}, curve[2][2] = {{0,0},{0,0}},
-            gibphase[2][2] = {{0,0},{0,0}}, gibmag[2][2] = {{0,0},{0,0}};
+    LighthouseCalibration calibration[2][2];
 };

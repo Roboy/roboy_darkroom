@@ -132,9 +132,9 @@ void LighthouseSimulator::PublishSensorData() {
                 }
 
                 Matrix4d tilt_trafo = Matrix4d::Identity();
-                tilt_trafo.block(0, 0, 3, 3) << cos(tilt[id][motor]), 0, sin(tilt[id][motor]),
+                tilt_trafo.block(0, 0, 3, 3) << cos(calibration[id][motor].tilt), 0, sin(calibration[id][motor].tilt),
                         0, 1, 0,
-                        -sin(tilt[id][motor]), 0, cos(tilt[id][motor]);
+                        -sin(calibration[id][motor].tilt), 0, cos(calibration[id][motor].tilt);
                 switch(optical_model){
                     case 0:{ // pin hole camera
                         // tilt is around lighthouse y axis
@@ -161,10 +161,10 @@ void LighthouseSimulator::PublishSensorData() {
                 ROS_DEBUG_STREAM_THROTTLE(1,"measured sensor pos: " << sensor_pos.transpose() << "\t elevation " << elevation << "\t azimuth " <<azimuth);
 
                 // excentric parameters, assumed to be from y axis -> cos
-                elevation += phase[id][motor] + curve[id][motor]*pow(sin(elevation)*cos(azimuth),2.0)
-                             + gibmag[id][motor]*cos(elevation+gibphase[id][motor]);
-                azimuth += phase[id][motor] + curve[id][motor]*pow(cos(elevation),2.0)
-                           + gibmag[id][motor]*cos(azimuth+gibphase[id][motor]);
+                elevation += calibration[id][motor].phase + calibration[id][motor].curve*pow(sin(elevation)*cos(azimuth),2.0)
+                             + calibration[id][motor].gibmag*cos(elevation+calibration[id][motor].gibphase);
+                azimuth += calibration[id][motor].phase + calibration[id][motor].curve*pow(cos(elevation),2.0)
+                           + calibration[id][motor].gibmag*cos(azimuth+calibration[id][motor].gibphase);
 
                 uint32_t sensor_value;
                 if (elevation >= 0 && elevation <= 180.0 && azimuth >= 0 &&

@@ -15,7 +15,6 @@
 #include <common_utilities/rviz_visualization.hpp>
 #include <common_utilities/UDPSocket.hpp>
 #include "darkroom/LighthouseEstimator.hpp"
-#include "darkroom/Utilities.hpp"
 #include <robot_localization/ros_filter_types.h>
 
 #define uSecsToRadians(ticks) (degreesToRadians(ticks * 0.021600864))
@@ -24,7 +23,7 @@
 
 using namespace std;
 
-class TrackedObject : public LighthouseEstimator, Utilities, public RobotLocalization::RosEkf {
+class TrackedObject : public LighthouseEstimator, public RobotLocalization::RosEkf {
 public:
     TrackedObject();
 
@@ -86,7 +85,6 @@ public:
             distance_thread_2 = nullptr, relative_pose_thread = nullptr;
     std::atomic<bool> receiveData, recording, publish_transform;
     string path;
-    tf::Transform pose;
     int objectID = 0;
 private:
     ros::NodeHandlePtr nh;

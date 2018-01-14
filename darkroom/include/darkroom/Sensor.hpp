@@ -142,6 +142,11 @@ public:
      * @param relative_location the relative 3D position
      */
     void getRelativeLocation(Vector3d &relative_location);
+    /**
+     * Gets the sensors relative location on the tracked object
+     * @param relative_location the relative 3D position in homogenous coordinates
+     */
+    void getRelativeLocation(Vector4d &relative_location);
 
     /**
      * Indicates if the sensors relative location is known

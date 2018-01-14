@@ -23,6 +23,10 @@ TrackedObject::TrackedObject() {
 
     string package_path = ros::package::getPath("darkroom");
 
+    string calibration_path = package_path + "/params/lighthouse_calibration.yaml";
+    readCalibrationConfig(calibration_path,LIGHTHOUSE_A,calibration[LIGHTHOUSE_A]);
+    readCalibrationConfig(calibration_path,LIGHTHOUSE_B,calibration[LIGHTHOUSE_B]);
+
     path = package_path+"/calibrated_objects";
 
     pose.setOrigin(tf::Vector3(0,0,0));

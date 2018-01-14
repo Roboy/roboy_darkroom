@@ -81,9 +81,9 @@ double Triangulation::triangulateFromRays(Vector3d &ray0, Vector3d &ray1,
 
 void Triangulation::rayFromLighthouseAngles(Vector2d &angles, Vector3d &ray, bool lighthouse) {
     double azimuth = angles(1), elevation = angles(0);
-    elevation += phase[lighthouse][VERTICAL] + curve[lighthouse][VERTICAL]*pow(sin(elevation)*cos(azimuth),2.0)
-                 + gibmag[lighthouse][VERTICAL]*cos(elevation+gibphase[lighthouse][VERTICAL]);
-    azimuth += phase[lighthouse][HORIZONTAL] + curve[lighthouse][HORIZONTAL]*pow(cos(elevation),2.0)
-               + gibmag[lighthouse][HORIZONTAL]*cos(azimuth+gibphase[lighthouse][HORIZONTAL]);
+    elevation += calibration[lighthouse][VERTICAL].phase + calibration[lighthouse][VERTICAL].curve*pow(sin(elevation)*cos(azimuth),2.0)
+                 + calibration[lighthouse][VERTICAL].gibmag*cos(elevation+calibration[lighthouse][VERTICAL].gibphase);
+    azimuth += calibration[lighthouse][HORIZONTAL].phase + calibration[lighthouse][HORIZONTAL].curve*pow(cos(elevation),2.0)
+               + calibration[lighthouse][HORIZONTAL].gibmag*cos(azimuth+calibration[lighthouse][HORIZONTAL].gibphase);
     ray = Vector3d(sin(elevation)*cos(azimuth), sin(elevation)*sin(azimuth), cos(elevation));
 }
