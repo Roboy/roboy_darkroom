@@ -130,16 +130,16 @@ bool Utilities::writeCalibrationConfig(string filepath, int lighthouse, Lighthou
     YAML::Node config = YAML::LoadFile(filepath.c_str());
 
     YAML::Node node = YAML::Load("");
-    node[0] = calib[VERTICAL].phase;
-    node[1] = calib[HORIZONTAL].phase;
-    node[2] = calib[VERTICAL].tilt;
-    node[3] = calib[HORIZONTAL].tilt;
-    node[4] = calib[VERTICAL].curve;
-    node[5] = calib[HORIZONTAL].curve;
-    node[6] = calib[VERTICAL].gibphase;
-    node[7] = calib[HORIZONTAL].gibphase;
-    node[8] = calib[VERTICAL].gibmag;
-    node[9] = calib[HORIZONTAL].gibmag;
+    node[0] = calib[HORIZONTAL].phase;
+    node[1] = calib[VERTICAL].phase;
+    node[2] = calib[HORIZONTAL].tilt;
+    node[3] = calib[VERTICAL].tilt;
+    node[4] = calib[HORIZONTAL].curve;
+    node[5] = calib[VERTICAL].curve;
+    node[6] = calib[HORIZONTAL].gibphase;
+    node[7] = calib[VERTICAL].gibphase;
+    node[8] = calib[HORIZONTAL].gibmag;
+    node[9] = calib[VERTICAL].gibmag;
     char str[100];
     sprintf(str,"ligthhouse%d", lighthouse);
     config[str] = node;
@@ -153,22 +153,37 @@ bool Utilities::readCalibrationConfig(fs::path filepath, int lighthouse, Lightho
     if(!file_exists(filepath.c_str()))
         return false;
     try {
-        ROS_INFO_STREAM("reading calibration config " << filepath.filename() << " for lighthouse " << lighthouse);
+        stringstream strstream;
+        strstream << "reading calibration config " << filepath.filename() << " for lighthouse " << lighthouse << endl;
 
         YAML::Node config = YAML::LoadFile(filepath.c_str());
         char str[100];
         sprintf(str,"ligthhouse%d", lighthouse);
         vector<float> calib_data = config[str].as<vector<float>>();
-        calib[VERTICAL].phase = calib_data[0];
-        calib[HORIZONTAL].phase = calib_data[1];
-        calib[VERTICAL].tilt = calib_data[2];
-        calib[HORIZONTAL].tilt = calib_data[3];
-        calib[VERTICAL].curve = calib_data[4];
-        calib[HORIZONTAL].curve = calib_data[5];
-        calib[VERTICAL].gibphase = calib_data[6];
-        calib[HORIZONTAL].gibphase = calib_data[7];
-        calib[VERTICAL].gibmag = calib_data[8];
-        calib[HORIZONTAL].gibmag = calib_data[9];
+        calib[HORIZONTAL].phase = calib_data[0];
+        calib[VERTICAL].phase = calib_data[1];
+        calib[HORIZONTAL].tilt = calib_data[2];
+        calib[VERTICAL].tilt = calib_data[3];
+        calib[HORIZONTAL].curve = calib_data[4];
+        calib[VERTICAL].curve = calib_data[5];
+        calib[HORIZONTAL].gibphase = calib_data[6];
+        calib[VERTICAL].gibphase = calib_data[7];
+        calib[HORIZONTAL].gibmag = calib_data[8];
+        calib[VERTICAL].gibmag = calib_data[9];
+
+
+        strstream << "phase_horizontal:    " <<  calib[HORIZONTAL].phase << endl;
+        strstream << "phase_vertical:      " <<  calib[VERTICAL].phase << endl;
+        strstream << "tilt_horizontal:     " <<  calib[HORIZONTAL].tilt << endl;
+        strstream << "tilt_vertical:       " <<  calib[VERTICAL].tilt << endl;
+        strstream << "curve_horizontal:    " <<  calib[HORIZONTAL].curve << endl;
+        strstream << "curve_vertical:      " <<  calib[VERTICAL].curve << endl;
+        strstream << "gibphase_horizontal: " <<  calib[HORIZONTAL].gibphase << endl;
+        strstream << "gibphase_vertical:   " <<  calib[VERTICAL].gibphase << endl;
+        strstream << "gibmag_horizontal:   " <<  calib[HORIZONTAL].gibmag << endl;
+        strstream << "gibmag_vertical:     " <<  calib[VERTICAL].gibmag << endl;
+
+        ROS_INFO_STREAM(strstream.str());
 
     } catch (YAML::Exception &e) {
         ROS_ERROR_STREAM(e.what());

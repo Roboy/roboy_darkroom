@@ -230,7 +230,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
 
 bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lighthouse, vector<int> &specificIds) {
     ROS_INFO_STREAM("estimating distance of sensors to lighthouse " << lighthouse + 1);
-    vector <Vector3d> relPos;
+    vector<Vector3d> relPos;
     vector<double> elevations, azimuths;
     vector<double> distanceToLighthouse;
     vector<int> ids;
@@ -332,13 +332,13 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
 //        }
 
         error = v.norm() / (double) ids.size();
-        if (error < ERROR_THRESHOLD || (error - error_prev) < 0.00000001) {
+        if (error < ERROR_THRESHOLD || (error_prev - error) < 0.00000001) {
             break;
         }
         error_prev = error;
         ROS_INFO_THROTTLE(5, "iteration %d error %lf", iterations, error);
         // construct distance new vector, sharing data with the stl container
-        Map <VectorXd> d_new(distanceToLighthouse.data(), distanceToLighthouse.size());
+        Map<VectorXd> d_new(distanceToLighthouse.data(), distanceToLighthouse.size());
         d_new = d_old - (J.transpose() * J).inverse() * J.transpose() * v;
         iterations++;
     }
@@ -520,7 +520,7 @@ bool LighthouseEstimator::estimateObjectPoseUsingRelativeDistances() {
 
 void LighthouseEstimator::triangulateSensors() {
     high_resolution_clock::time_point timestamp_new[4];
-    map < int, high_resolution_clock::time_point[4] > timestamps_old;
+    map<int, high_resolution_clock::time_point[4]> timestamps_old;
 
     ros::Rate rate(30);
     bool lighthouse_active[2];
@@ -623,7 +623,7 @@ void LighthouseEstimator::triangulateSensors() {
 
 void LighthouseEstimator::publishRays() {
     high_resolution_clock::time_point timestamp_new[4];
-    map < int, high_resolution_clock::time_point[4] > timestamps_old;
+    map<int, high_resolution_clock::time_point[4]> timestamps_old;
 
     ros::Rate rate(30);
     bool lighthouse_active[2];
@@ -671,7 +671,7 @@ void LighthouseEstimator::calibrateRelativeSensorDistances() {
     clearAll();
 
     high_resolution_clock::time_point timestamp0_new[2], timestamp1_new[2];
-    map < int, high_resolution_clock::time_point[2] > timestamps0_old, timestamps1_old;
+    map<int, high_resolution_clock::time_point[2]> timestamps0_old, timestamps1_old;
 
     clearAll();
     ROS_INFO("measuring mean sensor positions for 10 seconds");
@@ -832,10 +832,10 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
             << pos_in_lighthouse_frame[1] << " " << pos_in_lighthouse_frame[2] << endl;
 
         // calculate ground truth ligthhouse angles
-        double elevation = M_PI - acos(pos_in_lighthouse_frame[2] / distance);
+        double elevation = M_PI - atan2(pos_in_lighthouse_frame[1], pos_in_lighthouse_frame[2]);
         double azimuth = atan2(pos_in_lighthouse_frame[1], pos_in_lighthouse_frame[0]);
-        vector<double> a = {M_PI - elevation, azimuth};
-        elevation_truth.push_back(M_PI - elevation);
+        vector<double> a = {elevation, azimuth};
+        elevation_truth.push_back(elevation);
         azimuth_truth.push_back(azimuth);
 
         // get the measured angles
@@ -867,35 +867,48 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
 
     ROS_INFO_STREAM("calibration value estimation for lighthouse " << lighthouse + 1 << " terminated with error "
                                                                    << lm->fnorm << endl
-                                                                   << "phase vertical    " << calibrationValues(phase0)
                                                                    << endl
-                                                                   << "phase horizontal      " << calibrationValues(phase1)
+                                                                   << "phase horizontal    "
+                                                                   << calibrationValues(phase_horizontal)
                                                                    << endl
-                                                                   << "tilt vertical     " << calibrationValues(tilt0)
+                                                                   << "phase vertical      "
+                                                                   << calibrationValues(phase_vertical)
                                                                    << endl
-                                                                   << "tilt horizontal       " << calibrationValues(tilt1)
+                                                                   << "tilt horizontal     "
+                                                                   << calibrationValues(tilt_horizontal)
                                                                    << endl
-                                                                   << "curve vertical    " << calibrationValues(curve0)
+                                                                   << "tilt vertical       "
+                                                                   << calibrationValues(tilt_vertical)
                                                                    << endl
-                                                                   << "curve horizontal      " << calibrationValues(curve1)
+                                                                   << "curve horizontal    "
+                                                                   << calibrationValues(curve_horizontal)
                                                                    << endl
-                                                                   << "gibphase vertical " << calibrationValues(gibphase0)
+                                                                   << "curve vertical      "
+                                                                   << calibrationValues(curve_vertical)
                                                                    << endl
-                                                                   << "gibphase horizontal   " << calibrationValues(gibphase1)
+                                                                   << "gibphase horizontal "
+                                                                   << calibrationValues(gibphase_horizontal)
                                                                    << endl
-                                                                   << "gibmag vertical   " << calibrationValues(gibmag0)
+                                                                   << "gibphase vertical   "
+                                                                   << calibrationValues(gibphase_vertical)
                                                                    << endl
-                                                                   << "gibmag horizontal     " << calibrationValues(gibmag1));
-    calibration[lighthouse][VERTICAL].phase = calibrationValues(phase0);
-    calibration[lighthouse][HORIZONTAL].phase = calibrationValues(phase1);
-    calibration[lighthouse][VERTICAL].tilt = calibrationValues(tilt0);
-    calibration[lighthouse][HORIZONTAL].tilt = calibrationValues(tilt1);
-    calibration[lighthouse][VERTICAL].curve = calibrationValues(curve0);
-    calibration[lighthouse][HORIZONTAL].curve = calibrationValues(curve1);
-    calibration[lighthouse][VERTICAL].gibphase = calibrationValues(gibphase0);
-    calibration[lighthouse][HORIZONTAL].gibphase = calibrationValues(gibphase1);
-    calibration[lighthouse][VERTICAL].gibmag = calibrationValues(gibmag0);
-    calibration[lighthouse][HORIZONTAL].gibmag = calibrationValues(gibmag1);
+                                                                   << "gibmag horizontal   "
+                                                                   << calibrationValues(gibmag_horizontal)
+                                                                   << endl
+                                                                   << "gibmag vertical     "
+                                                                   << calibrationValues(gibmag_vertical)
+                                                                   << endl);
+
+    calibration[lighthouse][VERTICAL].phase = calibrationValues(phase_vertical);
+    calibration[lighthouse][HORIZONTAL].phase = calibrationValues(phase_horizontal);
+    calibration[lighthouse][VERTICAL].tilt = calibrationValues(tilt_vertical);
+    calibration[lighthouse][HORIZONTAL].tilt = calibrationValues(tilt_horizontal);
+    calibration[lighthouse][VERTICAL].curve = calibrationValues(curve_vertical);
+    calibration[lighthouse][HORIZONTAL].curve = calibrationValues(curve_horizontal);
+    calibration[lighthouse][VERTICAL].gibphase = calibrationValues(gibphase_vertical);
+    calibration[lighthouse][HORIZONTAL].gibphase = calibrationValues(gibphase_horizontal);
+    calibration[lighthouse][VERTICAL].gibmag = calibrationValues(gibmag_vertical);
+    calibration[lighthouse][HORIZONTAL].gibmag = calibrationValues(gibmag_horizontal);
 
     string package_path = ros::package::getPath("darkroom");
     string calibration_result_path = package_path + "/params/lighthouse_calibration.yaml";

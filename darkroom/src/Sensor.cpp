@@ -15,7 +15,7 @@ void Sensor::update(bool lighthouse, int type, double angle){
         m_angleUpdateTime_prev[lighthouse][HORIZONTAL] = m_angleUpdateTime_cur[lighthouse][HORIZONTAL];
         m_angleUpdateTime_cur[lighthouse][HORIZONTAL] = high_resolution_clock::now();
     } else {
-        m_angles_vertical[lighthouse] = M_PI-angle;
+        m_angles_vertical[lighthouse] = angle;
         m_angleUpdateTime_prev[lighthouse][VERTICAL] = m_angleUpdateTime_cur[lighthouse][VERTICAL];
         m_angleUpdateTime_cur[lighthouse][VERTICAL] = high_resolution_clock::now();
     }
@@ -81,9 +81,9 @@ bool Sensor::isActive(bool lighthouse){
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     microseconds time_span[2] = {duration_cast<microseconds>(t1-m_angleUpdateTime_cur[lighthouse][HORIZONTAL]),
                                  duration_cast<microseconds>(t1-m_angleUpdateTime_cur[lighthouse][VERTICAL])};
-//    return true;
-    return (time_span[HORIZONTAL].count() > 0 && time_span[HORIZONTAL].count() < 100000 &&
-            time_span[VERTICAL].count() > 0 && time_span[VERTICAL].count() < 100000 );
+    return true;
+//    return (time_span[HORIZONTAL].count() > 0 && time_span[HORIZONTAL].count() < 100000 &&
+//            time_span[VERTICAL].count() > 0 && time_span[VERTICAL].count() < 100000 );
 }
 
 bool Sensor::hasNewData(high_resolution_clock::time_point *timestamp){

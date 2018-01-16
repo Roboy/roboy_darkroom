@@ -83,15 +83,11 @@ LighthouseSimulator::~LighthouseSimulator() {
 }
 
 void LighthouseSimulator::PublishSensorData() {
-    ros::Duration d(1);
-    d.sleep();
-
     ros::Rate rate(120);
-    bool motor = false;
+    bool motor = HORIZONTAL;
     high_resolution_clock::time_point t0 = high_resolution_clock::now();
     vector<Matrix4d> RT_object2lighthouse(meshes.size()), RT_object2lighthouse_new(meshes.size());
     vector<bool> pose_changed(meshes.size(),true);
-    int optical_model = 0;
 
     while (sensor_publishing) {
         for (int i=0; i<meshes.size();i++) {
@@ -122,60 +118,38 @@ void LighthouseSimulator::PublishSensorData() {
                 Vector4d sensor_pos;
                 sensor_pos = RT_object2lighthouse[i] * sensor.second;
 
-                Vector4d sensor_pos_measured;
-
-                int temp_optical_model;
-                nh->getParam("optical_model",temp_optical_model);
-                if(temp_optical_model!=optical_model){
-                    optical_model = temp_optical_model;
-                    ROS_WARN("switching to optical model %d", optical_model);
-                }
-
                 Matrix4d tilt_trafo = Matrix4d::Identity();
                 tilt_trafo.block(0, 0, 3, 3) << cos(calibration[id][motor].tilt), 0, sin(calibration[id][motor].tilt),
                         0, 1, 0,
                         -sin(calibration[id][motor].tilt), 0, cos(calibration[id][motor].tilt);
-                switch(optical_model){
-                    case 0:{ // pin hole camera
-                        // tilt is around lighthouse y axis
-                        sensor_pos_measured = tilt_trafo*sensor_pos;
-                        break;
-                    }
-                    case 1:{ // motor offset from central axis
-                        if(motor==HORIZONTAL)
-                            sensor_pos_measured = sensor_pos + Vector4d(0,0,AXIS_OFFSET,1);
-                        else
-                            sensor_pos_measured = sensor_pos + Vector4d(-AXIS_OFFSET,0,0,1);
 
-                        // tilt is around respective motor y axis
-                        sensor_pos_measured = tilt_trafo*sensor_pos_measured;
-                        break;
-                    }
-                }
+                Vector4d sensor_pos_motor_vertical, sensor_pos_motor_horizontal;
+                sensor_pos_motor_vertical = sensor_pos - Vector4d(-AXIS_OFFSET,0,0,0);
+                sensor_pos_motor_horizontal = sensor_pos - Vector4d(0,0,-AXIS_OFFSET,0);
 
-                double distance = sqrt(pow(sensor_pos_measured[0], 2.0) + pow(sensor_pos_measured[1], 2.0) + pow(sensor_pos_measured[2], 2.0));
+                double elevation = M_PI -  atan2(sensor_pos_motor_vertical(1), sensor_pos_motor_vertical(2));
+                double azimuth = atan2(sensor_pos_motor_horizontal[1], sensor_pos_motor_horizontal[0]);
 
-                double elevation = M_PI - acos(sensor_pos_measured[2] / distance);
-                double azimuth = atan2(sensor_pos_measured[1], sensor_pos_measured[0]);
-
-                ROS_DEBUG_STREAM_THROTTLE(1,"measured sensor pos: " << sensor_pos.transpose() << "\t elevation " << elevation << "\t azimuth " <<azimuth);
+                ROS_INFO_STREAM_THROTTLE(1,"measured sensor pos: " << sensor_pos.transpose() << "\t elevation " << elevation << "\t azimuth " <<azimuth);
 
                 // excentric parameters, assumed to be from y axis -> cos
-                elevation += calibration[id][motor].phase + calibration[id][motor].curve*pow(sin(elevation)*cos(azimuth),2.0)
+                elevation += calibration[id][motor].phase;
+                elevation += calibration[id][motor].curve*pow(sin(elevation)*cos(azimuth),2.0)
                              + calibration[id][motor].gibmag*cos(elevation+calibration[id][motor].gibphase);
-                azimuth += calibration[id][motor].phase + calibration[id][motor].curve*pow(cos(elevation),2.0)
+                azimuth += calibration[id][motor].phase;
+                azimuth += calibration[id][motor].curve*pow(cos(elevation),2.0)
                            + calibration[id][motor].gibmag*cos(azimuth+calibration[id][motor].gibphase);
 
                 uint32_t sensor_value;
                 if (elevation >= 0 && elevation <= 180.0 && azimuth >= 0 &&
                     azimuth <= 180.0 && sensor_visible[i][j]) { // if the sensor is visible by lighthouse
 
-                    if (!motor) {
+                    if (motor == VERTICAL) {
                         uint32_t elevation_in_ticks = (uint32_t) (radiansToTicks(elevation));
                         sensor_value = (uint32_t) (id << 31 | 1 << 30 | true << 29 | sensor.first<<19 | elevation_in_ticks & 0x7FFFF);
                         if (sensor.first == 0)
                             ROS_DEBUG_THROTTLE(1, "elevation: %lf in ticks: %d", elevation, elevation_in_ticks);
-                    } else {
+                    } else if(motor == HORIZONTAL) {
                         uint32_t azimuth_in_ticks = (uint32_t) (radiansToTicks(azimuth));
                         sensor_value = (uint32_t) (id << 31 | 0 << 30 | true << 29 | sensor.first<<19 | azimuth_in_ticks & 0x7FFFF);
                         if (sensor.first == 0)

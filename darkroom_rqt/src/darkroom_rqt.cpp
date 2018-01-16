@@ -404,9 +404,11 @@ void RoboyDarkRoom::resetLighthousePoses() {
     tf_map.setRotation(quat);
     bool ok;
     lighthouse1.setRotation(quat);
-    lighthouse1.setOrigin(tf::Vector3(0, -2.305, 0));
+//    lighthouse1.setOrigin(tf::Vector3(0, -2.968, -0.115));
+    lighthouse1.setOrigin(tf::Vector3(0, -2, 0));
     lighthouse2.setRotation(quat);
-    lighthouse2.setOrigin(tf::Vector3(0, -2.305, 0));
+//    lighthouse2.setOrigin(tf::Vector3(0, -2.968, -0.115));
+    lighthouse2.setOrigin(tf::Vector3(0, -2, 0));
 }
 
 void RoboyDarkRoom::record() {
@@ -1088,6 +1090,40 @@ void RoboyDarkRoom::estimateFactoryCalibration(){
         ROS_ERROR("could not load calibration object, check the path %s", calibration_object_path.c_str());
         return;
     }
+
+    if (ui.simulate->isChecked()) {
+        pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+
+        vector<fs::path> parts = {calibration_object_path};
+
+        simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
+        simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
+
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
+
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
+
+        lighthouse_simulation.push_back(simulation);
+    }
+
     addTrackedObject(calibration_object_path.c_str());
 
     TrackedObjectPtr calibration_object = trackedObjects.back();
@@ -1096,6 +1132,10 @@ void RoboyDarkRoom::estimateFactoryCalibration(){
     tf::Quaternion q;
     q.setRPY(0,0,0);
     calibration_object->pose.setRotation(q);
+
+    ros::Duration d(2);
+    // wait a bit to be sure there is sensor data available
+    d.sleep();
 
     if(ui.estimate_lighthouse_1->isChecked()){
         calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].reset();

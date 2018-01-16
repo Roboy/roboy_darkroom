@@ -13,7 +13,8 @@
 using namespace Eigen;
 using namespace std;
 
-enum {phase0 , phase1, tilt0, tilt1, curve0, curve1, gibphase0, gibphase1, gibmag0, gibmag1};
+enum {phase_horizontal , phase_vertical, tilt_horizontal, tilt_vertical, curve_horizontal, curve_vertical,
+    gibphase_horizontal, gibphase_vertical, gibmag_horizontal, gibmag_vertical};
 
 namespace InYourGibbousPhase {
 // Generic functor for Eigen Levenberg-Marquardt minimizer
