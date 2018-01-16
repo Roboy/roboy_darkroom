@@ -184,9 +184,9 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
                           "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
                           visible_sensors.size(), lm->iter, lm->fnorm);
 
-        if (lm->fnorm > 0.001) {
-            object_pose << 0, 0, 0, 0, 0, 0.1;
-        } else {
+//        if (lm->fnorm > 0.001) {
+//            object_pose << 0, 0, 0, 0, 0, 0.1;
+//        } else {
             getRTmatrix(RT_correct, object_pose);
             RT_object = RT_correct * RT_0;
 
@@ -221,7 +221,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
             if (has_mesh) // TODO mesh path not properly implemented yet
                 publishMesh("roboy_models", "Roboy2.0_Upper_Body_Xylophone_simplified/meshes/CAD", "xylophone.stl",
                             origin, q, 0.001, "world", "mesh", 9999, 1);
-        }
+//        }
 //        rate.sleep();
     }
 

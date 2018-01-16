@@ -404,11 +404,11 @@ void RoboyDarkRoom::resetLighthousePoses() {
     tf_map.setRotation(quat);
     bool ok;
     lighthouse1.setRotation(quat);
-//    lighthouse1.setOrigin(tf::Vector3(0, -2.968, -0.115));
-    lighthouse1.setOrigin(tf::Vector3(0, -2, 0));
+    lighthouse1.setOrigin(tf::Vector3(0, -2.849, -0.115));
+//    lighthouse1.setOrigin(tf::Vector3(0, -2, 0));
     lighthouse2.setRotation(quat);
-//    lighthouse2.setOrigin(tf::Vector3(0, -2.968, -0.115));
-    lighthouse2.setOrigin(tf::Vector3(0, -2, 0));
+    lighthouse2.setOrigin(tf::Vector3(0, -2.849, -0.115));
+//    lighthouse2.setOrigin(tf::Vector3(0, -2, 0));
 }
 
 void RoboyDarkRoom::record() {
@@ -595,7 +595,7 @@ void RoboyDarkRoom::transformPublisher() {
 //                                                                                         : "lighthouse2"),
 //                                                              simulated.second->name.c_str()));
 //        }
-        if (ui.simulate->isChecked()){
+//        if (ui.simulate->isChecked()){
             if (ui.random_pose->isChecked()) {
                 // randomly moves all objects
                 for (auto &object:trackedObjects) {
@@ -621,7 +621,7 @@ void RoboyDarkRoom::transformPublisher() {
                 tf_broadcaster.sendTransform(tf::StampedTransform(object->pose, ros::Time::now(),
                                                                   "world", object->name.c_str()));
             }
-        }
+//        }
 
         rate.sleep();
     }
