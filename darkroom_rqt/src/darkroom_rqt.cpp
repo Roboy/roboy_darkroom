@@ -936,15 +936,32 @@ bool RoboyDarkRoom::addTrackedObject(const char *config_file_path) {
             return false;
         if (!newObject->init(model->filePath(indexList[0]).toStdString().c_str()))
             return false;
+        if (ui.simulate->isChecked()) {
+            pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+
+            vector<fs::path> parts = {model->filePath(indexList[0]).toStdString().c_str()};
+
+            simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
+            simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
+            lighthouse_simulation.push_back(simulation);
+        }
     } else {
         if (!newObject->init(config_file_path))
             return false;
+        if (ui.simulate->isChecked()) {
+            pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+
+            vector<fs::path> parts = {config_file_path};
+
+            simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
+            simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
+            lighthouse_simulation.push_back(simulation);
+        }
     }
 
     ROS_DEBUG_STREAM("adding tracked object " << config_file_path);
     trackedObjects.push_back(newObject);
     object_counter++;
-
 
     TrackedObjectInfo info;
 
