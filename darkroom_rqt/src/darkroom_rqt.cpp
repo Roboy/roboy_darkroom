@@ -404,11 +404,11 @@ void RoboyDarkRoom::resetLighthousePoses() {
     tf_map.setRotation(quat);
     bool ok;
     lighthouse1.setRotation(quat);
-    lighthouse1.setOrigin(tf::Vector3(0, -2.849, -0.115));
-//    lighthouse1.setOrigin(tf::Vector3(0, -2, 0));
+//    lighthouse1.setOrigin(tf::Vector3(0, -2.849, -0.115));
+    lighthouse1.setOrigin(tf::Vector3(0, -2, 0));
     lighthouse2.setRotation(quat);
-    lighthouse2.setOrigin(tf::Vector3(0, -2.849, -0.115));
-//    lighthouse2.setOrigin(tf::Vector3(0, -2, 0));
+//    lighthouse2.setOrigin(tf::Vector3(0, -2.849, -0.115));
+    lighthouse2.setOrigin(tf::Vector3(-0.825, -2, 0));
 }
 
 void RoboyDarkRoom::record() {
@@ -1218,6 +1218,14 @@ void RoboyDarkRoom::resetFactoryCalibration(){
         object->calibration[LIGHTHOUSE_A][VERTICAL].reset();
         object->calibration[LIGHTHOUSE_B][HORIZONTAL].reset();
         object->calibration[LIGHTHOUSE_B][VERTICAL].reset();
+    }
+    if(!lighthouse_simulation.empty()){
+        for(auto &lighthouse:lighthouse_simulation){
+            lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].reset();
+            lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].reset();
+            lighthouse.second->calibration[LIGHTHOUSE_B][HORIZONTAL].reset();
+            lighthouse.second->calibration[LIGHTHOUSE_B][VERTICAL].reset();
+        }
     }
 }
 

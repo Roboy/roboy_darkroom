@@ -20,7 +20,7 @@
 namespace fs = boost::filesystem;
 
 #define MAX_ITERATIONS 100
-#define ERROR_THRESHOLD 0.00001
+#define ERROR_THRESHOLD 0.0000001
 
 #define NUMBER_OF_SAMPLES 100
 
@@ -140,6 +140,7 @@ private:
     void applyCalibrationData(Vector2d &lighthouse0_angles, Vector2d &lighthouse1_angles);
     void applyCalibrationData(bool lighthouse, Vector2d &lighthouse_angles);
     void applyCalibrationData(bool lighthouse, double &elevation, double &azimuth);
+    MatrixXd Pinv(MatrixXd A);
 private:
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;

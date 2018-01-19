@@ -132,7 +132,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
         vector<int> visible_sensors;
         getVisibleCalibratedSensors(visible_sensors);
 
-        if (visible_sensors.size() < 4) {
+        if (visible_sensors.size() < 3) {
             ROS_INFO_THROTTLE(1, "object pose estimation aborted because only %ld sensors are visible",
                               visible_sensors.size());
             continue;
@@ -184,9 +184,9 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
                           "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
                           visible_sensors.size(), lm->iter, lm->fnorm);
 
-//        if (lm->fnorm > 0.001) {
-//            object_pose << 0, 0, 0, 0, 0, 0.1;
-//        } else {
+        if (lm->fnorm > 0.5) {
+            object_pose << 0, 0, 0, 0, 0, 0.1;
+        } else {
             getRTmatrix(RT_correct, object_pose);
             RT_object = RT_correct * RT_0;
 
@@ -221,7 +221,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
             if (has_mesh) // TODO mesh path not properly implemented yet
                 publishMesh("roboy_models", "Roboy2.0_Upper_Body_Xylophone_simplified/meshes/CAD", "xylophone.stl",
                             origin, q, 0.001, "world", "mesh", 9999, 1);
-//        }
+        }
 //        rate.sleep();
     }
 
@@ -242,10 +242,11 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
             if (sensor.second.isActive(lighthouse) && sensor.second.isCalibrated()) {
                 ids.push_back(sensor.first);
                 sensor.second.get(lighthouse, elevations, azimuths);
-                // apply factory calibration correction if desired
+                // apply factory calibration correction
                 applyCalibrationData(lighthouse, elevations.back(), azimuths.back());
                 sensor.second.getRelativeLocation(relPos);
                 distanceToLighthouse.push_back(sensor.second.getDistance(lighthouse));
+//                distanceToLighthouse.push_back(rand()/(double)RAND_MAX);
                 cout << sensor.first << "\t";
             }
         }
@@ -268,11 +269,11 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
         for (uint i = 0; i < specificIds.size(); i++) {
             ids.push_back(specificIds.at(i));
             sensors[specificIds.at(i)].get(lighthouse, elevations, azimuths);
-            // apply factory calibration correction if desired
-            // apply factory calibration correction if desired
+            // apply factory calibration correction
             applyCalibrationData(lighthouse, elevations.back(), azimuths.back());
             sensors[specificIds.at(i)].getRelativeLocation(relPos);
             distanceToLighthouse.push_back(sensors[specificIds.at(i)].getDistance(lighthouse));
+//            distanceToLighthouse.push_back(rand()/(double)RAND_MAX);
         }
     }
 
@@ -289,15 +290,25 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
     for (uint i = 0; i < ids.size() - 1; i++) {
         for (uint j = i + 1; j < ids.size(); j++) {
             // calculate the cosine between the two sensors
+//            cosineBetween(i, j) =
+//                    sin(elevations[i]) * cos(azimuths[i]) * sin(elevations[j]) * cos(azimuths[j]) +
+//                    sin(elevations[i]) * sin(azimuths[i]) * sin(elevations[j]) * sin(azimuths[j]) +
+//                    cos(elevations[i]) * cos(elevations[j]);
+            double norm_1 = sqrt(pow(cos(azimuths[i]) * sin(elevations[i]),2.0)
+                                 + pow(sin(azimuths[i]) * sin(elevations[i]),2.0)
+                                 + pow(sin(azimuths[i]) * cos(elevations[i]),2.0));
+            double norm_2 = sqrt(pow(cos(azimuths[j]) * sin(elevations[j]),2.0)
+                                 + pow(sin(azimuths[j]) * sin(elevations[j]),2.0)
+                                 + pow(sin(azimuths[j]) * cos(elevations[j]),2.0));
             cosineBetween(i, j) =
-                    sin(elevations[i]) * cos(azimuths[i]) * sin(elevations[j]) * cos(azimuths[j]) +
-                    sin(elevations[i]) * sin(azimuths[i]) * sin(elevations[j]) * sin(azimuths[j]) +
-                    cos(elevations[i]) * cos(elevations[j]);
+                    (cos(azimuths[i]) * sin(elevations[i]) * cos(azimuths[j]) * sin(elevations[j]) +
+                    sin(azimuths[i]) * sin(elevations[i]) * sin(azimuths[j]) * sin(elevations[j]) +
+                    sin(azimuths[i]) * cos(elevations[i]) * sin(azimuths[j]) * cos(elevations[j]))/(norm_1*norm_2);
 
-            ROS_DEBUG("cosine between %d and %d: %f", i, j, cosineBetween(i, j));
+//            ROS_DEBUG("cosine between %d and %d: %f", i, j, cosineBetween(i, j));
             // calculate the distance between the sensors
             distanceBetween(i, j) = (relPos[i] - relPos[j]).norm();
-            ROS_DEBUG("distance between sensor %d and %d: %f", ids[i], ids[j], distanceBetween(i, j));
+//            ROS_DEBUG("distance between sensor %d and %d: %f", ids[i], ids[j], distanceBetween(i, j));
         }
     }
 
@@ -339,7 +350,8 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
         ROS_INFO_THROTTLE(5, "iteration %d error %lf", iterations, error);
         // construct distance new vector, sharing data with the stl container
         Map<VectorXd> d_new(distanceToLighthouse.data(), distanceToLighthouse.size());
-        d_new = d_old - (J.transpose() * J).inverse() * J.transpose() * v;
+        MatrixXd J_pinv = Pinv(J);
+        d_new = d_old - J_pinv * v;
         iterations++;
     }
 
@@ -585,10 +597,10 @@ void LighthouseEstimator::triangulateSensors() {
                         Vector3d pos(0, 0, 0);
                         ray0 *= 5;
                         publishRay(pos, ray0, "lighthouse1", "rays_lighthouse_1", getMessageID(RAY, sensor.first, 0),
-                                   COLOR(0, 1, 0, 1.0), 1);
+                                   COLOR(0, 1, 0, 1.0), 0.05);
                         ray1 *= 5;
                         publishRay(pos, ray1, "lighthouse2", "rays_lighthouse_2", getMessageID(RAY, sensor.first, 1),
-                                   COLOR(0, 1, 0, 1.0), 1);
+                                   COLOR(0, 1, 0, 1.0), 0.05);
 
                     }
                 }
@@ -640,13 +652,15 @@ void LighthouseEstimator::publishRays() {
 
                 memcpy(timestamps_old[sensor.first], timestamp_new, sizeof(timestamp_new));
 
+                applyCalibrationData(lighthouse0_angles, lighthouse1_angles);
+
                 if (lighthouse_active[LIGHTHOUSE_A]) {
                     Vector3d ray;
                     rayFromLighthouseAngles(lighthouse0_angles, ray, LIGHTHOUSE_A);
                     Vector3d pos(0, 0, 0);
                     ray *= 5;
                     publishRay(pos, ray, "lighthouse1", "rays_lighthouse_1", getMessageID(RAY, sensor.first, 0),
-                               COLOR(1, 0, 0, 0.5), 1);
+                               COLOR(1, 0, 0, 0.5), 0.05);
                 }
                 if (lighthouse_active[LIGHTHOUSE_B]) {
                     Vector3d ray;
@@ -654,7 +668,7 @@ void LighthouseEstimator::publishRays() {
                     Vector3d pos(0, 0, 0);
                     ray *= 5;
                     publishRay(pos, ray, "lighthouse2", "rays_lighthouse_2", getMessageID(RAY, sensor.first, 0),
-                               COLOR(1, 0, 0, 0.5), 1);
+                               COLOR(1, 0, 0, 0.5), 0.05);
                 }
             }
         }
@@ -969,35 +983,49 @@ void LighthouseEstimator::applyCalibrationData(Vector2d &lighthouse0_angles, Vec
 }
 
 void LighthouseEstimator::applyCalibrationData(bool lighthouse, Vector2d &lighthouse_angles) {
-    if (use_lighthouse_calibration_data_phase[lighthouse]) {
-        lighthouse_angles[HORIZONTAL] += ootx[lighthouse].fcal_0_phase;
-        lighthouse_angles[VERTICAL] += ootx[lighthouse].fcal_1_phase;
-    }
-    if (use_lighthouse_calibration_data_tilt[lighthouse]) {
-        lighthouse_angles[HORIZONTAL] += ootx[lighthouse].fcal_0_tilt;
-        lighthouse_angles[VERTICAL] += ootx[lighthouse].fcal_1_tilt;
-    }
-    if (use_lighthouse_calibration_data_gibphase[lighthouse]) {
-        // TODO
-    }
-    if (use_lighthouse_calibration_data_gibmag[lighthouse]) {
-        // TODO
-    }
+    lighthouse_angles(0) += calibration[lighthouse][VERTICAL].phase;
+    lighthouse_angles(0) += calibration[lighthouse][VERTICAL].curve*pow(sin(lighthouse_angles(0))*cos(lighthouse_angles(1)),2.0)
+                 + calibration[lighthouse][VERTICAL].gibmag*cos(lighthouse_angles(0)+calibration[lighthouse][VERTICAL].gibphase);
+    lighthouse_angles(1) += calibration[lighthouse][HORIZONTAL].phase;
+    lighthouse_angles(1) += calibration[lighthouse][HORIZONTAL].curve*pow(cos(lighthouse_angles(0)),2.0)
+               + calibration[lighthouse][HORIZONTAL].gibmag*cos(lighthouse_angles(1)+calibration[lighthouse][HORIZONTAL].gibphase);
 }
 
 void LighthouseEstimator::applyCalibrationData(bool lighthouse, double &elevation, double &azimuth) {
-    if (use_lighthouse_calibration_data_phase[lighthouse]) {
-        azimuth += ootx[lighthouse].fcal_0_phase;
-        elevation += ootx[lighthouse].fcal_1_phase;
-    }
-    if (use_lighthouse_calibration_data_tilt[lighthouse]) {
-        azimuth += ootx[lighthouse].fcal_0_tilt;
-        elevation += ootx[lighthouse].fcal_1_tilt;
-    }
-    if (use_lighthouse_calibration_data_gibphase[lighthouse]) {
-        // TODO
-    }
-    if (use_lighthouse_calibration_data_gibmag[lighthouse]) {
-        // TODO
+//    double norm = sqrt(pow(cos(azimuth) * sin(elevation),2.0)
+//                         + pow(sin(azimuth) * sin(elevation),2.0)
+//                         + pow(sin(azimuth) * cos(elevation),2.0));
+    elevation += calibration[lighthouse][VERTICAL].phase;
+    elevation += calibration[lighthouse][VERTICAL].curve*pow(sin(elevation)*cos(azimuth),2.0)
+                 + calibration[lighthouse][VERTICAL].gibmag*cos(elevation+calibration[lighthouse][VERTICAL].gibphase);
+    azimuth += calibration[lighthouse][HORIZONTAL].phase;
+    azimuth += calibration[lighthouse][HORIZONTAL].curve*pow(cos(elevation),2.0)
+               + calibration[lighthouse][HORIZONTAL].gibmag*cos(azimuth+calibration[lighthouse][HORIZONTAL].gibphase);
+}
+
+MatrixXd LighthouseEstimator::Pinv(MatrixXd A) {
+
+    int n_rows = A.rows();
+    int n_cols = A.cols();
+    //MatrixXf A_pinv = MatrixXf::Zero(n_cols,n_rows);
+    JacobiSVD<MatrixXd> svd(A, ComputeFullU | ComputeFullV);
+    if (n_rows < n_cols) {
+        VectorXd S = svd.singularValues();
+        MatrixXd S_pinv = MatrixXd::Zero(n_cols, n_rows);
+        for (int i = 0; i < n_rows; i++) {
+            if (S(i) > 1e-6) {
+                S_pinv(i, i) = 1 / S(i);
+            }
+        }
+        return svd.matrixV() * S_pinv * svd.matrixU().transpose();
+    } else {
+        VectorXd S = svd.singularValues();
+        MatrixXd S_pinv = MatrixXd::Zero(n_cols, n_rows);
+        for (int i = 0; i < n_cols; i++) {
+            if (S(i) > 1e-6) {
+                S_pinv(i, i) = 1 / S(i);
+            }
+        }
+        return svd.matrixV() * S_pinv * svd.matrixU().transpose();
     }
 }

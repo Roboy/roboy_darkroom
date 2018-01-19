@@ -81,17 +81,11 @@ double Triangulation::triangulateFromRays(Vector3d &ray0, Vector3d &ray1,
 
 void Triangulation::rayFromLighthouseAngles(Vector2d &angles, Vector3d &ray, bool lighthouse) {
     double elevation = angles(0), azimuth = angles(1);
-    elevation += calibration[lighthouse][VERTICAL].phase;
-    elevation += calibration[lighthouse][VERTICAL].curve*pow(sin(elevation)*cos(azimuth),2.0)
-                 + calibration[lighthouse][VERTICAL].gibmag*cos(elevation+calibration[lighthouse][VERTICAL].gibphase);
-    azimuth += calibration[lighthouse][HORIZONTAL].phase;
-    azimuth += calibration[lighthouse][HORIZONTAL].curve*pow(cos(elevation),2.0)
-               + calibration[lighthouse][HORIZONTAL].gibmag*cos(azimuth+calibration[lighthouse][HORIZONTAL].gibphase);
-    Vector3d v(0, sin(elevation), -cos(elevation));
-    Vector3d h(cos(azimuth), sin(azimuth), 0);
-    Vector3d nv = v.cross(Vector3d(1,0,0));
-    Vector3d nh = h.cross(Vector3d(0,0,1));
-    ray = nh.cross(nv);
+//    Vector3d h(cos(azimuth), sin(azimuth), 0);
+//    Vector3d nv = v.cross(Vector3d(1,0,0));
+//    Vector3d nh = h.cross(Vector3d(0,0,1));
+//    ray = nh.cross(nv);
+    ray = Vector3d(cos(azimuth)*sin(elevation), sin(azimuth)*sin(elevation), -sin(azimuth)*cos(elevation));
     ray.normalize();
 // TODO use tilt
 //    Matrix3d tilt_trafo_vertical = Matrix3d::Identity(), tilt_trafo_horizontal = Matrix3d::Identity();
