@@ -39,8 +39,8 @@ double Triangulation::triangulateFromLighthouseAngles(Vector2d &angles0, Vector2
     rot0 = RT_0.topLeftCorner(3, 3);
     rot1 = RT_1.topLeftCorner(3, 3);
 
-    rayFromLighthouseAngles(angles0,ray0,LIGHTHOUSE_A);
-    rayFromLighthouseAngles(angles1,ray1,LIGHTHOUSE_B);
+    rayFromLighthouseAngles(angles0,ray0);
+    rayFromLighthouseAngles(angles1,ray1);
 
     Vector3d ray0_worldFrame, ray1_worldFrame;
 
@@ -79,8 +79,8 @@ double Triangulation::triangulateFromRays(Vector3d &ray0, Vector3d &ray1,
     return distance;
 }
 
-void Triangulation::rayFromLighthouseAngles(Vector2d &angles, Vector3d &ray, bool lighthouse) {
-    double elevation = angles(0), azimuth = angles(1);
+void Triangulation::rayFromLighthouseAngles(Vector2d &angles, Vector3d &ray) {
+    double elevation = angles(VERTICAL), azimuth = angles(HORIZONTAL);
 //    Vector3d h(cos(azimuth), sin(azimuth), 0);
 //    Vector3d nv = v.cross(Vector3d(1,0,0));
 //    Vector3d nh = h.cross(Vector3d(0,0,1));

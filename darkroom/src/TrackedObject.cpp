@@ -18,7 +18,7 @@ TrackedObject::TrackedObject() {
     receiveData = true;
     sensor_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensors", 1, &TrackedObject::receiveSensorDataRoboy, this);
 
-    spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
+    spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(2));
     spinner->start();
 
     string package_path = ros::package::getPath("darkroom");
@@ -49,6 +49,12 @@ bool TrackedObject::init(const char* configFile){
     ROS_INFO_STREAM("reading config of  " << configFile);
     if(!readConfig(configFile, objectID, name, mesh, calibrated_sensors, sensors, calibration_angles))
         return false;
+
+    for(auto &sensor:sensors){
+        Vector3d rel_pos;
+        sensor.second.getRelativeLocation(rel_pos);
+        publishSphere(rel_pos,"world","relative_locations",rand(),COLOR(0,1,0,1));
+    }
 
     imu.setOrigin(tf::Vector3(0,0,0));
     imu.setRotation(tf::Quaternion(0,0,0,1));
@@ -209,8 +215,11 @@ bool TrackedObject::record(bool start) {
 }
 
 void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware::DarkRoom::ConstPtr &msg) {
-    if(msg->objectID != objectID) // only use messages for me
+    if(msg->objectID != objectID){
+        // only use messages for me
+        ROS_DEBUG_STREAM_THROTTLE(1,"receiving sensor data, but it's not for me " << objectID << " " << msg->objectID);
         return;
+    }
     ROS_WARN_THROTTLE(10, "receiving sensor data");
     uint id = 0;
 

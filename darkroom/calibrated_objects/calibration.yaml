@@ -1,5 +1,5 @@
 name: calibration
-ObjectID: 0
+ObjectID: 00:00:f3:be:ef:00
 mesh: nothing
 sensor_relative_locations:
  - [ 0 , 0, 0, 0]

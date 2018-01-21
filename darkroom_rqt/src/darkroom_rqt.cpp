@@ -407,12 +407,12 @@ void RoboyDarkRoom::resetLighthousePoses() {
     tf_map.setRotation(quat);
     bool ok;
     lighthouse1.setRotation(quat);
-//    lighthouse1.setOrigin(tf::Vector3(0, -2.849, -0.115));
-    lighthouse1.setOrigin(tf::Vector3(0, -2, 0));
+    lighthouse1.setOrigin(tf::Vector3(0, -2.4, -0.115));
+//    lighthouse1.setOrigin(tf::Vector3(0, -2, 0));
     lighthouse2.setRotation(quat);
-//    lighthouse2.setOrigin(tf::Vector3(0, -2.849, -0.115));
+    lighthouse2.setOrigin(tf::Vector3(-0.825, -2.4, -0.115));
 //    lighthouse2.setOrigin(tf::Vector3(-0.825, -2, 0));
-    lighthouse2.setOrigin(tf::Vector3(0, -2, 0));
+//    lighthouse2.setOrigin(tf::Vector3(0, -2, 0));
 }
 
 void RoboyDarkRoom::record() {

@@ -82,7 +82,7 @@ private:
     vector<ros::Publisher> imu_pub;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
 
-    vector<int32_t> objectID;
+    vector<string> objectID;
     vector<string> name;
     vector<string> imu_topic_name;
     bool has_mesh = false;

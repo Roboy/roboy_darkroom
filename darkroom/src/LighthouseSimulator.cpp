@@ -131,8 +131,8 @@ void LighthouseSimulator::PublishSensorData() {
                 double temp_elevation2 = calibration[id][VERTICAL].gibmag*cos(elevation+calibration[id][VERTICAL].gibphase);
                 double temp_azimuth1 = calibration[id][HORIZONTAL].curve*pow(-sin(azimuth)*cos(elevation),2.0);
                 double temp_azimuth2 = calibration[id][HORIZONTAL].gibmag*cos(azimuth+calibration[id][HORIZONTAL].gibphase);
-                elevation += calibration[id][VERTICAL].phase + temp_elevation1 + temp_elevation2;
-                azimuth += calibration[id][HORIZONTAL].phase + temp_azimuth1 + temp_azimuth2;
+                elevation -= (calibration[id][VERTICAL].phase + temp_elevation1 + temp_elevation2);
+                azimuth -= (calibration[id][HORIZONTAL].phase + temp_azimuth1 + temp_azimuth2);
 
                 uint32_t sensor_value;
                 if (elevation >= 0 && elevation <= 180.0 && azimuth >= 0 &&

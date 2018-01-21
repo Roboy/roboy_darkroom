@@ -33,7 +33,7 @@ public:
      * @param filepath to
      * @return success
      */
-    bool readConfig(fs::path filepath, int &objectID, string &name, fs::path &mesh,
+    bool readConfig(fs::path filepath, string &objectID, string &name, fs::path &mesh,
                            vector<int> &calibrated_sensors, map<int, Sensor> &sensors,
                     map<int,vector<double>> &calibrationAngles);
 
@@ -42,7 +42,7 @@ public:
      * @param filepath
      * @return success
      */
-    bool writeConfig(fs::path filepath, int &objectID, string &name, fs::path &mesh,
+    bool writeConfig(fs::path filepath, string &objectID, string &name, fs::path &mesh,
                      vector<int> &calibrated_sensors, map<int, Sensor> &sensors);
 
     /**

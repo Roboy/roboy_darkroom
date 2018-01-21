@@ -85,7 +85,7 @@ public:
             distance_thread_2 = nullptr, relative_pose_thread = nullptr, rays_thread = nullptr;
     std::atomic<bool> receiveData, recording, publish_transform;
     string path;
-    int objectID = 0;
+    string objectID;
 private:
     ros::NodeHandlePtr nh;
     ros::Publisher darkroom_statistics_pub;

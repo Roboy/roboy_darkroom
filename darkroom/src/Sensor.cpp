@@ -32,14 +32,14 @@ bool Sensor::getSwitchLighthouses(){
 
 void Sensor::get(bool lighthouse, Vector2d &angles){
     lock_guard<std::mutex> lock(m_lockMutex);
-    angles = Vector2d(m_angles_vertical[m_switch?!lighthouse:lighthouse],
-                      m_angles_horizontal[m_switch?!lighthouse:lighthouse]);
+    angles = Vector2d(m_angles_horizontal[m_switch?!lighthouse:lighthouse],
+                      m_angles_vertical[m_switch?!lighthouse:lighthouse]);
 }
 
 void Sensor::get(bool lighthouse, Vector2d &angles, high_resolution_clock::time_point *timestamps){
     lock_guard<std::mutex> lock(m_lockMutex);
-    angles = Vector2d(m_angles_vertical[m_switch?!lighthouse:lighthouse],
-                      m_angles_horizontal[m_switch?!lighthouse:lighthouse]);
+    angles = Vector2d(m_angles_horizontal[m_switch?!lighthouse:lighthouse],
+                      m_angles_vertical[m_switch?!lighthouse:lighthouse]);
     timestamps[HORIZONTAL] = m_angleUpdateTime_cur[lighthouse][HORIZONTAL];
     timestamps[VERTICAL] = m_angleUpdateTime_cur[lighthouse][VERTICAL];
 }
@@ -81,9 +81,9 @@ bool Sensor::isActive(bool lighthouse){
     high_resolution_clock::time_point t1 = high_resolution_clock::now();
     microseconds time_span[2] = {duration_cast<microseconds>(t1-m_angleUpdateTime_cur[lighthouse][HORIZONTAL]),
                                  duration_cast<microseconds>(t1-m_angleUpdateTime_cur[lighthouse][VERTICAL])};
-    return true;
-//    return (time_span[HORIZONTAL].count() > 0 && time_span[HORIZONTAL].count() < 20000 &&
-//            time_span[VERTICAL].count() > 0 && time_span[VERTICAL].count() < 20000 );
+//    return true;
+    return (time_span[HORIZONTAL].count() > 0 && time_span[HORIZONTAL].count() < 100000 &&
+            time_span[VERTICAL].count() > 0 && time_span[VERTICAL].count() < 100000 );
 }
 
 bool Sensor::hasNewData(high_resolution_clock::time_point *timestamp){

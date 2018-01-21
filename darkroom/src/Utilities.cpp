@@ -45,14 +45,14 @@ bool Utilities::readModelDirectory(string modelDirectory, ModelInformation &info
     }
 }
 
-bool Utilities::readConfig(fs::path filepath, int &objectID, string &name, fs::path &mesh,
+bool Utilities::readConfig(fs::path filepath, string &objectID, string &name, fs::path &mesh,
                            vector<int> &calibrated_sensors, map<int, Sensor> &sensors, map<int,vector<double>> &calibrationAngles) {
     if(!file_exists(filepath.c_str()))
         return false;
     try {
         ROS_INFO_STREAM("reading config " << filepath.filename());
         YAML::Node config = YAML::LoadFile(filepath.c_str());
-        objectID = config["ObjectID"].as<int>();
+        objectID = config["ObjectID"].as<string>();
         name = config["name"].as<string>();
         mesh = filepath.remove_filename().c_str();
         mesh += "/" + config["mesh"].as<string>();
@@ -88,7 +88,7 @@ bool Utilities::readConfig(fs::path filepath, int &objectID, string &name, fs::p
     return true;
 }
 
-bool Utilities::writeConfig(fs::path filepath, int &objectID, string &name, fs::path &mesh,
+bool Utilities::writeConfig(fs::path filepath, string &objectID, string &name, fs::path &mesh,
                             vector<int> &calibrated_sensors, map<int, Sensor> &sensors) {
     std::ofstream fout(filepath.root_path().c_str());
     if (!fout.is_open()) {
