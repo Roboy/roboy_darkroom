@@ -103,6 +103,8 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
             "object_pose_estimation_least_squares");
     button["estimate_factory_calibration_values"] = widget_->findChild<QPushButton *>(
             "estimate_factory_calibration_values");
+    button["estimate_factory_calibration_values_2"] = widget_->findChild<QPushButton *>(
+            "estimate_factory_calibration_values_2");
     button["reset_factory_calibration_values"] = widget_->findChild<QPushButton *>(
             "reset_factory_calibration_values");
     button["reset_pose"] = widget_->findChild<QPushButton *>("reset_pose");
@@ -226,6 +228,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(button["add_tracked_object"], SIGNAL(clicked()), this, SLOT(addTrackedObject()));
     QObject::connect(button["remove_tracked_object"], SIGNAL(clicked()), this, SLOT(removeTrackedObject()));
     QObject::connect(button["estimate_factory_calibration_values"], SIGNAL(clicked()), this, SLOT(estimateFactoryCalibration()));
+    QObject::connect(button["estimate_factory_calibration_values_2"], SIGNAL(clicked()), this, SLOT(estimateFactoryCalibration2()));
     QObject::connect(button["reset_factory_calibration_values"], SIGNAL(clicked()), this, SLOT(resetFactoryCalibration()));
     QObject::connect(button["reset_pose"], SIGNAL(clicked()), this, SLOT(resetPose()));
 
@@ -408,7 +411,8 @@ void RoboyDarkRoom::resetLighthousePoses() {
     lighthouse1.setOrigin(tf::Vector3(0, -2, 0));
     lighthouse2.setRotation(quat);
 //    lighthouse2.setOrigin(tf::Vector3(0, -2.849, -0.115));
-    lighthouse2.setOrigin(tf::Vector3(-0.825, -2, 0));
+//    lighthouse2.setOrigin(tf::Vector3(-0.825, -2, 0));
+    lighthouse2.setOrigin(tf::Vector3(0, -2, 0));
 }
 
 void RoboyDarkRoom::record() {
@@ -599,22 +603,39 @@ void RoboyDarkRoom::transformPublisher() {
             if (ui.random_pose->isChecked()) {
                 // randomly moves all objects
                 for (auto &object:trackedObjects) {
-                    object->pose.setOrigin( tf::Vector3(0.2*sin(random_pose_x),0.2*sin(random_pose_y),0.2*sin(random_pose_z)));
+                    object->pose.setOrigin( tf::Vector3(0.5*sin(random_pose_x),0.5*sin(random_pose_y),0.5*sin(random_pose_z)));
                     tf::Quaternion q(0, 0, 0, 1);
                     q.setRPY(random_pose_roll, random_pose_pitch, random_pose_yaw);
                     object->pose.setRotation(q);
                     if(ui.random_pose_x->isChecked())
-                        random_pose_x += 0.002;
+                        random_pose_x += 0.001;
                     if(ui.random_pose_y->isChecked())
-                        random_pose_y += 0.002;
+                        random_pose_y += 0.0009;
                     if(ui.random_pose_z->isChecked())
-                        random_pose_z += 0.002;
+                        random_pose_z += 0.0008;
                     if(ui.random_pose_roll->isChecked())
-                        random_pose_roll += 0.002;
+                        random_pose_roll += 0.0002;
                     if(ui.random_pose_pitch->isChecked())
-                        random_pose_pitch += 0.002;
+                        random_pose_pitch += 0.0002;
                     if(ui.random_pose_yaw->isChecked())
-                        random_pose_yaw += 0.002;
+                        random_pose_yaw += 0.0002;
+
+//                    object->pose.setOrigin( tf::Vector3(random_pose_x,random_pose_y,random_pose_z));
+//                    tf::Quaternion q(0, 0, 0, 1);
+//                    q.setRPY(random_pose_roll, random_pose_pitch, random_pose_yaw);
+//                    object->pose.setRotation(q);
+//                    if(ui.random_pose_x->isChecked())
+//                        random_pose_x += 0.001 * (0.5-rand()/double(RAND_MAX));
+//                    if(ui.random_pose_y->isChecked())
+//                        random_pose_y += 0.001 * (0.5-rand()/double(RAND_MAX));
+//                    if(ui.random_pose_z->isChecked())
+//                        random_pose_z += 0.001 * (0.5-rand()/double(RAND_MAX));
+//                    if(ui.random_pose_roll->isChecked())
+//                        random_pose_roll += 0.001 * (0.5-rand()/double(RAND_MAX));
+//                    if(ui.random_pose_pitch->isChecked())
+//                        random_pose_pitch += 0.001 * (0.5-rand()/double(RAND_MAX));
+//                    if(ui.random_pose_yaw->isChecked())
+//                        random_pose_yaw += 0.001 * (0.5-rand()/double(RAND_MAX));
                 }
             }
             for (auto &object:trackedObjects) {
@@ -1138,6 +1159,18 @@ void RoboyDarkRoom::estimateFactoryCalibration(){
         simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
         simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
 
+        simulation.first->sensor_publishing = true;
+        simulation.first->sensor_thread.reset(
+                new boost::thread(
+                        [simulation]() {simulation.first->PublishSensorData(); }
+                ));
+
+        simulation.second->sensor_publishing = true;
+        simulation.second->sensor_thread.reset(
+                new boost::thread(
+                        [simulation]() {simulation.second->PublishSensorData(); }
+                ));
+
         lighthouse_simulation.push_back(simulation);
     }
 
@@ -1175,6 +1208,97 @@ void RoboyDarkRoom::estimateFactoryCalibration(){
         calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].reset();
         calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].reset();
         if(calibration_object->estimateFactoryCalibration(LIGHTHOUSE_B)){
+            text["lighthouse_phase_horizontal_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].phase));
+            text["lighthouse_phase_vertical_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].phase));
+            text["lighthouse_tilt_horizontal_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt));
+            text["lighthouse_tilt_vertical_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].tilt));
+            text["lighthouse_curve_horizontal_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].curve));
+            text["lighthouse_curve_vertical_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].curve));
+            text["lighthouse_gibphase_horizontal_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase));
+            text["lighthouse_gibphase_vertical_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].gibphase));
+            text["lighthouse_gibmag_horizontal_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag));
+            text["lighthouse_gibmag_vertical_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].gibmag));
+        }
+    }
+
+}
+
+void RoboyDarkRoom::estimateFactoryCalibration2(){
+    ROS_DEBUG("estimate_factory_calibration_2 clicked");
+    string package_path = ros::package::getPath("darkroom");
+    string calibration_object_path = package_path + "/calibrated_objects/calibration.yaml";
+    if (!fileExists(calibration_object_path.c_str())) {
+        ROS_ERROR("could not load calibration object, check the path %s", calibration_object_path.c_str());
+        return;
+    }
+
+    if (ui.simulate->isChecked()) {
+        pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+
+        vector<fs::path> parts = {calibration_object_path};
+
+        simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
+        simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
+
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
+
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
+
+        lighthouse_simulation.push_back(simulation);
+    }
+
+    addTrackedObject(calibration_object_path.c_str());
+
+    TrackedObjectPtr calibration_object = trackedObjects.back();
+
+    calibration_object->pose.setOrigin(tf::Vector3(0,0,0));
+    tf::Quaternion q;
+    q.setRPY(0,0,0);
+    calibration_object->pose.setRotation(q);
+
+    ros::Duration d(2);
+    // wait a bit to be sure there is sensor data available
+    d.sleep();
+
+    if(ui.estimate_lighthouse_1->isChecked()){
+        calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].reset();
+        calibration_object->calibration[LIGHTHOUSE_A][HORIZONTAL].reset();
+        if(calibration_object->estimateFactoryCalibration2(LIGHTHOUSE_A)){
+            text["lighthouse_phase_horizontal_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][HORIZONTAL].phase));
+            text["lighthouse_phase_vertical_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].phase));
+            text["lighthouse_tilt_horizontal_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt));
+            text["lighthouse_tilt_vertical_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].tilt));
+            text["lighthouse_curve_horizontal_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][HORIZONTAL].curve));
+            text["lighthouse_curve_vertical_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].curve));
+            text["lighthouse_gibphase_horizontal_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase));
+            text["lighthouse_gibphase_vertical_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].gibphase));
+            text["lighthouse_gibmag_horizontal_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag));
+            text["lighthouse_gibmag_vertical_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].gibmag));
+        }
+    }
+
+    if(ui.estimate_lighthouse_2->isChecked()){
+        calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].reset();
+        calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].reset();
+        if(calibration_object->estimateFactoryCalibration2(LIGHTHOUSE_B)){
             text["lighthouse_phase_horizontal_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].phase));
             text["lighthouse_phase_vertical_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].phase));
             text["lighthouse_tilt_horizontal_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt));

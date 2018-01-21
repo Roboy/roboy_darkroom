@@ -30,6 +30,10 @@ find_package(gazebo REQUIRED)
 include_directories(${GAZEBO_INCLUDE_DIRS})
 link_directories(${GAZEBO_LIBRARY_DIRS})
 
+# alglib
+find_package(ALGLIB REQUIRED)
+include_directories(${ALGLIB_INCLUDE_DIRS})
+
 catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware common_utilities robot_localization xmlrpcpp
 		pcl_ros
 		INCLUDE_DIRS include
@@ -47,6 +51,9 @@ include_directories(
 
 add_library( PoseEstimatorSensorCloud src/PoseEstimatorSensorCloud.cpp )
 add_library( InYourGibbousPhase src/InYourGibbousPhase.cpp )
+
+add_executable(testMe src/testMe.cpp)
+target_link_libraries(testMe ${ALGLIB_LIBRARIES})
 
 add_library( Sensor src/Sensor.cpp )
 target_link_libraries( Sensor ${catkin_LIBRARIES} )
@@ -66,7 +73,8 @@ target_link_libraries( LighthouseSimulator ${catkin_LIBRARIES} Transform)
 
 add_library( LighthouseEstimator src/LighthouseEstimator.cpp )
 add_dependencies(LighthouseEstimator roboy_communication_middleware_gencpp )
-target_link_libraries( LighthouseEstimator ${catkin_LIBRARIES} PoseEstimatorSensorCloud Transform Triangulate InYourGibbousPhase)
+target_link_libraries( LighthouseEstimator ${catkin_LIBRARIES} PoseEstimatorSensorCloud Transform Triangulate
+		InYourGibbousPhase ${ALGLIB_LIBRARIES})
 
 add_library( TrackedObject src/TrackedObject.cpp )
 add_dependencies(TrackedObject roboy_communication_middleware_gencpp )

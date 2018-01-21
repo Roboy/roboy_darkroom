@@ -9,7 +9,7 @@ LighthouseSimulator::LighthouseSimulator(int id, vector<fs::path> &configFile) :
     }
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
     sensors_pub = nh->advertise<roboy_communication_middleware::DarkRoom>(
-            "/roboy/middleware/DarkRoom/sensors", 1);
+            "/roboy/middleware/DarkRoom/sensors", 100);
 
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
     spinner->start();
@@ -54,12 +54,6 @@ LighthouseSimulator::LighthouseSimulator(int id, vector<fs::path> &configFile) :
             sensor_visible[i].push_back(true);
         }
     }
-
-    sensor_publishing = true;
-    sensor_thread.reset(
-            new boost::thread(
-                    [this]() { PublishSensorData(); }
-            ));
 }
 
 LighthouseSimulator::~LighthouseSimulator() {
@@ -130,15 +124,15 @@ void LighthouseSimulator::PublishSensorData() {
                 double elevation = M_PI -  atan2(sensor_pos_motor_vertical(1), sensor_pos_motor_vertical(2));
                 double azimuth = atan2(sensor_pos_motor_horizontal[1], sensor_pos_motor_horizontal[0]);
 
-                ROS_INFO_STREAM_THROTTLE(1,"measured sensor pos: " << sensor_pos.transpose() << "\t elevation " << elevation << "\t azimuth " <<azimuth);
+                ROS_DEBUG_STREAM_THROTTLE(1,"measured sensor pos: " << sensor_pos.transpose() << "\t elevation " << elevation << "\t azimuth " <<azimuth);
 
                 // excentric parameters, assumed to be from y axis -> cos
-                elevation += calibration[id][motor].phase;
-                elevation += calibration[id][motor].curve*pow(sin(elevation)*cos(azimuth),2.0)
-                             + calibration[id][motor].gibmag*cos(elevation+calibration[id][motor].gibphase);
-                azimuth += calibration[id][motor].phase;
-                azimuth += calibration[id][motor].curve*pow(cos(elevation),2.0)
-                           + calibration[id][motor].gibmag*cos(azimuth+calibration[id][motor].gibphase);
+                double temp_elevation1 = calibration[id][VERTICAL].curve*pow(cos(azimuth)*sin(elevation),2.0);
+                double temp_elevation2 = calibration[id][VERTICAL].gibmag*cos(elevation+calibration[id][VERTICAL].gibphase);
+                double temp_azimuth1 = calibration[id][HORIZONTAL].curve*pow(-sin(azimuth)*cos(elevation),2.0);
+                double temp_azimuth2 = calibration[id][HORIZONTAL].gibmag*cos(azimuth+calibration[id][HORIZONTAL].gibphase);
+                elevation += calibration[id][VERTICAL].phase + temp_elevation1 + temp_elevation2;
+                azimuth += calibration[id][HORIZONTAL].phase + temp_azimuth1 + temp_azimuth2;
 
                 uint32_t sensor_value;
                 if (elevation >= 0 && elevation <= 180.0 && azimuth >= 0 &&

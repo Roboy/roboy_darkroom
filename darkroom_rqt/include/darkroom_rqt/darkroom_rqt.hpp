@@ -146,6 +146,12 @@ public Q_SLOTS:
      * Estimates the factory calibration values
      */
     void estimateFactoryCalibration();
+
+    /**
+     * Estimates the factory calibration values
+     */
+    void estimateFactoryCalibration2();
+
     /**
      * Resets all tracked objects calibration values
      */

@@ -14,8 +14,15 @@
 #include <atomic>
 #include <mutex>
 #include "darkroom/InYourGibbousPhase.hpp"
+#include "darkroom/InYourGibbousPhase2.hpp"
 #include <ros/package.h>
 #include "darkroom/Utilities.hpp"
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <optimization.h>
+
+using namespace alglib;
 
 namespace fs = boost::filesystem;
 
@@ -28,7 +35,10 @@ namespace fs = boost::filesystem;
 
 static vector<int> DEFAULT_VECTOR;
 
-class LighthouseEstimator : public DarkRoom::Transform, public rviz_visualization, public Triangulation, public Utilities {
+void function1_fvec(const real_1d_array &x, real_1d_array &fi, void *ptr);
+
+class LighthouseEstimator
+        : public DarkRoom::Transform, public rviz_visualization, public Triangulation, public Utilities {
 public:
     LighthouseEstimator();
 
@@ -98,6 +108,13 @@ public:
     bool estimateFactoryCalibration(int lighthouse);
 
     /**
+     * Estimates calibration values based on known sensor angles
+     * @param lighthouse for this lighthouse
+     * @return success
+     */
+    bool estimateFactoryCalibration2(int lighthouse);
+
+    /**
      * Returns a unique id for #MESSAGE_ID sensor and lighthouse
      * @param type the message type #MESSAGE_ID
      * @param sensor the sensor id
@@ -122,7 +139,7 @@ public:
 
     map<int, Sensor> sensors;
     vector<int> calibrated_sensors;
-    map<int,vector<double>> calibration_angles;
+    map<int, vector<double>> calibration_angles;
     int active_sensors = 0;
     atomic<bool> tracking, calibrating, poseestimating, objectposeestimating,
             distances, rays, particle_filtering, use_lighthouse_calibration_data_phase[2],
@@ -137,10 +154,15 @@ public:
     tf::Transform pose;
 private:
     void receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg);
+
     void applyCalibrationData(Vector2d &lighthouse0_angles, Vector2d &lighthouse1_angles);
+
     void applyCalibrationData(bool lighthouse, Vector2d &lighthouse_angles);
+
     void applyCalibrationData(bool lighthouse, double &elevation, double &azimuth);
+
     MatrixXd Pinv(MatrixXd A);
+
 private:
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;

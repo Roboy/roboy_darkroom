@@ -1375,7 +1375,7 @@
       <string>z</string>
      </property>
      <property name="checked">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
     </widget>
     <widget class="QCheckBox" name="random_pose_pitch">
@@ -2424,6 +2424,19 @@
        <bool>true</bool>
       </property>
      </widget>
+     <widget class="QPushButton" name="estimate_factory_calibration_values_2">
+      <property name="geometry">
+       <rect>
+        <x>450</x>
+        <y>70</y>
+        <width>99</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>estimate2</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QFrame" name="frame_8">
      <property name="geometry">
@@ -3247,7 +3260,7 @@
      <string>simulate</string>
     </property>
     <property name="checked">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
    </widget>
   </widget>

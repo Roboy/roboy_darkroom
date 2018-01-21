@@ -11,10 +11,14 @@ namespace InYourGibbousPhase {
         for(int i=0;i<numberOfSensors;i++){
             elevation = elevation_measured[i], azimuth = azimuth_measured[i];
 
-            elevation += x(phase_vertical);
-            elevation += x(curve_vertical)*pow(sin(elevation)*cos(azimuth),2.0) + x(gibmag_vertical)*cos(elevation+x(gibphase_vertical));
-            azimuth += x(phase_horizontal);
-            azimuth += x(curve_horizontal)*pow(cos(elevation),2.0) + x(gibmag_horizontal)*cos(azimuth+x(gibphase_horizontal));
+            elevation -= x(phase_vertical);
+            azimuth -= x(phase_horizontal);
+            double temp_elevation1 = x(curve_vertical)*pow(cos(azimuth)*sin(elevation),2.0);
+            double temp_elevation2 = x(gibmag_vertical)*cos(elevation+x(gibphase_vertical));
+            double temp_azimuth1 = x(curve_horizontal)*pow(-sin(azimuth)*cos(elevation),2.0);
+            double temp_azimuth2 = x(gibmag_horizontal)*cos(azimuth+x(gibphase_horizontal));
+            elevation -= (temp_elevation1+temp_elevation2);
+            azimuth -= (temp_azimuth1+temp_azimuth2);
 
             fvec(j) += (elevation-elevation_truth[i]);
             fvec(j+1) += (azimuth-azimuth_truth[i]);

@@ -1,5 +1,73 @@
 #include "darkroom/LighthouseEstimator.hpp"
 
+vector<vector<Vector3d>> relative_positions_trajectory;
+vector<vector<Vector2d>> angles_measured_trajectory;
+int numberOfSensors;
+vector<double> elevation_measured, azimuth_measured, elevation_truth, azimuth_truth;
+
+void function1_fvec(const real_1d_array &x, real_1d_array &fi, void *ptr) {
+    double elevation, azimuth;
+    for (int i = 0; i < relative_positions_trajectory.size(); i++) {
+        double error_elevation = 0, error_azimuth = 0;
+        for (int j = 0; j < angles_measured_trajectory[i].size(); j++) {
+            elevation = angles_measured_trajectory[i][j](0), azimuth = angles_measured_trajectory[i][j](1);
+            double elevation_truth = M_PI - atan2(2.0, relative_positions_trajectory[i][j](2) + x[i * 2 + 1]);
+            double azimuth_truth = atan2(2.0, relative_positions_trajectory[i][j](0) + x[i * 2]);
+
+            error_elevation += (elevation - elevation_truth);
+            error_azimuth += (azimuth - azimuth_truth);
+
+        }
+        fi[(i * 2)] = error_elevation;
+        fi[(i * 2) + 1] = error_azimuth;
+    }
+}
+
+void inYourGibbousPhase(const real_1d_array &x, real_1d_array &fi, void *ptr) {
+    double elevation, azimuth;
+    fi[0] = 0;
+    fi[1] = 0;
+    for(int i=0;i<numberOfSensors;i++){
+        elevation = elevation_measured[i], azimuth = azimuth_measured[i];
+        elevation += x[phase_vertical];
+        azimuth += x[phase_horizontal];
+        elevation += x[curve_vertical]*pow(cos(azimuth),2.0) + x[gibmag_vertical]*cos(elevation+x[gibphase_vertical]);
+        azimuth += x[curve_horizontal]*pow(cos(elevation),2.0) + x[gibmag_horizontal]*cos(azimuth+x[gibphase_horizontal]);
+
+        fi[0] += (elevation-elevation_truth[i]);
+        fi[1] += (azimuth-azimuth_truth[i]);
+//            cout << elevation << "\t" << azimuth << endl;
+    }
+}
+
+//void function1_fvec(const real_1d_array &x, double &fi, void *ptr) {
+//    double elevation, azimuth;
+//    fi = 0;
+//    for (int i = 0; i < relative_positions_trajectory.size(); i++) {
+//        double error_elevation = 0, error_azimuth = 0;
+//        for (int j = 0; j < angles_measured_trajectory[i].size(); j++) {
+//            elevation = angles_measured_trajectory[i][j](0), azimuth = angles_measured_trajectory[i][j](1);
+//            elevation += x[phase_vertical];
+//            azimuth += x[phase_horizontal];
+//
+//            elevation += x[curve_vertical] * pow(sin(elevation) * cos(azimuth), 2.0) +
+//                         x[gibmag_vertical] * cos(elevation + x[gibphase_vertical]);
+//
+//            azimuth += x[curve_horizontal] * pow(cos(elevation), 2.0) +
+//                       x[gibmag_horizontal] * cos(azimuth + x[gibphase_horizontal]);
+//
+//            double elevation_truth = M_PI - atan2(2.0, relative_positions_trajectory[i][j](2) + x[10 + i * 2 + 1]);
+//            double azimuth_truth = atan2(2.0, relative_positions_trajectory[i][j](0) + x[10 + i * 2]);
+//
+//            error_elevation += (elevation - elevation_truth);
+//            error_azimuth += (azimuth - azimuth_truth);
+//
+//        }
+//        fi += error_elevation;
+//        fi += error_azimuth;
+//    }
+//}
+
 LighthouseEstimator::LighthouseEstimator() {
     if (!ros::isInitialized()) {
         int argc = 0;
@@ -597,10 +665,10 @@ void LighthouseEstimator::triangulateSensors() {
                         Vector3d pos(0, 0, 0);
                         ray0 *= 5;
                         publishRay(pos, ray0, "lighthouse1", "rays_lighthouse_1", getMessageID(RAY, sensor.first, 0),
-                                   COLOR(0, 1, 0, 1.0), 0.05);
+                                   COLOR(0, 1, 0, 1.0), 1);
                         ray1 *= 5;
                         publishRay(pos, ray1, "lighthouse2", "rays_lighthouse_2", getMessageID(RAY, sensor.first, 1),
-                                   COLOR(0, 1, 0, 1.0), 0.05);
+                                   COLOR(0, 1, 0, 1.0), 1);
 
                     }
                 }
@@ -637,7 +705,7 @@ void LighthouseEstimator::publishRays() {
     high_resolution_clock::time_point timestamp_new[4];
     map<int, high_resolution_clock::time_point[4]> timestamps_old;
 
-    ros::Rate rate(30);
+    ros::Rate rate(60);
     bool lighthouse_active[2];
 
     while (rays) {
@@ -660,7 +728,7 @@ void LighthouseEstimator::publishRays() {
                     Vector3d pos(0, 0, 0);
                     ray *= 5;
                     publishRay(pos, ray, "lighthouse1", "rays_lighthouse_1", getMessageID(RAY, sensor.first, 0),
-                               COLOR(1, 0, 0, 0.5), 0.05);
+                               COLOR(1, 0, 0, 0.5),1);
                 }
                 if (lighthouse_active[LIGHTHOUSE_B]) {
                     Vector3d ray;
@@ -668,7 +736,7 @@ void LighthouseEstimator::publishRays() {
                     Vector3d pos(0, 0, 0);
                     ray *= 5;
                     publishRay(pos, ray, "lighthouse2", "rays_lighthouse_2", getMessageID(RAY, sensor.first, 0),
-                               COLOR(1, 0, 0, 0.5), 0.05);
+                               COLOR(1, 0, 0, 0.5),1);
                 }
             }
         }
@@ -805,7 +873,6 @@ void LighthouseEstimator::calibrateRelativeSensorDistances() {
 }
 
 bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
-    vector<double> elevation_measured, azimuth_measured, elevation_truth, azimuth_truth;
     stringstream str;
     // get the transform from object to lighthouse
     Matrix4d RT_object2lighthouse;
@@ -826,28 +893,32 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
     while (active_sensors.size() < 20) {
         getVisibleCalibratedSensors(lighthouse, active_sensors);
         if (active_sensors.size() < 20 && (ros::Duration(ros::Time::now() - t0).toSec() > 5)) {
-            ROS_ERROR("no active sensors, giving up");
+            ROS_ERROR("not enough active sensors, giving up");
             return false;
         }
     }
     ROS_INFO("%ld active sensors", active_sensors.size());
 
+    elevation_measured.clear();
+    azimuth_measured.clear();
+    elevation_truth.clear();
+    azimuth_truth.clear();
     for (auto &active_sensor:active_sensors) {
         // calculate the ground truth
         Vector4d rel_pos;
         sensors[active_sensor].getRelativeLocation(rel_pos);
         // transform into lighthouse frame
         Vector4d pos_in_lighthouse_frame = RT_object2lighthouse * rel_pos;
-
-        double distance = sqrt(pow(pos_in_lighthouse_frame[0], 2.0) + pow(pos_in_lighthouse_frame[1], 2.0) +
-                               pow(pos_in_lighthouse_frame[2], 2.0));
+        Vector4d sensor_pos_motor_vertical, sensor_pos_motor_horizontal;
+        sensor_pos_motor_vertical = pos_in_lighthouse_frame - Vector4d(-AXIS_OFFSET,0,0,0);
+        sensor_pos_motor_horizontal = pos_in_lighthouse_frame - Vector4d(0,0,-AXIS_OFFSET,0);
 
         str << active_sensor << " sensor position in ligthhouse frame: " << pos_in_lighthouse_frame[0] << " "
             << pos_in_lighthouse_frame[1] << " " << pos_in_lighthouse_frame[2] << endl;
 
         // calculate ground truth ligthhouse angles
-        double elevation = M_PI - atan2(pos_in_lighthouse_frame[1], pos_in_lighthouse_frame[2]);
-        double azimuth = atan2(pos_in_lighthouse_frame[1], pos_in_lighthouse_frame[0]);
+        double elevation = M_PI - atan2(sensor_pos_motor_vertical[1], sensor_pos_motor_vertical[2]);
+        double azimuth = atan2(sensor_pos_motor_horizontal[1], sensor_pos_motor_horizontal[0]);
         vector<double> a = {elevation, azimuth};
         elevation_truth.push_back(elevation);
         azimuth_truth.push_back(azimuth);
@@ -857,11 +928,11 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
         elevation_measured.push_back(elevation);
         azimuth_measured.push_back(azimuth);
 
-        str << "\t" << elevation_truth.back() << "\t"
-            << elevation_measured.back() << "\t"
-            << "\t" << azimuth_truth.back() << "\t" << azimuth_measured.back() << endl;
+        str << "\t true " << elevation_truth.back() << "\t" << azimuth_truth.back() << endl
+            << "\t measured " << elevation_measured.back() << "\t" << azimuth_measured.back() << endl;
     }
     ROS_INFO_STREAM(str.str());
+    numberOfSensors = elevation_measured.size();
 
     InYourGibbousPhase::InYourGibbousPhase estimator(elevation_measured.size());
     estimator.elevation_measured = elevation_measured;
@@ -873,61 +944,255 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
     Eigen::LevenbergMarquardt<Eigen::NumericalDiff<InYourGibbousPhase::InYourGibbousPhase>, double> *lm;
     numDiff1 = new NumericalDiff<InYourGibbousPhase::InYourGibbousPhase>(estimator);
     lm = new LevenbergMarquardt<NumericalDiff<InYourGibbousPhase::InYourGibbousPhase>, double>(*numDiff1);
-    lm->parameters.maxfev = 100000;
+    lm->parameters.maxfev = 1000;
     lm->parameters.xtol = 1e-10;
-    VectorXd calibrationValues(10);
-    calibrationValues << 0.0000001, 0, 0, 0, 0, 0, 0, 0, 0, 0;
-    int ret = lm->minimize(calibrationValues);
+    VectorXd x(10);
+    x << 0.0000001, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+    int ret = lm->minimize(x);
+    double error = lm->fnorm;
 
-    ROS_INFO_STREAM("calibration value estimation for lighthouse " << lighthouse + 1 << " terminated with error "
-                                                                   << lm->fnorm << endl
+//    real_1d_array x;
+//    x.setlength(10);
+//    for(int i=0;i<10;i++)
+//        x[i] = 0;
+//    double epsg = 0.0000000001, epsx = 0.0000000001, epsf = 0.0000000001;
+//    ae_int_t maxits = 0;
+//    minlmstate state;
+//    minlmreport rep;
+//
+//    minlmcreatev(10, 2, x, 0.000001, state);
+//    minlmsetcond(state, epsg, epsf, epsx, maxits);
+//    alglib::minlmoptimize(state, inYourGibbousPhase);
+//    minlmresults(state, x, rep);
+//    double error = 0;
+//    for(int i=0; i<elevation_measured.size(); i++){
+//        error += pow(elevation_measured[i]-elevation_truth[i],2.0);
+//        error += pow(azimuth_measured[i]-azimuth_truth[i],2.0);
+//    }
+//    error = sqrt(error)/elevation_measured.size(); // mse
+
+    ROS_INFO_STREAM("calibration value estimation for lighthouse " << lighthouse + 1 << " terminated with error " << error
                                                                    << endl
                                                                    << "phase horizontal    "
-                                                                   << calibrationValues(phase_horizontal)
+                                                                   << x[phase_horizontal]
                                                                    << endl
                                                                    << "phase vertical      "
-                                                                   << calibrationValues(phase_vertical)
+                                                                   << x[phase_vertical]
                                                                    << endl
                                                                    << "tilt horizontal     "
-                                                                   << calibrationValues(tilt_horizontal)
+                                                                   << x[tilt_horizontal]
                                                                    << endl
                                                                    << "tilt vertical       "
-                                                                   << calibrationValues(tilt_vertical)
+                                                                   << x[tilt_vertical]
                                                                    << endl
                                                                    << "curve horizontal    "
-                                                                   << calibrationValues(curve_horizontal)
+                                                                   << x[curve_horizontal]
                                                                    << endl
                                                                    << "curve vertical      "
-                                                                   << calibrationValues(curve_vertical)
+                                                                   << x[curve_vertical]
                                                                    << endl
                                                                    << "gibphase horizontal "
-                                                                   << calibrationValues(gibphase_horizontal)
+                                                                   << x[gibphase_horizontal]
                                                                    << endl
                                                                    << "gibphase vertical   "
-                                                                   << calibrationValues(gibphase_vertical)
+                                                                   << x[gibphase_vertical]
                                                                    << endl
                                                                    << "gibmag horizontal   "
-                                                                   << calibrationValues(gibmag_horizontal)
+                                                                   << x[gibmag_horizontal]
                                                                    << endl
                                                                    << "gibmag vertical     "
-                                                                   << calibrationValues(gibmag_vertical)
+                                                                   << x[gibmag_vertical]
                                                                    << endl);
 
-    calibration[lighthouse][VERTICAL].phase = calibrationValues(phase_vertical);
-    calibration[lighthouse][HORIZONTAL].phase = calibrationValues(phase_horizontal);
-    calibration[lighthouse][VERTICAL].tilt = calibrationValues(tilt_vertical);
-    calibration[lighthouse][HORIZONTAL].tilt = calibrationValues(tilt_horizontal);
-    calibration[lighthouse][VERTICAL].curve = calibrationValues(curve_vertical);
-    calibration[lighthouse][HORIZONTAL].curve = calibrationValues(curve_horizontal);
-    calibration[lighthouse][VERTICAL].gibphase = calibrationValues(gibphase_vertical);
-    calibration[lighthouse][HORIZONTAL].gibphase = calibrationValues(gibphase_horizontal);
-    calibration[lighthouse][VERTICAL].gibmag = calibrationValues(gibmag_vertical);
-    calibration[lighthouse][HORIZONTAL].gibmag = calibrationValues(gibmag_horizontal);
+    calibration[lighthouse][VERTICAL].phase = x[phase_vertical];
+    calibration[lighthouse][HORIZONTAL].phase = x[phase_horizontal];
+    calibration[lighthouse][VERTICAL].tilt = x[tilt_vertical];
+    calibration[lighthouse][HORIZONTAL].tilt = x[tilt_horizontal];
+    calibration[lighthouse][VERTICAL].curve = x[curve_vertical];
+    calibration[lighthouse][HORIZONTAL].curve = x[curve_horizontal];
+    calibration[lighthouse][VERTICAL].gibphase = x[gibphase_vertical];
+    calibration[lighthouse][HORIZONTAL].gibphase = x[gibphase_horizontal];
+    calibration[lighthouse][VERTICAL].gibmag = x[gibmag_vertical];
+    calibration[lighthouse][HORIZONTAL].gibmag = x[gibmag_horizontal];
 
     string package_path = ros::package::getPath("darkroom");
     string calibration_result_path = package_path + "/params/lighthouse_calibration.yaml";
 
     return writeCalibrationConfig(calibration_result_path, lighthouse, calibration[lighthouse]);
+}
+
+bool LighthouseEstimator::estimateFactoryCalibration2(int lighthouse) {
+    stringstream str;
+    // get the transform from object to lighthouse
+    Matrix4d RT_object2lighthouse;
+    ros::Time t0 = ros::Time::now();
+    ros::Rate rate(1);
+    int trajectory_points = 0;
+    relative_positions_trajectory.clear();
+    angles_measured_trajectory.clear();
+    vector<Vector3d> absolute_position;
+    double measurement_time = 5;
+    if(nh->hasParam("measurement_time"))
+        nh->getParam("measurement_time",measurement_time);
+    while ((ros::Duration(ros::Time::now() - t0).toSec() < measurement_time) ) {
+        // lets see who is active
+        vector<int> active_sensors;
+        vector<Vector2d> angles_measured;
+        vector<Vector3d> relPositions;
+        getVisibleCalibratedSensors(lighthouse, active_sensors);
+        Matrix4d RT_object2world;
+        getTransform(name.c_str(), "world", RT_object2world);
+        for (auto &active_sensor:active_sensors) {
+            double elevation, azimuth;
+            // get the measured angles
+            Vector2d angles;
+            sensors[active_sensor].get(lighthouse, angles);
+            angles_measured.push_back(angles);
+            Vector4d rel_pos;
+            sensors[active_sensor].getRelativeLocation(rel_pos);
+            relPositions.push_back(Vector3d(rel_pos(0),rel_pos(1),rel_pos(2)));
+        }
+        if(!active_sensors.empty()) {
+            relative_positions_trajectory.push_back(relPositions);
+            angles_measured_trajectory.push_back(angles_measured);
+            absolute_position.push_back(RT_object2world.block(0,3,3,1));
+            trajectory_points++;
+
+            rate.sleep();
+        }
+    }
+
+    stringstream s;
+    for(int i=0;i<trajectory_points;i++){
+        s << "trajectory point " << i << endl;
+        for(int j=0;j<relative_positions_trajectory[i].size();j++){
+            s << angles_measured_trajectory[i][j].transpose() << "\t\t" <<  relative_positions_trajectory[i][j].transpose() << endl;
+        }
+    }
+
+    ROS_INFO_STREAM(s.str());
+
+    real_1d_array x;
+    x.setlength(trajectory_points*2);
+    double epsg = 0.0000000001, epsx = 0.0000000001, epsf = 0.0000000001;
+    ae_int_t maxits = 0;
+    minlmstate state;
+    minlmreport rep;
+
+    minlmcreatev(trajectory_points*2, x, 0.0001, state);
+    minlmsetcond(state, epsg, epsf, epsx, maxits);
+    alglib::minlmoptimize(state, function1_fvec);
+    minlmresults(state, x, rep);
+
+
+//    real_1d_array x;
+//    x.setlength(10+trajectory_points);
+//    real_1d_array bndl;
+//    bndl.setlength(10+trajectory_points);
+//    for(int i=0;i<10+trajectory_points;i++)
+//        bndl[i] = -1;
+//    real_1d_array bndu;
+//    bndu.setlength(10+trajectory_points);
+//    for(int i=0;i<10+trajectory_points;i++)
+//        bndu[i] = 1;
+//    minbleicstate state;
+//    minbleicreport rep;
+//    double epsg = 0.000001;
+//    double epsf = 0;
+//    double epsx = 0;
+//    ae_int_t maxits = 0;
+//    double diffstep = 1.0e-6;
+//    minbleiccreatef(x, diffstep, state);
+//    minbleicsetbc(state, bndl, bndu);
+//    minbleicsetcond(state, epsg, epsf, epsx, maxits);
+//    alglib::minbleicoptimize(state, function1_fvec);
+//    minbleicresults(state, x, rep);
+
+    switch(rep.terminationtype){
+        case -7 : ROS_WARN("derivative correctness check failed"); break;
+        case -3 : ROS_WARN("constraints are inconsistent"); break;
+        case 1:  ROS_WARN("relative function improvement is no more than EpsF."); break;
+        case 2:  ROS_WARN("relative step is no more than EpsX."); break;
+        case 4: ROS_WARN("gradient is no more than EpsG."); break;
+        case 5: ROS_WARN("MaxIts steps was taken "); break;
+        case 7: ROS_WARN("stopping conditions are too stringent, further improvement is impossible"); break;
+        case 8: ROS_WARN("terminated by user who called minlmrequesttermination().") ;break;
+    }
+
+    s.clear();
+    double error = 0;
+    Eigen::IOFormat fmt(4, 0, " ", "", "", "", "[", "]");
+//    VectorXd calib(10);
+//    calib << x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9];
+//    s << "estimated calibration values " << calib.format(fmt) << endl;
+    for(int i=0;i<trajectory_points;i++){
+        Vector3d pos(x[(i*2)],0,x[(i*2)+1]);
+        publishSphere(pos,"world","estimated_trajectory", i+9133534, COLOR(1.0,0.5,0.5,1));
+        publishSphere(absolute_position[i],"world","true_trajectory", i+92933239, COLOR(0,0.5,0.5,1));
+        s << "estimate: " << pos.format(fmt) << "  true: " << absolute_position[i].format(fmt) << endl;
+        error+=(absolute_position[i]-pos).norm();
+    }
+    ROS_INFO_STREAM(s.str());
+    ROS_INFO("done with error %lf after %d iterations", error, (int)rep.iterationscount);
+//
+//    ROS_INFO_STREAM("calibration value estimation for lighthouse " << lighthouse + 1 << " terminated with error "
+//                                                                   << lm->fnorm << " after " << lm->iter << " iterations "
+//                                                                   << endl
+//                                                                   << "phase horizontal    "
+//                                                                   << calibrationValues(phase_horizontal)
+//                                                                   << endl
+//                                                                   << "phase vertical      "
+//                                                                   << calibrationValues(phase_vertical)
+//                                                                   << endl
+//                                                                   << "tilt horizontal     "
+//                                                                   << calibrationValues(tilt_horizontal)
+//                                                                   << endl
+//                                                                   << "tilt vertical       "
+//                                                                   << calibrationValues(tilt_vertical)
+//                                                                   << endl
+//                                                                   << "curve horizontal    "
+//                                                                   << calibrationValues(curve_horizontal)
+//                                                                   << endl
+//                                                                   << "curve vertical      "
+//                                                                   << calibrationValues(curve_vertical)
+//                                                                   << endl
+//                                                                   << "gibphase horizontal "
+//                                                                   << calibrationValues(gibphase_horizontal)
+//                                                                   << endl
+//                                                                   << "gibphase vertical   "
+//                                                                   << calibrationValues(gibphase_vertical)
+//                                                                   << endl
+//                                                                   << "gibmag horizontal   "
+//                                                                   << calibrationValues(gibmag_horizontal)
+//                                                                   << endl
+//                                                                   << "gibmag vertical     "
+//                                                                   << calibrationValues(gibmag_vertical)
+//                                                                   << endl
+//                            << "trajectory     " << endl
+//                            << calibrationValues.transpose()
+//                            << endl
+//    );
+//
+//    for(int i=0;i<trajectory_points;i++){
+//        Vector3d pos(calibrationValues(10+(i*2)),0,calibrationValues(10+(i*2)+1));
+//        publishSphere(pos,"world","estimated_trajectory", i+92933239, COLOR(0,0.5,0.5,1));
+//    }
+//
+//    calibration[lighthouse][VERTICAL].phase = calibrationValues(phase_vertical);
+//    calibration[lighthouse][HORIZONTAL].phase = calibrationValues(phase_horizontal);
+//    calibration[lighthouse][VERTICAL].tilt = calibrationValues(tilt_vertical);
+//    calibration[lighthouse][HORIZONTAL].tilt = calibrationValues(tilt_horizontal);
+//    calibration[lighthouse][VERTICAL].curve = calibrationValues(curve_vertical);
+//    calibration[lighthouse][HORIZONTAL].curve = calibrationValues(curve_horizontal);
+//    calibration[lighthouse][VERTICAL].gibphase = calibrationValues(gibphase_vertical);
+//    calibration[lighthouse][HORIZONTAL].gibphase = calibrationValues(gibphase_horizontal);
+//    calibration[lighthouse][VERTICAL].gibmag = calibrationValues(gibmag_vertical);
+//    calibration[lighthouse][HORIZONTAL].gibmag = calibrationValues(gibmag_horizontal);
+//
+//    string package_path = ros::package::getPath("darkroom");
+//    string calibration_result_path = package_path + "/params/lighthouse_calibration.yaml";
+//
+//    return writeCalibrationConfig(calibration_result_path, lighthouse, calibration[lighthouse]);
 }
 
 int LighthouseEstimator::getMessageID(int type, int sensor, bool lighthouse) {
@@ -984,22 +1249,19 @@ void LighthouseEstimator::applyCalibrationData(Vector2d &lighthouse0_angles, Vec
 
 void LighthouseEstimator::applyCalibrationData(bool lighthouse, Vector2d &lighthouse_angles) {
     lighthouse_angles(0) += calibration[lighthouse][VERTICAL].phase;
-    lighthouse_angles(0) += calibration[lighthouse][VERTICAL].curve*pow(sin(lighthouse_angles(0))*cos(lighthouse_angles(1)),2.0)
-                 + calibration[lighthouse][VERTICAL].gibmag*cos(lighthouse_angles(0)+calibration[lighthouse][VERTICAL].gibphase);
     lighthouse_angles(1) += calibration[lighthouse][HORIZONTAL].phase;
-    lighthouse_angles(1) += calibration[lighthouse][HORIZONTAL].curve*pow(cos(lighthouse_angles(0)),2.0)
+    lighthouse_angles(0) += calibration[lighthouse][VERTICAL].curve*pow(cos(lighthouse_angles(1))*sin(lighthouse_angles(0)),2.0)
+                 + calibration[lighthouse][VERTICAL].gibmag*cos(lighthouse_angles(0)+calibration[lighthouse][VERTICAL].gibphase);
+    lighthouse_angles(1) += calibration[lighthouse][HORIZONTAL].curve*pow(-sin(lighthouse_angles(1))*cos(lighthouse_angles(0)),2.0)
                + calibration[lighthouse][HORIZONTAL].gibmag*cos(lighthouse_angles(1)+calibration[lighthouse][HORIZONTAL].gibphase);
 }
 
 void LighthouseEstimator::applyCalibrationData(bool lighthouse, double &elevation, double &azimuth) {
-//    double norm = sqrt(pow(cos(azimuth) * sin(elevation),2.0)
-//                         + pow(sin(azimuth) * sin(elevation),2.0)
-//                         + pow(sin(azimuth) * cos(elevation),2.0));
     elevation += calibration[lighthouse][VERTICAL].phase;
-    elevation += calibration[lighthouse][VERTICAL].curve*pow(sin(elevation)*cos(azimuth),2.0)
-                 + calibration[lighthouse][VERTICAL].gibmag*cos(elevation+calibration[lighthouse][VERTICAL].gibphase);
     azimuth += calibration[lighthouse][HORIZONTAL].phase;
-    azimuth += calibration[lighthouse][HORIZONTAL].curve*pow(cos(elevation),2.0)
+    elevation += calibration[lighthouse][VERTICAL].curve*pow(cos(azimuth)*sin(elevation),2.0)
+                 + calibration[lighthouse][VERTICAL].gibmag*cos(elevation+calibration[lighthouse][VERTICAL].gibphase);
+    azimuth += calibration[lighthouse][HORIZONTAL].curve*pow(-sin(azimuth)*cos(elevation),2.0)
                + calibration[lighthouse][HORIZONTAL].gibmag*cos(azimuth+calibration[lighthouse][HORIZONTAL].gibphase);
 }
 

@@ -11,6 +11,10 @@ find_package(PkgConfig REQUIRED )
 pkg_check_modules(EIGEN3 REQUIRED eigen3)
 include_directories(${EIGEN3_INCLUDE_DIRS})
 
+# alglib
+find_package(ALGLIB REQUIRED)
+include_directories(${ALGLIB_INCLUDE_DIRS})
+
 include_directories( include qcustomplot)
 
 ## System dependencies are found with CMake's conventions
