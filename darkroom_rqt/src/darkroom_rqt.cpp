@@ -87,7 +87,6 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     button["show_rays"] = widget_->findChild<QPushButton *>("show_rays");
     button["show_distances"] = widget_->findChild<QPushButton *>("show_distances");
     button["pose_correction_least_squares"] = widget_->findChild<QPushButton *>("pose_correction_least_squares");
-    button["pose_correction_particle_filter"] = widget_->findChild<QPushButton *>("pose_correction_particle_filter");
     button["position_estimation_relativ_sensor_distances"] = widget_->findChild<QPushButton *>(
             "position_estimation_relativ_sensor_distances");
     button["pose_estimation_relativ_sensor_distances"] = widget_->findChild<QPushButton *>(
@@ -1158,18 +1157,6 @@ void RoboyDarkRoom::estimateFactoryCalibration(){
         simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
         simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
         simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
-
-        simulation.first->sensor_publishing = true;
-        simulation.first->sensor_thread.reset(
-                new boost::thread(
-                        [simulation]() {simulation.first->PublishSensorData(); }
-                ));
-
-        simulation.second->sensor_publishing = true;
-        simulation.second->sensor_thread.reset(
-                new boost::thread(
-                        [simulation]() {simulation.second->PublishSensorData(); }
-                ));
 
         lighthouse_simulation.push_back(simulation);
     }

@@ -54,6 +54,8 @@ LighthouseSimulator::LighthouseSimulator(int id, vector<fs::path> &configFile) :
             sensor_visible[i].push_back(true);
         }
     }
+    sensor_publishing = true;
+    sensor_thread.reset( new boost::thread( [this]() {this->PublishSensorData(); } ));
 }
 
 LighthouseSimulator::~LighthouseSimulator() {

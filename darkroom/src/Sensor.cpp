@@ -82,8 +82,8 @@ bool Sensor::isActive(bool lighthouse){
     microseconds time_span[2] = {duration_cast<microseconds>(t1-m_angleUpdateTime_cur[lighthouse][HORIZONTAL]),
                                  duration_cast<microseconds>(t1-m_angleUpdateTime_cur[lighthouse][VERTICAL])};
 //    return true;
-    return (time_span[HORIZONTAL].count() > 0 && time_span[HORIZONTAL].count() < 100000 &&
-            time_span[VERTICAL].count() > 0 && time_span[VERTICAL].count() < 100000 );
+    return (time_span[HORIZONTAL].count() > 0 && time_span[HORIZONTAL].count() < 50000 &&
+            time_span[VERTICAL].count() > 0 && time_span[VERTICAL].count() < 50000 );
 }
 
 bool Sensor::hasNewData(high_resolution_clock::time_point *timestamp){
