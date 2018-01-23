@@ -1,6 +1,6 @@
 #include "darkroom/TrackedObject.hpp"
 
-int TrackedObject::trackeObjectInstance = 0;
+int LighthouseEstimator::trackedObjectInstance = 0;
 bool TrackedObject::m_switch = false;
 
 TrackedObject::TrackedObject() {
@@ -36,7 +36,7 @@ TrackedObject::TrackedObject() {
     ROS_DEBUG_STREAM("loading yaml file using this command: " << load_yaml_command);
     system(load_yaml_command.c_str());
 
-    trackeObjectInstance++;
+    trackedObjectInstance++;
 }
 
 TrackedObject::~TrackedObject() {

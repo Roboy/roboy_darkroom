@@ -59,8 +59,6 @@ public:
      * @return success (if writing to the file is possible)
      */
     bool record(bool start);
-
-    static int trackeObjectInstance; //! a unique object instance (helps with unique rviz marker ids)
 private:
 
     /**

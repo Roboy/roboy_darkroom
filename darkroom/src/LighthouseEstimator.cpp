@@ -536,7 +536,8 @@ bool LighthouseEstimator::estimateObjectPoseUsingRelativeDistances() {
             publishTF(tf, (LIGHTHOUSE_A ? "lighthouse2" : "lighthouse1"), "object_lighthouse_1");
         }
     }else{
-        ROS_ERROR("we need at least four sensors for to be visble for lighthouse 1 for this to work, aborting");
+        ROS_ERROR("we need at least four sensors for to be visble for lighthouse 1 for this to work, "
+                          "but there are only %ld sensors visible aborting", visible_sensors[LIGHTHOUSE_A].size());
         return false;
     }
 
@@ -576,7 +577,8 @@ bool LighthouseEstimator::estimateObjectPoseUsingRelativeDistances() {
             publishTF(tf, (LIGHTHOUSE_B ? "lighthouse2" : "lighthouse1"), "object_lighthouse_2");
         }
     }else{
-        ROS_ERROR("we need at least four sensors for to be visble for lighthouse 2 for this to work, aborting");
+        ROS_ERROR("we need at least four sensors for to be visble for lighthouse 2 for this to work, "
+                          "but there are only %ld sensors visible aborting", visible_sensors[LIGHTHOUSE_B].size());
         return false;
     }
 
@@ -1220,7 +1222,7 @@ int LighthouseEstimator::getMessageID(int type, int sensor, bool lighthouse) {
 //    DISTANCES = 4
     int n_sensors = sensors.size(), per_lighthouse = n_sensors * NUMBER_OF_LIGHTHOUSES * lighthouse;
 
-
+    sensor += trackedObjectInstance*6667;
     switch (type) {
         case TRIANGULATED:
             return sensor;
