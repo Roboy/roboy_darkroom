@@ -205,8 +205,8 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
         vector<int> visible_sensors;
         getVisibleCalibratedSensors(visible_sensors);
 
-        if (visible_sensors.size() < 3) {
-            ROS_INFO_THROTTLE(1, "object pose estimation aborted because only %ld sensors are visible",
+        if (visible_sensors.size() < 4) {
+            ROS_INFO_THROTTLE(1, "object pose estimation aborted because only %ld sensors are visible (need minimum 4)",
                               visible_sensors.size());
             continue;
         }
@@ -257,7 +257,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
                           "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
                           visible_sensors.size(), lm->iter, lm->fnorm);
 
-        if (lm->fnorm > 0.5) {
+        if (lm->fnorm > 0.1) {
             object_pose << 0, 0, 0, 0, 0, 0.1;
         } else {
             getRTmatrix(RT_correct, object_pose);
