@@ -600,7 +600,7 @@ bool LighthouseEstimator::estimateObjectPoseUsingRelativeDistances() {
 }
 
 void LighthouseEstimator::estimateObjectPoseEPNP(){
-    ros::Rate rate(1);
+    ros::Rate rate(30);
     while(poseestimating_epnp) {
         vector<int> visible_sensors[2];
         getVisibleCalibratedSensors(LIGHTHOUSE_A, visible_sensors[LIGHTHOUSE_A]);
@@ -646,12 +646,9 @@ void LighthouseEstimator::estimateObjectPoseEPNP(){
             RT_object2lighthouse_est.block(0,0,3,1) = -1.0* RT_object2lighthouse_est_backup.block(0,1,3,1);
             RT_object2lighthouse_est.block(0,2,3,1) = RT_object2lighthouse_est_backup.block(0,0,3,1);
             RT_object2lighthouse_est.block(0,1,3,1) = -1.0 * RT_object2lighthouse_est_backup.block(0,2,3,1);
-
-//            RT_object2lighthouse_est = transform_1*RT_object2lighthouse_est;
-//            RT_object2lighthouse_est = transform_2*RT_object2lighthouse_est;
-//
-//            Map<Matrix3d>(&R_est[0][0], 3, 3) = RT_object2lighthouse_est.block(0,0,3,3);
-//            Map<Vector3d>(&t_est[0], 3, 1) = RT_object2lighthouse_est.block(0,3,3,1);
+            RT_object2lighthouse_est.block(0,3,3,1) << RT_object2lighthouse_est_backup(0,3),
+                    RT_object2lighthouse_est_backup(2,3),
+                    -RT_object2lighthouse_est_backup(1,3);
 //
             Map<Matrix3d>(&R_true[0][0], 3, 3) = RT_object2lighthouse_true.block(0,0,3,3);
             Map<Vector3d>(&t_true[0], 3, 1) = RT_object2lighthouse_true.block(0,3,3,1);
@@ -659,8 +656,13 @@ void LighthouseEstimator::estimateObjectPoseEPNP(){
 
             Eigen::IOFormat fmt(4, 0, " ", ";\n", "", "", "[", "]");
 
-            cout << RT_object2lighthouse_true.format(fmt) << endl;
-            cout << RT_object2lighthouse_est.format(fmt) << endl;
+//            cout << RT_object2lighthouse_true.format(fmt) << endl;
+            ROS_INFO_STREAM_THROTTLE(5,RT_object2lighthouse_est.format(fmt));
+
+            tf::Transform tf;
+            getTFtransform(RT_object2lighthouse_est, tf);
+            string tf_name = name + "_epnp";
+            publishTF(tf, "lighthouse1", tf_name.c_str());
 
 //            PnP.relative_error(rot_err, transl_err, R_true, t_true, R_est, t_est);
 //            cout << ">>> Reprojection error: " << err2 << endl;
