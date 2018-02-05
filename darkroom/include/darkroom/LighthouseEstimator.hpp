@@ -56,6 +56,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <optimization.h>
+#include <epnp/epnp.h>
 
 using namespace alglib;
 
@@ -125,6 +126,10 @@ public:
     void triangulateSensors();
 
     /**
+     * Estimates relative object pose using epnp
+     */
+    void estimateObjectPoseEPNP();
+    /**
      * Publishes the lighthouse rays
      */
     void publishRays();
@@ -176,7 +181,7 @@ public:
     vector<int> calibrated_sensors;
     map<int, vector<double>> calibration_angles;
     int active_sensors = 0;
-    atomic<bool> tracking, calibrating, poseestimating, objectposeestimating,
+    atomic<bool> tracking, calibrating, poseestimating, poseestimating_epnp, objectposeestimating,
             distances, rays, particle_filtering, use_lighthouse_calibration_data_phase[2],
             use_lighthouse_calibration_data_tilt[2], use_lighthouse_calibration_data_gibphase[2],
             use_lighthouse_calibration_data_gibmag[2];

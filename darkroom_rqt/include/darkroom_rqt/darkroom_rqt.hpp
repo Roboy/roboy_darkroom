@@ -147,6 +147,10 @@ public Q_SLOTS:
      */
     void startEstimateObjectPoseUsingRelativeDistances();
     /**
+     * Toggles relative pose estimation epnp thread
+     */
+    void startEstimateObjectPoseEPNP();
+    /**
      * Toggles least squares pose estimation thread
      */
     void startObjectPoseEstimationLeastSquares();

@@ -20,6 +20,7 @@
     <depend>xmlrpcpp</depend>
     <depend>gazebo</depend>
     <depend>pcl_ros</depend>
+    <depend>epnp</depend>
 
     <export>
         <rviz plugin="${prefix}/darkroom.xml"/>

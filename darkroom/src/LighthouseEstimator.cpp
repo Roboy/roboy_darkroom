@@ -599,6 +599,90 @@ bool LighthouseEstimator::estimateObjectPoseUsingRelativeDistances() {
     lighthouse_pose_correction.publish(msg);
 }
 
+void LighthouseEstimator::estimateObjectPoseEPNP(){
+    ros::Rate rate(1);
+    while(poseestimating_epnp) {
+        vector<int> visible_sensors[2];
+        getVisibleCalibratedSensors(LIGHTHOUSE_A, visible_sensors[LIGHTHOUSE_A]);
+        Matrix4d RT_object2lighthouse_true;
+
+        if (visible_sensors[LIGHTHOUSE_A].size() >= 4) {
+            epnp PnP;
+            PnP.set_internal_parameters(0, 0, 1, 1);
+            PnP.set_maximum_number_of_correspondences(visible_sensors[LIGHTHOUSE_A].size());
+            PnP.reset_correspondences();
+            for(int sensor:visible_sensors[LIGHTHOUSE_A]) {
+                Vector3d rel_pos;
+                sensors[sensor].getRelativeLocation(rel_pos);
+                Vector2d angles;
+                sensors[sensor].get(LIGHTHOUSE_A,angles);
+                PnP.add_correspondence(rel_pos[2], rel_pos[1], rel_pos[0], tan(M_PI_2-angles[HORIZONTAL]), tan(M_PI_2-angles[VERTICAL]));
+            }
+
+            double R_est[3][3], t_est[3], R_true[3][3], t_true[3];
+            double err2 = PnP.compute_pose(R_est, t_est);
+            double rot_err, transl_err;
+
+            // this is the true pose (only available when simulating of course)
+            getTransform(name.c_str(), "lighthouse1", RT_object2lighthouse_true);
+
+            Matrix4d RT_object2lighthouse_true_trans, transform_1, transform_2;
+            transform_1.setIdentity();
+            transform_1.block(0,0,3,3) << 1, 0, 0,
+                                        0, 0, 1,
+                                        0, -1, 0;
+            transform_2.setIdentity();
+            transform_2.block(0,0,3,3) <<  1, 0, 0,
+                                           0, -1, 0,
+                                            0,0,-1;
+//            RT_object2lighthouse_true_trans = transform_1*RT_object2lighthouse_true;
+
+            Matrix4d RT_object2lighthouse_est, RT_object2lighthouse_est_backup;
+
+            RT_object2lighthouse_est.setIdentity();
+            RT_object2lighthouse_est.block(0,0,3,3) = Map<Matrix3d>(&R_est[0][0], 3, 3);
+            RT_object2lighthouse_est.block(0,3,3,1) = Map<Vector3d>(&t_est[0], 3, 1);
+            RT_object2lighthouse_est_backup = RT_object2lighthouse_est;
+            RT_object2lighthouse_est.block(0,0,3,1) = -1.0* RT_object2lighthouse_est_backup.block(0,1,3,1);
+            RT_object2lighthouse_est.block(0,2,3,1) = RT_object2lighthouse_est_backup.block(0,0,3,1);
+            RT_object2lighthouse_est.block(0,1,3,1) = -1.0 * RT_object2lighthouse_est_backup.block(0,2,3,1);
+
+//            RT_object2lighthouse_est = transform_1*RT_object2lighthouse_est;
+//            RT_object2lighthouse_est = transform_2*RT_object2lighthouse_est;
+//
+//            Map<Matrix3d>(&R_est[0][0], 3, 3) = RT_object2lighthouse_est.block(0,0,3,3);
+//            Map<Vector3d>(&t_est[0], 3, 1) = RT_object2lighthouse_est.block(0,3,3,1);
+//
+            Map<Matrix3d>(&R_true[0][0], 3, 3) = RT_object2lighthouse_true.block(0,0,3,3);
+            Map<Vector3d>(&t_true[0], 3, 1) = RT_object2lighthouse_true.block(0,3,3,1);
+
+
+            Eigen::IOFormat fmt(4, 0, " ", ";\n", "", "", "[", "]");
+
+            cout << RT_object2lighthouse_true.format(fmt) << endl;
+            cout << RT_object2lighthouse_est.format(fmt) << endl;
+
+//            PnP.relative_error(rot_err, transl_err, R_true, t_true, R_est, t_est);
+//            cout << ">>> Reprojection error: " << err2 << endl;
+//            cout << ">>> rot_err: " << rot_err << ", transl_err: " << transl_err << endl;
+//            cout << endl;
+//            cout << "'True reprojection error':"
+//                 << PnP.reprojection_error(R_true, t_true) << endl;
+//            cout << endl;
+//            cout << "True pose:" << endl;
+//            PnP.print_pose(R_true, t_true);
+//            cout << endl;
+//            cout << "Found pose:" << endl;
+//            PnP.print_pose(R_est, t_est);
+        } else {
+            ROS_ERROR("we need at least four sensors for to be visible for lighthouse 1 for this to work, "
+                              "but there are only %ld sensors visible aborting", visible_sensors[LIGHTHOUSE_A].size());
+            continue;
+        }
+        rate.sleep();
+    }
+}
+
 void LighthouseEstimator::triangulateSensors() {
     high_resolution_clock::time_point timestamp_new[4];
     map<int, high_resolution_clock::time_point[4]> timestamps_old;

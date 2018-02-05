@@ -1,3 +1,6 @@
 [submodule "roboy_de10_nano_soc"]
 	path = roboy_de10_nano_soc
 	url = https://github.com/Roboy/roboy_de10_nano_soc
+[submodule "epnp"]
+	path = epnp
+	url = https://github.com/artivis/epnp

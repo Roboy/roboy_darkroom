@@ -10,7 +10,7 @@ SET(CMAKE_BUILD_TYPE Debug)
 # Dependencies
 #==============================================================================
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation tf tf_conversions visualization_msgs
-		roboy_communication_middleware common_utilities robot_localization xmlrpcpp pcl_ros )
+		roboy_communication_middleware common_utilities robot_localization xmlrpcpp pcl_ros epnp)
 
 # Eigen
 find_package(PkgConfig REQUIRED )
@@ -35,7 +35,7 @@ find_package(ALGLIB REQUIRED)
 include_directories(${ALGLIB_INCLUDE_DIRS})
 
 catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware common_utilities robot_localization xmlrpcpp
-		pcl_ros
+		pcl_ros epnp
 		INCLUDE_DIRS include
         LIBRARIES PoseEstimatorSensorCloud Transform Triangulate LighthouseEstimator LighthouseSimulator
         Sensor TrackedObject )

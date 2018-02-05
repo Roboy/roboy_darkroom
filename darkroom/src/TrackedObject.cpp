@@ -133,6 +133,7 @@ void TrackedObject::shutDown(){
     tracking = false;
     calibrating = false;
     poseestimating = false;
+    poseestimating_epnp = false;
     receiveData = false;
     publish_transform = false;
     rays = false;
@@ -164,6 +165,12 @@ void TrackedObject::shutDown(){
         if (poseestimation_thread->joinable()) {
             ROS_INFO("Waiting for pose estimation thread to terminate");
             poseestimation_thread->join();
+        }
+    }
+    if (relative_pose_epnp_thread != nullptr) {
+        if (relative_pose_epnp_thread->joinable()) {
+            ROS_INFO("Waiting for pose estimation epnp thread to terminate");
+            relative_pose_epnp_thread->join();
         }
     }
     if (publish_imu_transform != nullptr) {
