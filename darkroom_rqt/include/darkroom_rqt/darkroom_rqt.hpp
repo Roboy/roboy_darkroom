@@ -192,6 +192,11 @@ public Q_SLOTS:
     void estimateFactoryCalibration2();
 
     /**
+     * Estimates the factory calibration values using epnp
+     */
+    void estimateFactoryCalibrationEPNP();
+
+    /**
      * Resets all tracked objects calibration values
      */
     void resetFactoryCalibration();

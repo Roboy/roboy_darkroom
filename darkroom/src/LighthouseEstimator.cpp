@@ -707,8 +707,8 @@ void LighthouseEstimator::estimateObjectPoseEPNP(){
                 Map<Vector3d>(&t_true[0], 3, 1) = RT_object2lighthouse_true.block(0,3,3,1);
                 PnP.relative_error(rot_err, transl_err, R_true, t_true, R_est, t_est);
                 stringstream str;
-                str << ">>> Reprojection error: " << err2 << endl;
-                str << ">>> rot_err: " << rot_err << ", transl_err: " << transl_err << endl;
+                str << "Reprojection error: " << err2 << endl;
+                str << "rot_err: " << rot_err << ", transl_err: " << transl_err << endl;
                 str << endl;
                 str << "'True reprojection error':"
                     << PnP.reprojection_error(R_true, t_true) << endl;
@@ -1147,6 +1147,181 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
     return writeCalibrationConfig(calibration_result_path, lighthouse, calibration[lighthouse]);
 }
 
+bool LighthouseEstimator::estimateFactoryCalibrationEPNP(int lighthouse){
+    ros::Rate rate(30);
+    Eigen::IOFormat fmt(4, 0, " ", ";\n", "", "", "[", "]");
+    ros::Time t0 = ros::Time::now();
+    vector<double> elevations_measured, azimuths_measured, elevations_model, azimuths_model;
+    double error;
+    do{
+        vector<int> visible_sensors;
+        getVisibleCalibratedSensors(lighthouse, visible_sensors);
+        Matrix4d RT_object2lighthouse_true;
+
+        if (visible_sensors.size() >= 4) {
+            epnp PnP;
+            PnP.set_internal_parameters(0, 0, 1, 1);
+            PnP.set_maximum_number_of_correspondences(visible_sensors.size());
+            PnP.reset_correspondences();
+            for(int sensor:visible_sensors) {
+                Vector3d rel_pos;
+                sensors[sensor].getRelativeLocation(rel_pos);
+                Vector2d angles;
+                sensors[sensor].get(lighthouse,angles);
+                elevations_measured.push_back(angles[VERTICAL]);
+                azimuths_measured.push_back(angles[HORIZONTAL]);
+                applyCalibrationData(lighthouse,angles);
+                PnP.add_correspondence(rel_pos[2], rel_pos[1], rel_pos[0], tan(M_PI_2-angles[HORIZONTAL]), tan(M_PI_2-angles[VERTICAL]));
+            }
+
+            double R_est[3][3], t_est[3], R_true[3][3], t_true[3];
+            double err2 = PnP.compute_pose(R_est, t_est);
+
+            Matrix4d RT_object2lighthouse_est, RT_object2lighthouse_est_backup;
+
+            RT_object2lighthouse_est.setIdentity();
+            RT_object2lighthouse_est.block(0,0,3,3) = Map<Matrix3d>(&R_est[0][0], 3, 3);
+            RT_object2lighthouse_est.block(0,3,3,1) = Map<Vector3d>(&t_est[0], 3, 1);
+            RT_object2lighthouse_est_backup = RT_object2lighthouse_est;
+            RT_object2lighthouse_est.block(0,0,3,1) = -1.0* RT_object2lighthouse_est_backup.block(0,1,3,1);
+            RT_object2lighthouse_est.block(0,2,3,1) = RT_object2lighthouse_est_backup.block(0,0,3,1);
+            RT_object2lighthouse_est.block(0,1,3,1) = -1.0 * RT_object2lighthouse_est_backup.block(0,2,3,1);
+            RT_object2lighthouse_est.block(0,3,3,1) << RT_object2lighthouse_est_backup(0,3),
+                    RT_object2lighthouse_est_backup(2,3),
+                    -RT_object2lighthouse_est_backup(1,3);
+
+            ROS_INFO_STREAM_THROTTLE(5,RT_object2lighthouse_est.format(fmt) << endl << RT_object2lighthouse_true.format(fmt));
+
+            tf::Transform tf;
+            getTFtransform(RT_object2lighthouse_est, tf);
+            string tf_name = name + "_" + (lighthouse?"epnp2":"epnp1");
+            publishTF(tf, (lighthouse?"lighthouse2":"lighthouse1"), tf_name.c_str());
+
+            // this is the true pose (only available when simulating of course)
+            if(getTransform(name.c_str(), (lighthouse==LIGHTHOUSE_A?"lighthouse1":"lighthouse2"), RT_object2lighthouse_true)){
+                double rot_err, transl_err;
+                Map<Matrix3d>(&R_true[0][0], 3, 3) = RT_object2lighthouse_true.block(0,0,3,3);
+                Map<Vector3d>(&t_true[0], 3, 1) = RT_object2lighthouse_true.block(0,3,3,1);
+                PnP.relative_error(rot_err, transl_err, R_true, t_true, R_est, t_est);
+                stringstream str;
+                str << ">>> Reprojection error: " << err2 << endl;
+                str << ">>> rot_err: " << rot_err << ", transl_err: " << transl_err << endl;
+                str << endl;
+                str << "'True reprojection error':"
+                    << PnP.reprojection_error(R_true, t_true) << endl;
+                ROS_INFO_STREAM_THROTTLE(5,str.str());
+            }
+
+            // using the pose from epnp we calculate the new lighthouse angles
+            for(int sensor:visible_sensors) {
+                Vector4d sensor_pos, rel_pos;
+                sensors[sensor].getRelativeLocation(rel_pos);
+                sensor_pos = RT_object2lighthouse_est * rel_pos;
+
+                Vector4d sensor_pos_motor_vertical, sensor_pos_motor_horizontal;
+                sensor_pos_motor_vertical = sensor_pos - Vector4d(-AXIS_OFFSET, 0, 0, 0);
+                sensor_pos_motor_horizontal = sensor_pos - Vector4d(0, 0, -AXIS_OFFSET, 0);
+
+                double elevation = M_PI - atan2(sensor_pos_motor_vertical(1), sensor_pos_motor_vertical(2));
+                double azimuth = atan2(sensor_pos_motor_horizontal[1], sensor_pos_motor_horizontal[0]);
+
+                ROS_DEBUG_STREAM_THROTTLE(1, "measured sensor pos: " << sensor_pos.transpose() << "\t elevation "
+                                                                     << elevation << "\t azimuth " << azimuth);
+
+//                // apply our calibration model to get the lighthouse angles we expect
+//                double temp_elevation1 = calibration[lighthouse][VERTICAL].curve*pow(cos(azimuth)*sin(elevation),2.0);
+//                double temp_elevation2 = calibration[lighthouse][VERTICAL].gibmag*cos(elevation+calibration[lighthouse][VERTICAL].gibphase);
+//                double temp_azimuth1 = calibration[lighthouse][HORIZONTAL].curve*pow(-sin(azimuth)*cos(elevation),2.0);
+//                double temp_azimuth2 = calibration[lighthouse][HORIZONTAL].gibmag*cos(azimuth+calibration[lighthouse][HORIZONTAL].gibphase);
+//                elevation -= (calibration[lighthouse][VERTICAL].phase + temp_elevation1 + temp_elevation2);
+//                azimuth -= (calibration[lighthouse][HORIZONTAL].phase + temp_azimuth1 + temp_azimuth2);
+
+                elevations_model.push_back(elevation);
+                azimuths_model.push_back(azimuth);
+            }
+
+            InYourGibbousPhase3::InYourGibbousPhase3 estimator(elevations_model.size());
+            estimator.elevation_measured = elevations_measured;
+            estimator.azimuth_measured = azimuths_measured ;
+            estimator.elevation_model = elevations_model ;
+            estimator.azimuth_model = azimuths_model;
+
+            NumericalDiff<InYourGibbousPhase3::InYourGibbousPhase3> *numDiff1;
+            Eigen::LevenbergMarquardt<Eigen::NumericalDiff<InYourGibbousPhase3::InYourGibbousPhase3>, double> *lm;
+            numDiff1 = new NumericalDiff<InYourGibbousPhase3::InYourGibbousPhase3>(estimator);
+            lm = new LevenbergMarquardt<NumericalDiff<InYourGibbousPhase3::InYourGibbousPhase3>, double>(*numDiff1);
+            lm->parameters.maxfev = 1000;
+            lm->parameters.xtol = 1e-10;
+            VectorXd x(10);
+            x << calibration[lighthouse][HORIZONTAL].phase,
+                    calibration[lighthouse][VERTICAL].phase,
+                    calibration[lighthouse][HORIZONTAL].tilt,
+                    calibration[lighthouse][VERTICAL].tilt,
+                    calibration[lighthouse][HORIZONTAL].curve,
+                    calibration[lighthouse][VERTICAL].curve,
+                    calibration[lighthouse][HORIZONTAL].gibphase,
+                    calibration[lighthouse][VERTICAL].gibphase,
+                    calibration[lighthouse][HORIZONTAL].gibmag,
+                    calibration[lighthouse][VERTICAL].gibmag;
+            int ret = lm->minimize(x);
+            error = lm->fnorm;
+
+            ROS_INFO_STREAM(
+                    "calibration value estimation for lighthouse " << lighthouse + 1 << " terminated with error " << error
+                                                                   << endl
+                                                                   << "phase horizontal    "
+                                                                   << x[phase_horizontal]
+                                                                   << endl
+                                                                   << "phase vertical      "
+                                                                   << x[phase_vertical]
+                                                                   << endl
+                                                                   << "tilt horizontal     "
+                                                                   << x[tilt_horizontal]
+                                                                   << endl
+                                                                   << "tilt vertical       "
+                                                                   << x[tilt_vertical]
+                                                                   << endl
+                                                                   << "curve horizontal    "
+                                                                   << x[curve_horizontal]
+                                                                   << endl
+                                                                   << "curve vertical      "
+                                                                   << x[curve_vertical]
+                                                                   << endl
+                                                                   << "gibphase horizontal "
+                                                                   << x[gibphase_horizontal]
+                                                                   << endl
+                                                                   << "gibphase vertical   "
+                                                                   << x[gibphase_vertical]
+                                                                   << endl
+                                                                   << "gibmag horizontal   "
+                                                                   << x[gibmag_horizontal]
+                                                                   << endl
+                                                                   << "gibmag vertical     "
+                                                                   << x[gibmag_vertical]);
+
+            calibration[lighthouse][HORIZONTAL].phase = x[phase_horizontal];
+            calibration[lighthouse][VERTICAL].phase = x[phase_vertical];
+            calibration[lighthouse][HORIZONTAL].tilt = x[tilt_horizontal];
+            calibration[lighthouse][VERTICAL].tilt = x[tilt_vertical];
+            calibration[lighthouse][HORIZONTAL].curve = x[curve_horizontal];
+            calibration[lighthouse][VERTICAL].curve = x[curve_vertical];
+            calibration[lighthouse][HORIZONTAL].gibphase = x[gibphase_horizontal];
+            calibration[lighthouse][VERTICAL].gibphase = x[gibphase_vertical];
+            calibration[lighthouse][HORIZONTAL].gibmag = x[gibmag_horizontal];
+            calibration[lighthouse][VERTICAL].gibmag = x[gibmag_vertical];
+
+        } else {
+            ROS_ERROR_THROTTLE(5,"we need at least four sensors to be visible for this to work, "
+                    "but there are only %ld sensors visible aborting", visible_sensors.size());
+            error = 1;
+        }
+
+        rate.sleep();
+    }while(ros::Duration(ros::Time::now()-t0).toSec()<100 && error>0.00001);
+
+    ROS_INFO("calibration terminated with error %lf", error);
+}
+
 bool LighthouseEstimator::estimateFactoryCalibration2(int lighthouse) {
     stringstream str;
     // get the transform from object to lighthouse
@@ -1391,13 +1566,6 @@ void LighthouseEstimator::applyCalibrationData(Vector2d &lighthouse0_angles, Vec
 }
 
 void LighthouseEstimator::applyCalibrationData(bool lighthouse, Vector2d &lighthouse_angles) {
-//    int calib_type;
-//    nh->getParam("calib_type", calib_type);
-//    switch (calib_type) {
-//        case 0:
-//            // no calibration data
-//            break;
-//        case 1:
     lighthouse_angles(VERTICAL) += calibration[lighthouse][VERTICAL].phase;
     lighthouse_angles(HORIZONTAL) += calibration[lighthouse][HORIZONTAL].phase;
     lighthouse_angles(VERTICAL) += calibration[lighthouse][VERTICAL].curve *
@@ -1408,209 +1576,6 @@ void LighthouseEstimator::applyCalibrationData(bool lighthouse, Vector2d &lighth
                             pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
                             + calibration[lighthouse][HORIZONTAL].gibmag *
                               cos(lighthouse_angles(HORIZONTAL) + calibration[lighthouse][HORIZONTAL].gibphase);
-//            break;
-//        case 2:
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * cos(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_1_gibphase);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * cos(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_0_gibphase);
-//            break;
-//        case 3:
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * cos(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_0_gibphase);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * cos(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_1_gibphase);
-//            break;
-//        case 4:
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * cos(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_1_gibphase);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * cos(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_0_gibphase);
-//            break;
-//        case 5:
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_0_phase;
-//            break;
-//        case 6:
-//            lighthouse_angles(VERTICAL) -= ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(HORIZONTAL) -= ootx[lighthouse].fcal_0_phase;
-//            break;
-//        case 7:
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_1_phase;
-//            break;
-//        case 8:
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * cos(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_0_gibphase);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * cos(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_1_gibphase);
-//            break;
-//        case 9: // using sin
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * sin(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_0_gibphase);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * sin(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_1_gibphase);
-//            break;
-//        case 10: // using sin switching motors
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * sin(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_1_gibphase);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * sin(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_0_gibphase);
-//            break;
-//        case 11: // using negative phase
-//            lighthouse_angles(VERTICAL) -= ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(HORIZONTAL) -= ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * cos(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_1_gibphase);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * cos(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_0_gibphase);
-//            break;
-//        case 12: //using negative phase switching motors
-//            lighthouse_angles(VERTICAL) -= ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(HORIZONTAL) -= ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * cos(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_0_gibphase);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * cos(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_1_gibphase);
-//            break;
-//        case 13: // using negative phase using sin
-//            lighthouse_angles(VERTICAL) -= ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(HORIZONTAL) -= ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * sin(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_1_gibphase);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * sin(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_0_gibphase);
-//            break;
-//        case 14: //using negative phase switching motors using sin
-//            lighthouse_angles(VERTICAL) -= ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(HORIZONTAL) -= ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * sin(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_0_gibphase);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * sin(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_1_gibphase);
-//            break;
-//        case 15: // using sin motors switched normalized phase
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * sin(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_0_gibphase*M_PI);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * sin(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_1_gibphase*M_PI);
-//            break;
-//        case 16: // using sin normalized phase
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * sin(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_1_gibphase*M_PI);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * sin(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_0_gibphase*M_PI);
-//            break;
-//        case 17:
-//            lighthouse_angles(VERTICAL) -= ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(HORIZONTAL) -= ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(VERTICAL) -=
-//                    ootx[lighthouse].fcal_1_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    - ootx[lighthouse].fcal_1_gibmag * sin(lighthouse_angles(VERTICAL) - ootx[lighthouse].fcal_1_gibphase*M_PI);
-//            lighthouse_angles(HORIZONTAL) -=
-//                    ootx[lighthouse].fcal_0_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    - ootx[lighthouse].fcal_0_gibmag * sin(lighthouse_angles(HORIZONTAL) - ootx[lighthouse].fcal_0_gibphase*M_PI);
-//            break;
-//        case 18:
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(VERTICAL) -=
-//                    ootx[lighthouse].fcal_1_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    - ootx[lighthouse].fcal_1_gibmag * sin(lighthouse_angles(VERTICAL) - ootx[lighthouse].fcal_1_gibphase*M_PI);
-//            lighthouse_angles(HORIZONTAL) -=
-//                    ootx[lighthouse].fcal_0_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    - ootx[lighthouse].fcal_0_gibmag * sin(lighthouse_angles(HORIZONTAL) - ootx[lighthouse].fcal_0_gibphase*M_PI);
-//            break;
-//        case 19:
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 4.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * sin(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_1_gibphase*M_PI);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 4.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * sin(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_0_gibphase*M_PI);
-//            break;
-//        case 20:
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 4.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * sin(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_1_gibphase*M_PI);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 4.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * sin(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_0_gibphase*M_PI);
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_0_phase;
-//        case 21: // using sin motors switched normalized phase
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 4.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * sin(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_0_gibphase*M_PI);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 4.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * sin(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_1_gibphase*M_PI);
-//            break;
-//        case 22: // using sin motors switched normalized phase
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 6.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * sin(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_0_gibphase*M_PI);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 6.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * sin(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_1_gibphase*M_PI);
-//            break;
-//        case 23: // using sin motors switched normalized phase
-//            lighthouse_angles(VERTICAL) += ootx[lighthouse].fcal_0_phase;
-//            lighthouse_angles(HORIZONTAL) += ootx[lighthouse].fcal_1_phase;
-//            lighthouse_angles(VERTICAL) +=
-//                    ootx[lighthouse].fcal_0_curve * pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_0_gibmag * tan(lighthouse_angles(VERTICAL) + ootx[lighthouse].fcal_0_gibphase*M_PI);
-//            lighthouse_angles(HORIZONTAL) +=
-//                    ootx[lighthouse].fcal_1_curve * pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
-//                    + ootx[lighthouse].fcal_1_gibmag * tan(lighthouse_angles(HORIZONTAL) + ootx[lighthouse].fcal_1_gibphase*M_PI);
-//            break;
-//    }
 
 }
 

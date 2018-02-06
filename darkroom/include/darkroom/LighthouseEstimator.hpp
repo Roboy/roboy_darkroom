@@ -50,6 +50,7 @@
 #include <mutex>
 #include "darkroom/InYourGibbousPhase.hpp"
 #include "darkroom/InYourGibbousPhase2.hpp"
+#include "darkroom/InYourGibbousPhase3.hpp"
 #include <ros/package.h>
 #include "darkroom/Utilities.hpp"
 #include <stdlib.h>
@@ -146,6 +147,13 @@ public:
      * @return success
      */
     bool estimateFactoryCalibration(int lighthouse);
+
+    /**
+     * Estimates calibration values using epnp
+     * @param lighthouse for this lighthouse
+     * @return success
+     */
+    bool estimateFactoryCalibrationEPNP(int lighthouse);
 
     /**
      * Estimates calibration values based on known sensor angles
