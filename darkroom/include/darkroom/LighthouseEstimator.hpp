@@ -36,6 +36,7 @@
 #include "darkroom/Transform.hpp"
 #include "darkroom/Triangulation.hpp"
 #include "darkroom/PoseEstimatorSensorCloud.hpp"
+#include "darkroom/PoseEstimatorMultiLighthouse.hpp"
 #include "darkroom/Sensor.hpp"
 #include <common_utilities/rviz_visualization.hpp>
 #include <common_utilities/CommonDefinitions.h>
@@ -121,6 +122,10 @@ public:
     bool estimateObjectPoseUsingRelativeDistances();
 
     /**
+     * Estimates object pose using multi lighthouse approach
+     */
+    void estimateObjectPoseMultiLighthouse();
+    /**
      * Triangulates the sensor positions (the transform between lighthouse 1 and 2 needs to be known, otherwise the
      * triangulated position is not correct)
      */
@@ -189,7 +194,7 @@ public:
     vector<int> calibrated_sensors;
     map<int, vector<double>> calibration_angles;
     int active_sensors = 0;
-    atomic<bool> tracking, calibrating, poseestimating, poseestimating_epnp, objectposeestimating,
+    atomic<bool> tracking, calibrating, poseestimating, poseestimating_epnp, poseestimating_multiLighthouse, objectposeestimating,
             distances, rays, particle_filtering, use_lighthouse_calibration_data_phase[2],
             use_lighthouse_calibration_data_tilt[2], use_lighthouse_calibration_data_gibphase[2],
             use_lighthouse_calibration_data_gibmag[2];

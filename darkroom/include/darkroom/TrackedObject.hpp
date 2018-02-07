@@ -116,6 +116,7 @@ public:
             imu_thread = nullptr, objectposeestimation_thread = nullptr, poseestimation_thread = nullptr,
             particlefilter_thread = nullptr, distance_thread_1 = nullptr,
             distance_thread_2 = nullptr, relative_pose_thread = nullptr, relative_pose_epnp_thread = nullptr,
+            object_pose_estimation_multi_lighthouse_thread = nullptr,
             rays_thread = nullptr;
     std::atomic<bool> receiveData, recording, publish_transform;
     string path;

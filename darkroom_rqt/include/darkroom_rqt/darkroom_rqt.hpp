@@ -151,6 +151,10 @@ public Q_SLOTS:
      */
     void startEstimateObjectPoseEPNP();
     /**
+     * Toggles object pose estimation using multi lighthouse approach
+     */
+    void startEstimateObjectPoseMultiLighthouse();
+    /**
      * Toggles least squares pose estimation thread
      */
     void startObjectPoseEstimationLeastSquares();

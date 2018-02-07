@@ -92,6 +92,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     button["pose_estimation_relativ_sensor_distances"] = widget_->findChild<QPushButton *>(
             "pose_estimation_relativ_sensor_distances");
     button["pose_estimation_epnp"] = widget_->findChild<QPushButton *>(  "pose_estimation_epnp");
+    button["pose_estimation_multi_lighthouse"] = widget_->findChild<QPushButton *>(  "pose_estimation_multi_lighthouse");
     button["reset_lighthouse_poses"] = widget_->findChild<QPushButton *>("reset_lighthouse_poses");
     button["switch_lighthouses"] = widget_->findChild<QPushButton *>("switch_lighthouses");
     button["calibrate_relative_distances"] = widget_->findChild<QPushButton *>("calibrate_relative_distances");
@@ -178,6 +179,8 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
                     "a relative object pose");
     button["pose_estimation_epnp"]->setToolTip(
             "Estimates relative poses for each lighthouse using epnp");
+    button["pose_estimation_multi_lighthouse"]->setToolTip(
+            "Estimates global object pose using known lighthouse poses and relative sensor locations");
     button["reset_lighthouse_poses"]->setToolTip("reset the lighthouse poses\nto the slider values");
     button["switch_lighthouses"]->setToolTip("switch lighthouses");
     button["calibrate_relative_distances"]->setToolTip("calibrate the relative distances\nof an unknown object "
@@ -205,6 +208,8 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
                      SLOT(startEstimateObjectPoseUsingRelativeDistances()));
     QObject::connect(button["pose_estimation_epnp"], SIGNAL(clicked()), this,
                      SLOT(startEstimateObjectPoseEPNP()));
+    QObject::connect(button["pose_estimation_multi_lighthouse"], SIGNAL(clicked()), this,
+                     SLOT(startEstimateObjectPoseMultiLighthouse()));
     QObject::connect(button["reset_lighthouse_poses"], SIGNAL(clicked()), this, SLOT(resetLighthousePoses()));
     QObject::connect(button["calibrate_relative_distances"], SIGNAL(clicked()), this,
                      SLOT(startCalibrateRelativeSensorDistances()));
@@ -605,6 +610,20 @@ void RoboyDarkRoom::startEstimateObjectPoseEPNP() {
                     this->trackedObjects[i]->estimateObjectPoseEPNP();
                 }));
         trackedObjects[i]->relative_pose_epnp_thread->detach();
+    }
+}
+
+void RoboyDarkRoom::startEstimateObjectPoseMultiLighthouse() {
+    ROS_DEBUG("pose_estimation_multi_lighthouse clicked");
+    for (uint i = 0; i < trackedObjects.size(); i++) {
+        lock_guard<mutex>(trackedObjects[i]->mux);
+        ROS_INFO("starting multi lighthouse pose estimation thread");
+        trackedObjects[i]->poseestimating_multiLighthouse = true;
+        trackedObjects[i]->object_pose_estimation_multi_lighthouse_thread = boost::shared_ptr<boost::thread>(
+                new boost::thread([this, i]() {
+                    this->trackedObjects[i]->estimateObjectPoseMultiLighthouse();
+                }));
+        trackedObjects[i]->object_pose_estimation_multi_lighthouse_thread->detach();
     }
 }
 
