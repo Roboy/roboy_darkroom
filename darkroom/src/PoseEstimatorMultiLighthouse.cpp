@@ -23,6 +23,7 @@ namespace PoseEstimatorMultiLighthouse {
         VectorXd rt = VectorXd(12);
         rt << RT(0,0), RT(1,0), RT(2,0), RT(0,1), RT(1,1), RT(2,1), RT(0,2), RT(1,2), RT(2,2), RT(0,3), RT(1,3), RT(2,3);
 
+
         MatrixXd CD;
         VectorXd b;
         CD.resize(numberOfSensors*2,12);
@@ -30,23 +31,16 @@ namespace PoseEstimatorMultiLighthouse {
 
         for(int i=0; i<numberOfSensors;i++) {
             double u = tan(M_PI_2-azimuths[i]), v = tan(elevations[i]-M_PI_2);
-            Vector4d C = (lighthousePose.block(1,0,1,4)*u-lighthousePose.block(0,0,1,4)).transpose();
-            Vector4d D = (lighthousePose.block(1,0,1,4)*v-lighthousePose.block(2,0,1,4)).transpose();
+            Vector4d C = (lighthousePose[lighthouse_id[i]].block(1,0,1,4)*u-lighthousePose[lighthouse_id[i]].block(0,0,1,4)).transpose();
+            Vector4d D = (lighthousePose[lighthouse_id[i]].block(1,0,1,4)*v-lighthousePose[lighthouse_id[i]].block(2,0,1,4)).transpose();
             double X = rel_pos[i](0), Y = rel_pos[i](1), Z = rel_pos[i](2);
-            CD.block(i*2,0,2,12) << C(0)*X, C(1)*X, C(2)*X, C(0)*Y, C(1)*Y, C(2)*Y, C(0)*Z, C(1)*Z, C(2)*Z, C(0), C(1), C(2),
-                                    D(0)*X, D(1)*X, D(2)*X, D(0)*Y, D(1)*Y, D(2)*Y, D(0)*Z, D(1)*Z, D(2)*Z, D(0), D(1), D(2);
-            b(i*2) = C(3);
-            b(i*2+1) = D(3);
+            CD.block(i*2,0,1,12)   << C(0)*X, C(1)*X, C(2)*X, C(0)*Y, C(1)*Y, C(2)*Y, C(0)*Z, C(1)*Z, C(2)*Z, C(0), C(1), C(2);
+            CD.block(i*2+1,0,1,12) << D(0)*X, D(1)*X, D(2)*X, D(0)*Y, D(1)*Y, D(2)*Y, D(0)*Z, D(1)*Z, D(2)*Z, D(0), D(1), D(2);
+            b(i*2) = -C(3);
+            b(i*2+1) = -D(3);
         }
 
         fvec = CD*rt - b;
-
-        // cout << "RT\n" << RT << endl;
-        // cout << "position3D frame A\n" <<  pos3D_A << endl;
-        // cout << "position3D frame B\n" <<  pos3D_B << endl;
-        // cout << "new position3D frame A\n" <<  new_position3d << endl;
-        // cout << "error : " << difference.squaredNorm() <<endl;
-        // cout << "x : " << x <<endl;
         return 0;
     }
 

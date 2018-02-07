@@ -88,9 +88,10 @@ namespace PoseEstimatorMultiLighthouse {
         int operator()(const VectorXd &x, VectorXd &fvec) const;
 
         VectorXd pose;
-        Matrix4d lighthousePose;
+        vector<Matrix4d> lighthousePose;
         vector<double> elevations, azimuths;
         vector<Vector3d> rel_pos;
         int numberOfSensors = 4;
+        vector<int> lighthouse_id;
     };
 }

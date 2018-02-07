@@ -724,50 +724,73 @@ void LighthouseEstimator::estimateObjectPoseEPNP(){
 }
 
 void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
-    ros::Rate rate(10);
+    ros::Rate rate(60);
+    Eigen::IOFormat fmt(4, 0, " ", ";\n", "", "", "[", "]");
     while(poseestimating_multiLighthouse) {
         vector<int> visible_sensors[2];
         getVisibleCalibratedSensors(LIGHTHOUSE_A, visible_sensors[LIGHTHOUSE_A]);
-        VectorXd pose(6);
-        Matrix4d RT_object[2];
-        if (visible_sensors[LIGHTHOUSE_A].size() >= 6) {
-            vector<Vector3d> rel_positions;
-            vector<double> elevations, azimuths;
-            for (auto sensor:visible_sensors[LIGHTHOUSE_A]) {
-                Vector3d rel_pos;
-                sensors[sensor].get(LIGHTHOUSE_A, elevations, azimuths);
-                sensors[sensor].getRelativeLocation(rel_pos);
-                rel_positions.push_back(rel_pos);
-            }
+        getVisibleCalibratedSensors(LIGHTHOUSE_B, visible_sensors[LIGHTHOUSE_B]);
 
-            PoseEstimatorMultiLighthouse::PoseEstimator estimator(visible_sensors[LIGHTHOUSE_A].size());
-            getTransform(LIGHTHOUSE_A, "world", estimator.lighthousePose);
-            estimator.rel_pos = rel_positions;
-            estimator.azimuths = azimuths;
-            estimator.elevations = elevations;
-
-            pose << 0,0,0,0,0,0.0001;
-
-            NumericalDiff<PoseEstimatorMultiLighthouse::PoseEstimator> *numDiff;
-            Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorMultiLighthouse::PoseEstimator>, double> *lm;
-            numDiff = new NumericalDiff<PoseEstimatorMultiLighthouse::PoseEstimator>(estimator);
-            lm = new LevenbergMarquardt<NumericalDiff<PoseEstimatorMultiLighthouse::PoseEstimator>, double>(*numDiff);
-            lm->parameters.maxfev = MAX_ITERATIONS;
-            lm->parameters.xtol = 1e-10;
-            int ret = lm->minimize(pose);
-            ROS_INFO_THROTTLE(1,
-                              "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
-                              visible_sensors[LIGHTHOUSE_A].size(), lm->iter, lm->fnorm);
-
-            getRTmatrix(RT_object[LIGHTHOUSE_A], pose);
-
-            tf::Transform tf;
-            getTFtransform(RT_object[LIGHTHOUSE_A], tf);
-            publishTF(tf, "world", "object_multi_lighthouse");
-        } else {
-            ROS_ERROR_THROTTLE(1,"we need at least six sensors for this to work, "
-                              "but there are only %ld sensors visible aborting", visible_sensors[LIGHTHOUSE_A].size());
+        if (visible_sensors[LIGHTHOUSE_A].size() + visible_sensors[LIGHTHOUSE_B].size() < 6) {
+            ROS_ERROR_THROTTLE(1,"we need at least six visible sensors for this to work, "
+                              "but there are only %ld sensors visible aborting",
+                               visible_sensors[LIGHTHOUSE_A].size()+visible_sensors[LIGHTHOUSE_B].size());
+            continue;
         }
+
+        VectorXd pose(6);
+
+        vector<Vector3d> rel_positions;
+        vector<double> elevations, azimuths;
+        vector<int> lighthouse_id;
+        for (auto sensor:visible_sensors[LIGHTHOUSE_A]) {
+            Vector3d rel_pos;
+            sensors[sensor].get(LIGHTHOUSE_A, elevations, azimuths);
+            sensors[sensor].getRelativeLocation(rel_pos);
+            rel_positions.push_back(rel_pos);
+            lighthouse_id.push_back(LIGHTHOUSE_A);
+        }
+        for (auto sensor:visible_sensors[LIGHTHOUSE_B]) {
+            Vector3d rel_pos;
+            sensors[sensor].get(LIGHTHOUSE_B, elevations, azimuths);
+            sensors[sensor].getRelativeLocation(rel_pos);
+            rel_positions.push_back(rel_pos);
+            lighthouse_id.push_back(LIGHTHOUSE_B);
+        }
+
+        PoseEstimatorMultiLighthouse::PoseEstimator estimator(visible_sensors[LIGHTHOUSE_A].size()+visible_sensors[LIGHTHOUSE_B].size());
+        Matrix4d lighthousePose;
+        getTransform("world", LIGHTHOUSE_A, lighthousePose);
+        estimator.lighthousePose.push_back(lighthousePose);
+        getTransform("world", LIGHTHOUSE_B, lighthousePose);
+        estimator.lighthousePose.push_back(lighthousePose);
+        estimator.rel_pos = rel_positions;
+        estimator.azimuths = azimuths;
+        estimator.elevations = elevations;
+        estimator.lighthouse_id = lighthouse_id;
+
+        ROS_INFO_STREAM_THROTTLE(1, estimator.lighthousePose[LIGHTHOUSE_A].format(fmt) << endl << estimator.lighthousePose[LIGHTHOUSE_B].format(fmt) );
+
+        pose << 0,0,0,0,0,0.0001;
+
+        NumericalDiff<PoseEstimatorMultiLighthouse::PoseEstimator> *numDiff;
+        Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorMultiLighthouse::PoseEstimator>, double> *lm;
+        numDiff = new NumericalDiff<PoseEstimatorMultiLighthouse::PoseEstimator>(estimator);
+        lm = new LevenbergMarquardt<NumericalDiff<PoseEstimatorMultiLighthouse::PoseEstimator>, double>(*numDiff);
+        lm->parameters.maxfev = MAX_ITERATIONS;
+        lm->parameters.xtol = 1e-10;
+        int ret = lm->minimize(pose);
+        ROS_INFO_THROTTLE(1,
+                          "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
+                          visible_sensors[LIGHTHOUSE_A].size()+visible_sensors[LIGHTHOUSE_B].size(), lm->iter, lm->fnorm);
+
+        Matrix4d RT_object;
+        getRTmatrix(RT_object, pose);
+
+        tf::Transform tf;
+        getTFtransform(RT_object, tf);
+        publishTF(tf, "world", "object_multi_lighthouse");
+
         rate.sleep();
     }
 }
