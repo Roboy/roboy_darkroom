@@ -91,6 +91,7 @@ namespace InYourGibbousPhase3 {
 
         vector<double> elevation_measured, elevation_model;
         vector<double> azimuth_measured, azimuth_model;
+        vector<Vector4d> rel_pos;
         int numberOfSensors = 4;
         bool lighthouse;
         enum {phase_horizontal , phase_vertical, tilt_horizontal, tilt_vertical, curve_horizontal, curve_vertical,

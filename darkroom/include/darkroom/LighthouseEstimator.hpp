@@ -161,6 +161,13 @@ public:
     bool estimateFactoryCalibrationEPNP(int lighthouse);
 
     /**
+     * Estimates calibration values using multi lighthouse pose estimator
+     * @param lighthouse for this lighthouse
+     * @return success
+     */
+    bool estimateFactoryCalibrationMultiLighthouse(int lighthouse);
+
+    /**
      * Estimates calibration values based on known sensor angles
      * @param lighthouse for this lighthouse
      * @return success

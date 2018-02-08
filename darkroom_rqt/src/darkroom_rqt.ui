@@ -44,7 +44,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>4</number>
    </property>
    <widget class="QWidget" name="tab">
     <attribute name="title">
@@ -2483,6 +2483,19 @@
       </property>
       <property name="text">
        <string>estimate epnp</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="estimate_factory_calibration_values_multi">
+      <property name="geometry">
+       <rect>
+        <x>450</x>
+        <y>100</y>
+        <width>99</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>estimate multi</string>
       </property>
      </widget>
     </widget>

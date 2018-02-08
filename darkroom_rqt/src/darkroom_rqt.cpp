@@ -108,6 +108,8 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
             "estimate_factory_calibration_values_2");
     button["estimate_factory_calibration_values_epnp"] = widget_->findChild<QPushButton *>(
             "estimate_factory_calibration_values_epnp");
+    button["estimate_factory_calibration_values_multi"] = widget_->findChild<QPushButton *>(
+            "estimate_factory_calibration_values_multi");
     button["reset_factory_calibration_values"] = widget_->findChild<QPushButton *>(
             "reset_factory_calibration_values");
     button["reset_pose"] = widget_->findChild<QPushButton *>("reset_pose");
@@ -241,6 +243,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(button["estimate_factory_calibration_values"], SIGNAL(clicked()), this, SLOT(estimateFactoryCalibration()));
     QObject::connect(button["estimate_factory_calibration_values_2"], SIGNAL(clicked()), this, SLOT(estimateFactoryCalibration2()));
     QObject::connect(button["estimate_factory_calibration_values_epnp"], SIGNAL(clicked()), this, SLOT(estimateFactoryCalibrationEPNP()));
+    QObject::connect(button["estimate_factory_calibration_values_multi"], SIGNAL(clicked()), this, SLOT(estimateFactoryCalibrationMulti()));
     QObject::connect(button["reset_factory_calibration_values"], SIGNAL(clicked()), this, SLOT(resetFactoryCalibration()));
     QObject::connect(button["reset_pose"], SIGNAL(clicked()), this, SLOT(resetPose()));
 
@@ -1433,6 +1436,97 @@ void RoboyDarkRoom::estimateFactoryCalibrationEPNP(){
         calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].reset();
         calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].reset();
         if(calibration_object->estimateFactoryCalibrationEPNP(LIGHTHOUSE_B)){
+            text["lighthouse_phase_horizontal_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].phase));
+            text["lighthouse_phase_vertical_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].phase));
+            text["lighthouse_tilt_horizontal_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt));
+            text["lighthouse_tilt_vertical_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].tilt));
+            text["lighthouse_curve_horizontal_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].curve));
+            text["lighthouse_curve_vertical_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].curve));
+            text["lighthouse_gibphase_horizontal_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase));
+            text["lighthouse_gibphase_vertical_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].gibphase));
+            text["lighthouse_gibmag_horizontal_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag));
+            text["lighthouse_gibmag_vertical_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].gibmag));
+        }
+    }
+
+}
+
+void RoboyDarkRoom::estimateFactoryCalibrationMulti(){
+    ROS_DEBUG("estimate_factory_calibration_multi clicked");
+    string package_path = ros::package::getPath("darkroom");
+    string calibration_object_path = package_path + "/calibrated_objects/sphereTracker18cm.yaml";
+    if (!fileExists(calibration_object_path.c_str())) {
+        ROS_ERROR("could not load calibration object, check the path %s", calibration_object_path.c_str());
+        return;
+    }
+
+    if (ui.simulate->isChecked()) {
+        pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+
+        vector<fs::path> parts = {calibration_object_path};
+
+        simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
+        simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
+
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
+        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
+
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
+        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
+
+        lighthouse_simulation.push_back(simulation);
+    }
+
+    addTrackedObject(calibration_object_path.c_str());
+
+    TrackedObjectPtr calibration_object = trackedObjects.back();
+
+    calibration_object->pose.setOrigin(tf::Vector3(0,0,0));
+    tf::Quaternion q;
+    q.setRPY(0,0,0);
+    calibration_object->pose.setRotation(q);
+
+    ros::Duration d(2);
+    // wait a bit to be sure there is sensor data available
+    d.sleep();
+
+    if(ui.estimate_lighthouse_1->isChecked()){
+        calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].reset();
+        calibration_object->calibration[LIGHTHOUSE_A][HORIZONTAL].reset();
+        if(calibration_object->estimateFactoryCalibrationMultiLighthouse(LIGHTHOUSE_A)){
+            text["lighthouse_phase_horizontal_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][HORIZONTAL].phase));
+            text["lighthouse_phase_vertical_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].phase));
+            text["lighthouse_tilt_horizontal_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt));
+            text["lighthouse_tilt_vertical_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].tilt));
+            text["lighthouse_curve_horizontal_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][HORIZONTAL].curve));
+            text["lighthouse_curve_vertical_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].curve));
+            text["lighthouse_gibphase_horizontal_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase));
+            text["lighthouse_gibphase_vertical_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].gibphase));
+            text["lighthouse_gibmag_horizontal_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag));
+            text["lighthouse_gibmag_vertical_1"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].gibmag));
+        }
+    }
+
+    if(ui.estimate_lighthouse_2->isChecked()){
+        calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].reset();
+        calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].reset();
+        if(calibration_object->estimateFactoryCalibrationMultiLighthouse(LIGHTHOUSE_B)){
             text["lighthouse_phase_horizontal_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].phase));
             text["lighthouse_phase_vertical_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][VERTICAL].phase));
             text["lighthouse_tilt_horizontal_2"]->setText(QString::number(calibration_object->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt));

@@ -201,6 +201,11 @@ public Q_SLOTS:
     void estimateFactoryCalibrationEPNP();
 
     /**
+     * Estimates the factory calibration values using multi lighthouse pose estimation
+     */
+    void estimateFactoryCalibrationMulti();
+
+    /**
      * Resets all tracked objects calibration values
      */
     void resetFactoryCalibration();
