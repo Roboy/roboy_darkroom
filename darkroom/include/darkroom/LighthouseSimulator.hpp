@@ -73,6 +73,10 @@ public:
      */
     LighthouseSimulator(int id, vector<fs::path> &configFile);
     ~LighthouseSimulator();
+    void startSensorPublisher();
+    void startIMUPublisher();
+    bool record(bool start);
+private:
     /**
      * Publishes simulated lighthouse data
      */
@@ -106,11 +110,7 @@ public:
     bool rayIntersectsTriangle(Vector3d &origin, Vector3d &ray,
                                Vector4d &v0, Vector4d &v1, Vector4d &v2,
                                double &u, double &v, double &t);
-    boost::shared_ptr<boost::thread> sensor_thread = nullptr, imu_thread = nullptr;
-    atomic<bool> sensor_publishing, imu_publishing;
-    mutex mux;
-    int id;
-private:
+
     ros::NodeHandlePtr nh;
     ros::Publisher sensors_pub;
     ros::Subscriber aruco_pose_sub;
@@ -129,6 +129,11 @@ private:
     vector<mesh> meshes;
     vector<map<int, Vector4d>> sensor_position;
     vector<vector<bool>> sensor_visible;
+    map<int,ofstream> file;
+    boost::shared_ptr<boost::thread> sensor_thread = nullptr, imu_thread = nullptr;
+    atomic<bool> sensor_publishing, imu_publishing, recording;
+    mutex mux;
+    int id;
 };
 
 typedef boost::shared_ptr<LighthouseSimulator> LighthouseSimulatorPtr;

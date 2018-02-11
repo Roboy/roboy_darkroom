@@ -75,24 +75,21 @@ namespace InYourGibbousPhase3 {
     };
 
     struct InYourGibbousPhase3 : Functor<double> {
-        /**
-         * Default amount of sensors needed for Eigen templated structure
-         * @param numberOfSensors you can however choose any number of sensors here
-         */
-        InYourGibbousPhase3(int numberOfSensors = 4);
+
+        InYourGibbousPhase3(int numberOfSamples = 4);
 
         /**
          * This is the function that is called in each iteration
          * @param x contains the calibration values [phase0 phase1 tilt0 tilt1 curve0 curve1 gibphase0 gibphase1 gibmag0 gibmag1]
-         * @param fvec the error function (the difference between the sensor positions)
+         * @param fvec the error function
          * @return
          */
         int operator()(const VectorXd &x, VectorXd &fvec) const;
 
-        vector<double> elevation_measured, elevation_model;
-        vector<double> azimuth_measured, azimuth_model;
-        vector<Vector4d> rel_pos;
-        int numberOfSensors = 4;
+        vector<vector<double>> elevation_measured, elevation_model;
+        vector<vector<double>> azimuth_measured, azimuth_model;
+        vector<vector<Vector4d>> rel_pos;
+        int numberOfSamples = 4;
         bool lighthouse;
         enum {phase_horizontal , phase_vertical, tilt_horizontal, tilt_vertical, curve_horizontal, curve_vertical,
             gibphase_horizontal, gibphase_vertical, gibmag_horizontal, gibmag_vertical};

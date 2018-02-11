@@ -121,6 +121,7 @@ public:
     std::atomic<bool> receiveData, recording, publish_transform;
     string path;
     string objectID;
+    mutex mux;
 private:
     ros::NodeHandlePtr nh;
     ros::Publisher darkroom_statistics_pub;

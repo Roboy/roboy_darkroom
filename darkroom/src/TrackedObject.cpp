@@ -16,7 +16,7 @@ TrackedObject::TrackedObject() {
             "/roboy/middleware/DarkRoom/Statistics", 1);
 
     receiveData = true;
-    sensor_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensors", 1, &TrackedObject::receiveSensorDataRoboy, this);
+    sensor_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensors", 2, &TrackedObject::receiveSensorDataRoboy, this);
 
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(2));
     spinner->start();
@@ -53,7 +53,7 @@ bool TrackedObject::init(const char* configFile){
     for(auto &sensor:sensors){
         Vector3d rel_pos;
         sensor.second.getRelativeLocation(rel_pos);
-        publishSphere(rel_pos,"world","relative_locations",rand(),COLOR(0,1,0,1));
+        publishSphere(rel_pos,"world","relative_locations",rand(),COLOR(0,1,0,1),0.01,10);
     }
 
     imu.setOrigin(tf::Vector3(0,0,0));
@@ -213,7 +213,7 @@ bool TrackedObject::record(bool start) {
         file.open(str);
         if (file.is_open()) {
             ROS_INFO("start recording");
-            file << "timestamp, \tid, \tlighthouse, \trotor, \tsweepDuration[ticks]\n";
+            file << "timestamp, \tid, \tlighthouse, \trotor, \tsweepDuration[ticks], \tangle[rad]\n";
             recording = true;
             return true;
         } else {
@@ -240,6 +240,8 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware:
     static int message_counter = 0;
 
     uint lighthouse, rotor, sensorID,sweepDuration;
+    lock_guard<mutex> lock(mux);
+
     for (uint32_t const &data:msg->sensor_value) {
         lighthouse = (data >> 31) & 0x1;
         rotor = (data >> 30) & 0x1;
@@ -254,13 +256,12 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware:
 //                "rotor:         " << rotor << endl <<
 //                "sweepDuration: " << sweepDuration);
         if (valid == 1) {
-            if (recording) {
-                lock_guard<mutex> lock(mux);
-                file << msg->timestamp[sensorID] << ",\t" << sensorID << ",\t"
-                     << lighthouse << ",\t" << rotor << ",\t" << sweepDuration << endl;
-            }
             double angle = ticksToRadians(sweepDuration);
             sensors[sensorID].update(lighthouse, rotor, angle);
+            if (recording) {
+                file << msg->timestamp[sensorID] << ",\t" << sensorID << ",\t"
+                     << lighthouse << ",\t" << rotor << ",\t" << sweepDuration << ",\t" << angle << endl;
+            }
         }
 
         id++;
@@ -304,21 +305,20 @@ void TrackedObject::receiveSensorData(){
         vector<uint32_t> sweepDuration;
         if(socket->receiveSensorData(id,lighthouse,rotor,sweepDuration)){
             for(uint i=0; i<id.size(); i++) {
+                double angle = ticksToRadians(sweepDuration[i]);
                 ROS_INFO_STREAM_THROTTLE(10,
                         "id:              " << id[i] <<
                                             "\tlighthouse:    " << lighthouse[i] <<
                                             "\trotor:         " << rotor[i] <<
                                             "\tsweepDuration: " << sweepDuration[i]<<
                                             "\tangle: " << ticksToDegrees(sweepDuration[i]));
-
-
-                sensors[id[i]].update(lighthouse[i], rotor[i], ticksToRadians(sweepDuration[i]));
+                sensors[id[i]].update(lighthouse[i], rotor[i], angle);
                 if (recording) {
                     chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
                     chrono::microseconds time_span = chrono::duration_cast<chrono::microseconds>(t1 - t0);
                     lock_guard<mutex> lock(mux);
                     file << time_span.count() << ",\t" << id[i] << ",\t"
-                         << lighthouse[i] << ",\t" << rotor[i] << ",\t" << sweepDuration[i] << endl;
+                         << lighthouse[i] << ",\t" << rotor[i] << ",\t" << sweepDuration[i] << ",\t" << angle << endl;
                 }
             }
 //            Vector2d angles;

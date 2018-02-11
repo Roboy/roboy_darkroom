@@ -100,3 +100,8 @@ void Triangulation::rayFromLighthouseAngles(Vector2d &angles, Vector3d &ray) {
     // this is assuming spherical coordinates (which is not quite true, since the two motor axis dont align)
 //    ray = Vector3d(sin(elevation)*cos(azimuth), sin(elevation)*sin(azimuth), cos(elevation));
 }
+
+void Triangulation::rayFromLighthouseAngles(double elevation, double azimuth, Vector3d &ray){
+    ray = Vector3d(cos(azimuth)*sin(elevation), sin(azimuth)*sin(elevation), -sin(azimuth)*cos(elevation));
+    ray.normalize();
+}

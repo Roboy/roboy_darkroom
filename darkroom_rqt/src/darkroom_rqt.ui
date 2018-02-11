@@ -366,6 +366,9 @@
       <property name="text">
        <string>pose estimation (multiLighthouse)</string>
       </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
      </widget>
     </widget>
     <widget class="QFrame" name="frame_5">
@@ -1391,7 +1394,7 @@
       <string>y</string>
      </property>
      <property name="checked">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
     </widget>
     <widget class="QCheckBox" name="random_pose_z">
@@ -1468,7 +1471,7 @@
       </rect>
      </property>
      <property name="value">
-      <number>1</number>
+      <number>10</number>
      </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>

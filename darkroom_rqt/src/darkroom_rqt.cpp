@@ -389,8 +389,9 @@ void RoboyDarkRoom::connectRoboy() {
 
         simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, roboy_parts));
         simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, roboy_parts));
-        // lets start one imu publishing thread
-        simulation.first->imu_thread.reset(new boost::thread([simulation]() { simulation.first->PublishImuData(); }));
+        simulation.first->startIMUPublisher();
+        simulation.first->startSensorPublisher();
+        simulation.second->startSensorPublisher();
 
         lighthouse_simulation.push_back(simulation);
     }
@@ -436,6 +437,10 @@ void RoboyDarkRoom::record() {
     for (auto const &object:trackedObjects) {
         lock_guard<mutex>(object->mux);
         object->record(button["record"]->isChecked());
+    }
+    for (auto const &simulation:lighthouse_simulation) {
+        simulation.first->record(button["record"]->isChecked());
+        simulation.second->record(button["record"]->isChecked());
     }
 }
 
@@ -630,7 +635,9 @@ void RoboyDarkRoom::startEstimateObjectPoseMultiLighthouse() {
 }
 
 void RoboyDarkRoom::transformPublisher() {
-    ros::Rate rate(60);
+    ros::Rate rate(30);
+    Vector3d pos(0,0,0), vel(0.3,0.3,0.3);
+    double boundary = 0.5;
     while (publish_transform) {
         lock_guard<mutex> lock(mux);
         tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse1, ros::Time::now(), "world", "lighthouse1"));
@@ -645,16 +652,16 @@ void RoboyDarkRoom::transformPublisher() {
             if (ui.random_pose->isChecked()) {
                 // randomly moves all objects
                 for (auto &object:trackedObjects) {
-                    object->pose.setOrigin( tf::Vector3(0.5*sin(random_pose_x),0.5*sin(random_pose_y),0.5*sin(random_pose_z)));
+                    object->pose.setOrigin( tf::Vector3(pos(0),pos(1),pos(2)));
                     tf::Quaternion q(0, 0, 0, 1);
                     q.setRPY(random_pose_roll, random_pose_pitch, random_pose_yaw);
                     object->pose.setRotation(q);
                     if(ui.random_pose_x->isChecked())
-                        random_pose_x += rand()/(double)RAND_MAX*ui.random_pose_slider->value()/1000.0;
+                        pos(0) += vel(0)*ui.random_pose_slider->value()/1000.0+(rand()/(double)RAND_MAX-0.5)*0.001;
                     if(ui.random_pose_y->isChecked())
-                        random_pose_y += rand()/(double)RAND_MAX*ui.random_pose_slider->value()/1000.0;
+                        pos(1) += vel(1)*ui.random_pose_slider->value()/1000.0+(rand()/(double)RAND_MAX-0.5)*0.001;
                     if(ui.random_pose_z->isChecked())
-                        random_pose_z += rand()/(double)RAND_MAX*ui.random_pose_slider->value()/1000.0;
+                        pos(2) += vel(2)*ui.random_pose_slider->value()/1000.0+(rand()/(double)RAND_MAX-0.5)*0.001;
                     if(ui.random_pose_roll->isChecked())
                         random_pose_roll += rand()/(double)RAND_MAX*ui.random_pose_slider->value()/1000.0;
                     if(ui.random_pose_pitch->isChecked())
@@ -662,6 +669,12 @@ void RoboyDarkRoom::transformPublisher() {
                     if(ui.random_pose_yaw->isChecked())
                         random_pose_yaw += rand()/(double)RAND_MAX*ui.random_pose_slider->value()/1000.0;
 
+                    if(pos(0)>boundary || pos(0)<-boundary)
+                        vel(0) = -(vel(0)+(rand()/(double)RAND_MAX-0.5));
+                    if(pos(1)>boundary || pos(1)<-boundary)
+                        vel(1) = -(vel(1)+(rand()/(double)RAND_MAX-0.5));
+                    if(pos(2)>boundary || pos(2)<-boundary)
+                        vel(2) = -(vel(2)+(rand()/(double)RAND_MAX-0.5));
 //                    object->pose.setOrigin( tf::Vector3(random_pose_x,random_pose_y,random_pose_z));
 //                    tf::Quaternion q(0, 0, 0, 1);
 //                    q.setRPY(random_pose_roll, random_pose_pitch, random_pose_yaw);
@@ -1005,6 +1018,8 @@ bool RoboyDarkRoom::addTrackedObject(const char *config_file_path) {
 
             simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
             simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
+            simulation.first->startSensorPublisher();
+            simulation.second->startSensorPublisher();
             lighthouse_simulation.push_back(simulation);
         }
     } else {
@@ -1017,6 +1032,8 @@ bool RoboyDarkRoom::addTrackedObject(const char *config_file_path) {
 
             simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
             simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
+            simulation.first->startSensorPublisher();
+            simulation.second->startSensorPublisher();
             lighthouse_simulation.push_back(simulation);
         }
     }
@@ -1308,12 +1325,57 @@ void RoboyDarkRoom::estimateFactoryCalibration2(){
         simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
         simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
 
+        simulation.first->startSensorPublisher();
+        simulation.second->startSensorPublisher();
+
         lighthouse_simulation.push_back(simulation);
     }
 
-    addTrackedObject(calibration_object_path.c_str());
+    ROS_DEBUG_STREAM("adding tracked object " << calibration_object_path);
+    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject());
+    newObject->init(calibration_object_path.c_str());
+    trackedObjects.push_back(newObject);
+    object_counter++;
+
+    TrackedObjectInfo info;
+
+    QWidget *tracked_objects_scrollarea = widget_->findChild<QWidget *>("tracked_objects_scrollarea");
+    info.widget = new QWidget(tracked_objects_scrollarea);
+    char str[100];
+    sprintf(str, "%s", newObject->name.c_str());
+    info.widget->setObjectName(str);
+    info.widget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    info.widget->setLayout(new QHBoxLayout(info.widget));
+
+    QCheckBox *box = new QCheckBox;
+    box->setChecked(true);
+    info.widget->layout()->addWidget(box);
+
+    QLabel *name = new QLabel(info.widget);
+    name->setFixedSize(150, 30);
+    name->setText(str);
+    info.widget->layout()->addWidget(name);
+
+    QLabel *activeSensors = new QLabel(info.widget);
+    activeSensors->setFixedSize(50, 30);
+    activeSensors->setText("active sensors");
+    info.widget->layout()->addWidget(activeSensors);
+
+    info.name = name;
+    info.activeSensors = activeSensors;
+    info.selected = box;
+
+    trackedObjectsInfo.push_back(info);
+
+    tracked_objects_scrollarea->layout()->addWidget(info.widget);
 
     TrackedObjectPtr calibration_object = trackedObjects.back();
+    calibration_object->rays = true;
+    calibration_object->rays_thread = boost::shared_ptr<boost::thread>(
+            new boost::thread(
+                    [calibration_object]() { calibration_object->publishRays(); }
+            ));
+    calibration_object->rays_thread->detach();
 
     calibration_object->pose.setOrigin(tf::Vector3(0,0,0));
     tf::Quaternion q;
@@ -1399,12 +1461,57 @@ void RoboyDarkRoom::estimateFactoryCalibrationEPNP(){
         simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
         simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
 
+        simulation.first->startSensorPublisher();
+        simulation.second->startSensorPublisher();
+
         lighthouse_simulation.push_back(simulation);
     }
 
-    addTrackedObject(calibration_object_path.c_str());
+    ROS_DEBUG_STREAM("adding tracked object " << calibration_object_path);
+    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject());
+    newObject->init(calibration_object_path.c_str());
+    trackedObjects.push_back(newObject);
+    object_counter++;
+
+    TrackedObjectInfo info;
+
+    QWidget *tracked_objects_scrollarea = widget_->findChild<QWidget *>("tracked_objects_scrollarea");
+    info.widget = new QWidget(tracked_objects_scrollarea);
+    char str[100];
+    sprintf(str, "%s", newObject->name.c_str());
+    info.widget->setObjectName(str);
+    info.widget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    info.widget->setLayout(new QHBoxLayout(info.widget));
+
+    QCheckBox *box = new QCheckBox;
+    box->setChecked(true);
+    info.widget->layout()->addWidget(box);
+
+    QLabel *name = new QLabel(info.widget);
+    name->setFixedSize(150, 30);
+    name->setText(str);
+    info.widget->layout()->addWidget(name);
+
+    QLabel *activeSensors = new QLabel(info.widget);
+    activeSensors->setFixedSize(50, 30);
+    activeSensors->setText("active sensors");
+    info.widget->layout()->addWidget(activeSensors);
+
+    info.name = name;
+    info.activeSensors = activeSensors;
+    info.selected = box;
+
+    trackedObjectsInfo.push_back(info);
+
+    tracked_objects_scrollarea->layout()->addWidget(info.widget);
 
     TrackedObjectPtr calibration_object = trackedObjects.back();
+    calibration_object->rays = true;
+    calibration_object->rays_thread = boost::shared_ptr<boost::thread>(
+            new boost::thread(
+                    [calibration_object]() { calibration_object->publishRays(); }
+            ));
+    calibration_object->rays_thread->detach();
 
     calibration_object->pose.setOrigin(tf::Vector3(0,0,0));
     tf::Quaternion q;
@@ -1490,12 +1597,57 @@ void RoboyDarkRoom::estimateFactoryCalibrationMulti(){
         simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
         simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
 
+        simulation.first->startSensorPublisher();
+        simulation.second->startSensorPublisher();
+
         lighthouse_simulation.push_back(simulation);
     }
 
-    addTrackedObject(calibration_object_path.c_str());
+    ROS_DEBUG_STREAM("adding tracked object " << calibration_object_path);
+    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject());
+    newObject->init(calibration_object_path.c_str());
+    trackedObjects.push_back(newObject);
+    object_counter++;
+
+    TrackedObjectInfo info;
+
+    QWidget *tracked_objects_scrollarea = widget_->findChild<QWidget *>("tracked_objects_scrollarea");
+    info.widget = new QWidget(tracked_objects_scrollarea);
+    char str[100];
+    sprintf(str, "%s", newObject->name.c_str());
+    info.widget->setObjectName(str);
+    info.widget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    info.widget->setLayout(new QHBoxLayout(info.widget));
+
+    QCheckBox *box = new QCheckBox;
+    box->setChecked(true);
+    info.widget->layout()->addWidget(box);
+
+    QLabel *name = new QLabel(info.widget);
+    name->setFixedSize(150, 30);
+    name->setText(str);
+    info.widget->layout()->addWidget(name);
+
+    QLabel *activeSensors = new QLabel(info.widget);
+    activeSensors->setFixedSize(50, 30);
+    activeSensors->setText("active sensors");
+    info.widget->layout()->addWidget(activeSensors);
+
+    info.name = name;
+    info.activeSensors = activeSensors;
+    info.selected = box;
+
+    trackedObjectsInfo.push_back(info);
+
+    tracked_objects_scrollarea->layout()->addWidget(info.widget);
 
     TrackedObjectPtr calibration_object = trackedObjects.back();
+//    calibration_object->rays = true;
+//    calibration_object->rays_thread = boost::shared_ptr<boost::thread>(
+//            new boost::thread(
+//                    [calibration_object]() { calibration_object->publishRays(); }
+//            ));
+//    calibration_object->rays_thread->detach();
 
     calibration_object->pose.setOrigin(tf::Vector3(0,0,0));
     tf::Quaternion q;

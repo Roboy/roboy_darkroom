@@ -54,8 +54,6 @@ LighthouseSimulator::LighthouseSimulator(int id, vector<fs::path> &configFile) :
             sensor_visible[i].push_back(true);
         }
     }
-    sensor_publishing = true;
-    sensor_thread.reset( new boost::thread( [this]() {this->PublishSensorData(); } ));
 }
 
 LighthouseSimulator::~LighthouseSimulator() {
@@ -78,6 +76,62 @@ LighthouseSimulator::~LighthouseSimulator() {
     }
 }
 
+void LighthouseSimulator::startSensorPublisher(){
+    // we terminate any already running publisher
+    if(sensor_thread!=nullptr){
+        sensor_publishing = false;
+        if(sensor_thread->joinable()){
+            ROS_INFO("waiting for sensor thread to shutdown");
+            sensor_thread->join();
+        }
+    }
+    // and spawn a new one
+    sensor_publishing = true;
+    sensor_thread.reset( new boost::thread( [this]() {this->PublishSensorData(); } ));
+}
+
+void LighthouseSimulator::startIMUPublisher() {
+    // we terminate any already running publisher
+    if(imu_thread!=nullptr){
+        imu_publishing = false;
+        if(imu_thread->joinable()){
+            ROS_INFO("waiting for imu thread to shutdown");
+            imu_thread->join();
+        }
+    }
+    // and spawn a new one
+    imu_publishing = true;
+    imu_thread.reset( new boost::thread( [this]() {this->PublishImuData(); } ));
+}
+
+bool LighthouseSimulator::record(bool start) {
+    if (start) {
+        char str[100];
+        for(int i=0; i<meshes.size();i++){
+            sprintf(str, "record_simulated_lighthouse%d_%s.log", id, name[i].c_str());
+            file[i].open(str);
+            if (file[i].is_open()) {
+                ROS_INFO("start recording");
+                file[i] << "timestamp, \tid, \tlighthouse, \trotor, \tsweepDuration[ticks], \tangle[rad], \ttrue angle[rad], \t3X4RTmatrix (r00 r01 r02 t0 ...) true object pose in world frame\n";
+                recording = true;
+                return true;
+            } else {
+                ROS_ERROR("could not open file");
+                return false;
+            }
+        }
+
+    } else {
+        ROS_INFO("saving to file recording");
+        recording = false;
+        for(int i=0; i<meshes.size();i++){
+            file[i].close();
+        }
+
+        return true;
+    }
+}
+
 void LighthouseSimulator::PublishSensorData() {
     ros::Rate rate(120);
     bool motor = HORIZONTAL;
@@ -89,6 +143,9 @@ void LighthouseSimulator::PublishSensorData() {
         for (int i=0; i<meshes.size();i++) {
             // we need the transform from object to lighthouse frame
             if (!getTransform(name[i].c_str(), (id == 0 ? "lighthouse1" : "lighthouse2"), RT_object2lighthouse_new[i]))
+                continue;
+            Matrix4d RT_object2world;
+            if (!getTransform(name[i].c_str(), "world", RT_object2world))
                 continue;
 
             // because checking the visiblity of a sensor is costly, we only do it, when the pose has changed
@@ -106,9 +163,10 @@ void LighthouseSimulator::PublishSensorData() {
                 pose_changed[i] = false;
             }
 
-            roboy_communication_middleware::DarkRoom msg;
+            roboy_communication_middleware::DarkRoom msg0,msg1;
 
-            msg.objectID = objectID[i];
+            msg0.objectID = objectID[i];
+            msg1.objectID = objectID[i];
             int j= 0;
             for (auto const &sensor:sensor_position[i]) {
                 Vector4d sensor_pos;
@@ -123,34 +181,49 @@ void LighthouseSimulator::PublishSensorData() {
                 sensor_pos_motor_vertical = sensor_pos - Vector4d(-AXIS_OFFSET,0,0,0);
                 sensor_pos_motor_horizontal = sensor_pos - Vector4d(0,0,-AXIS_OFFSET,0);
 
-                double elevation = M_PI -  atan2(sensor_pos_motor_vertical(1), sensor_pos_motor_vertical(2));
-                double azimuth = atan2(sensor_pos_motor_horizontal[1], sensor_pos_motor_horizontal[0]);
+                double elevation_true = M_PI -  atan2(sensor_pos_motor_vertical(1), sensor_pos_motor_vertical(2));
+                double azimuth_true = atan2(sensor_pos_motor_horizontal[1], sensor_pos_motor_horizontal[0]);
 
-                ROS_DEBUG_STREAM_THROTTLE(1,"measured sensor pos: " << sensor_pos.transpose() << "\t elevation " << elevation << "\t azimuth " <<azimuth);
+                ROS_DEBUG_STREAM_THROTTLE(1,"measured sensor pos: " << sensor_pos.transpose() << "\t elevation " << elevation_true << "\t azimuth " <<azimuth_true);
 
                 // excentric parameters, assumed to be from y axis -> cos
-                double temp_elevation1 = calibration[id][VERTICAL].curve*pow(cos(azimuth)*sin(elevation),2.0);
-                double temp_elevation2 = calibration[id][VERTICAL].gibmag*cos(elevation+calibration[id][VERTICAL].gibphase);
-                double temp_azimuth1 = calibration[id][HORIZONTAL].curve*pow(-sin(azimuth)*cos(elevation),2.0);
-                double temp_azimuth2 = calibration[id][HORIZONTAL].gibmag*cos(azimuth+calibration[id][HORIZONTAL].gibphase);
-                elevation -= (calibration[id][VERTICAL].phase + temp_elevation1 + temp_elevation2);
-                azimuth -= (calibration[id][HORIZONTAL].phase + temp_azimuth1 + temp_azimuth2);
+                double temp_elevation1 = calibration[id][VERTICAL].curve*pow(cos(azimuth_true)*sin(elevation_true),2.0);
+                double temp_elevation2 = calibration[id][VERTICAL].gibmag*cos(elevation_true+calibration[id][VERTICAL].gibphase);
+                double temp_azimuth1 = calibration[id][HORIZONTAL].curve*pow(-sin(azimuth_true)*cos(elevation_true),2.0);
+                double temp_azimuth2 = calibration[id][HORIZONTAL].gibmag*cos(azimuth_true+calibration[id][HORIZONTAL].gibphase);
+                double elevation = elevation_true - (calibration[id][VERTICAL].phase + temp_elevation1 + temp_elevation2);
+                double azimuth = azimuth_true - (calibration[id][HORIZONTAL].phase + temp_azimuth1 + temp_azimuth2);
 
-                uint32_t sensor_value;
                 if (elevation >= 0 && elevation <= 180.0 && azimuth >= 0 &&
                     azimuth <= 180.0 && sensor_visible[i][j]) { // if the sensor is visible by lighthouse
+                    uint32_t sensor_value[2];
+                    uint32_t elevation_in_ticks = (uint32_t) (radiansToTicks(elevation));
+                    sensor_value[VERTICAL] = (uint32_t) (id << 31 | 1 << 30 | true << 29 | sensor.first<<19 | elevation_in_ticks & 0x7FFFF);
+//                    ROS_INFO("%d elevation: %lf in ticks: %d", j, elevation, elevation_in_ticks);
+                    uint32_t azimuth_in_ticks = (uint32_t) (radiansToTicks(azimuth));
+                    sensor_value[HORIZONTAL] = (uint32_t) (id << 31 | 0 << 30 | true << 29 | sensor.first<<19 | azimuth_in_ticks & 0x7FFFF);
+//                    ROS_INFO("%d azimuth: %lf in ticks: %d", j, azimuth, azimuth_in_ticks);
 
-                    if (motor == VERTICAL) {
-                        uint32_t elevation_in_ticks = (uint32_t) (radiansToTicks(elevation));
-                        sensor_value = (uint32_t) (id << 31 | 1 << 30 | true << 29 | sensor.first<<19 | elevation_in_ticks & 0x7FFFF);
-                        if (sensor.first == 0)
-                            ROS_DEBUG_THROTTLE(1, "elevation: %lf in ticks: %d", elevation, elevation_in_ticks);
-                    } else if(motor == HORIZONTAL) {
-                        uint32_t azimuth_in_ticks = (uint32_t) (radiansToTicks(azimuth));
-                        sensor_value = (uint32_t) (id << 31 | 0 << 30 | true << 29 | sensor.first<<19 | azimuth_in_ticks & 0x7FFFF);
-                        if (sensor.first == 0)
-                            ROS_DEBUG_THROTTLE(1, "azimuth: %lf in ticks: %d", azimuth, azimuth_in_ticks);
+                    high_resolution_clock::time_point t1 = high_resolution_clock::now();
+                    microseconds time_span = duration_cast<microseconds>(t1 - t0);
+                    msg0.timestamp.push_back(time_span.count());
+                    msg0.sensor_value.push_back(sensor_value[VERTICAL]);
+                    msg1.timestamp.push_back(time_span.count());
+                    msg1.sensor_value.push_back(sensor_value[HORIZONTAL]);
+
+                    if (recording) {
+                        file[i] << msg0.timestamp[id] << ",\t" << j << ",\t"
+                                << id << ",\t" << VERTICAL << ",\t" << elevation_in_ticks << ",\t" << elevation << ",\t" << elevation_true << ",\t"
+                                << RT_object2world(0,0) << ",\t" << RT_object2world(0,1) << ",\t" << RT_object2world(0,2) << ",\t" << RT_object2world(0,3) << ",\t"
+                                << RT_object2world(1,0) << ",\t" << RT_object2world(1,1) << ",\t" << RT_object2world(1,2) << ",\t" << RT_object2world(1,3) << ",\t"
+                                << RT_object2world(2,0) << ",\t" << RT_object2world(2,1) << ",\t" << RT_object2world(2,2) << ",\t" << RT_object2world(2,3) << endl;
+                        file[i] << msg1.timestamp[id] << ",\t" << j << ",\t"
+                                << id << ",\t" << HORIZONTAL << ",\t" << azimuth_in_ticks << ",\t" << azimuth << ",\t" << azimuth_true << ",\t"
+                                << RT_object2world(0,0) << ",\t" << RT_object2world(0,1) << ",\t" << RT_object2world(0,2) << ",\t" << RT_object2world(0,3) << ",\t"
+                                << RT_object2world(1,0) << ",\t" << RT_object2world(1,1) << ",\t" << RT_object2world(1,2) << ",\t" << RT_object2world(1,3) << ",\t"
+                                << RT_object2world(2,0) << ",\t" << RT_object2world(2,1) << ",\t" << RT_object2world(2,2) << ",\t" << RT_object2world(2,3) << endl;
                     }
+
                     Vector3d pos(sensor_pos[0], sensor_pos[1], sensor_pos[2]);
                     publishSphere(pos, (id == 0 ? "lighthouse1" : "lighthouse2"), "simulated_sensor_positions",
                                   sensor.first + id * sensor_position.size() + i*1000000, COLOR(0.5, 0, 0.5, 1), 0.01);
@@ -159,11 +232,6 @@ void LighthouseSimulator::PublishSensorData() {
                     publishSphere(pos, (id == 0 ? "lighthouse1" : "lighthouse2"), "simulated_sensor_positions",
                                   sensor.first + id * sensor_position.size() + i*1000000, COLOR(1, 0, 0, 1), 0.01, 1);
                 }
-                high_resolution_clock::time_point t1 = high_resolution_clock::now();
-                microseconds time_span = duration_cast<microseconds>(t1 - t0);
-                msg.timestamp.push_back(time_span.count());
-                msg.sensor_value.push_back(sensor_value);
-
 
                 // we gotta check if the sensor is visible
                 if(pose_changed[i] && nh->hasParam("check_visibility") && has_mesh){
@@ -174,8 +242,10 @@ void LighthouseSimulator::PublishSensorData() {
                 j++;
             }
 
-            if (!msg.sensor_value.empty())
-                sensors_pub.publish(msg);
+            if (!msg0.sensor_value.empty())
+                sensors_pub.publish(msg0);
+            if (!msg1.sensor_value.empty())
+                sensors_pub.publish(msg1);
         }
         rate.sleep();
         motor = !motor;

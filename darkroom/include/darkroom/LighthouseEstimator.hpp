@@ -52,6 +52,7 @@
 #include "darkroom/InYourGibbousPhase.hpp"
 #include "darkroom/InYourGibbousPhase2.hpp"
 #include "darkroom/InYourGibbousPhase3.hpp"
+#include "darkroom/InYourGibbousPhase4.hpp"
 #include <ros/package.h>
 #include "darkroom/Utilities.hpp"
 #include <stdlib.h>
