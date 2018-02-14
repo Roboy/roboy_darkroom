@@ -278,7 +278,7 @@ private:
     atomic<bool> publish_transform, update_tracked_object_info;
     int object_counter = 0, values_in_plot = 300, message_counter[4] = {0}, message_counter_statistics[2] = {0};
     vector<TrackedObjectPtr> trackedObjects;
-    mutex mux;
+    SharedMutex mux;
     static map<string, QLineEdit*> text;
     static map<string, QSlider*> slider;
     static map<string, QPushButton*> button;

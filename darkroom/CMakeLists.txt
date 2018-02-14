@@ -44,6 +44,7 @@ include_directories(
 		include/
         ${catkin_INCLUDE_DIRS}
         ${ncurses_INCLUDE_DIRS}
+        ../yamc/include
 )
 #==============================================================================
 # Application

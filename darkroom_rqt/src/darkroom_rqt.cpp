@@ -18,19 +18,18 @@ RoboyDarkRoom::RoboyDarkRoom()
 
 RoboyDarkRoom::~RoboyDarkRoom() {
     clearAll();
+    mux.lock();
     publish_transform = false;
     update_tracked_object_info = false;
-
     if (transform_thread->joinable()) {
         ROS_INFO("waiting for transform thread to shut down");
         transform_thread->join();
     }
-
     if (update_tracked_object_info_thread->joinable()) {
         ROS_INFO("waiting for update_tracked_object_info_thread to shut down");
         update_tracked_object_info_thread->join();
     }
-
+    mux.unlock();
     delete model;
 }
 
@@ -241,7 +240,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(button["add_tracked_object"], SIGNAL(clicked()), this, SLOT(addTrackedObject()));
     QObject::connect(button["remove_tracked_object"], SIGNAL(clicked()), this, SLOT(removeTrackedObject()));
     QObject::connect(button["estimate_factory_calibration_values"], SIGNAL(clicked()), this, SLOT(estimateFactoryCalibration()));
-    QObject::connect(button["estimate_factory_calibration_values_2"], SIGNAL(clicked()), this, SLOT(estimateFactoryCalibration2()));
+//    QObject::connect(button["estimate_factory_calibration_values_2"], SIGNAL(clicked()), this, SLOT(estimateFactoryCalibration2()));
     QObject::connect(button["estimate_factory_calibration_values_epnp"], SIGNAL(clicked()), this, SLOT(estimateFactoryCalibrationEPNP()));
     QObject::connect(button["estimate_factory_calibration_values_multi"], SIGNAL(clicked()), this, SLOT(estimateFactoryCalibrationMulti()));
     QObject::connect(button["reset_factory_calibration_values"], SIGNAL(clicked()), this, SLOT(resetFactoryCalibration()));
@@ -348,7 +347,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
 }
 
 void RoboyDarkRoom::shutdownPlugin() {
-
+    ros::shutdown();
 }
 
 void RoboyDarkRoom::saveSettings(qt_gui_cpp::Settings &plugin_settings,
@@ -435,8 +434,9 @@ void RoboyDarkRoom::record() {
     if (trackedObjects.empty())
         button["record"]->setChecked(false);
     for (auto const &object:trackedObjects) {
-        lock_guard<mutex>(object->mux);
+        object->mux.lock();
         object->record(button["record"]->isChecked());
+        object->mux.unlock();
     }
     for (auto const &simulation:lighthouse_simulation) {
         simulation.first->record(button["record"]->isChecked());
@@ -448,7 +448,7 @@ void RoboyDarkRoom::showRays() {
     ROS_DEBUG("show rays clicked");
 
     for (uint i = 0; i < trackedObjects.size(); i++) {
-//        lock_guard<mutex>(trackedObjects[i]->mux);
+        trackedObjects[i]->mux.lock();
         if (button["show_rays"]->isChecked()) {
             ROS_INFO("starting rays thread");
             trackedObjects[i]->rays = true;
@@ -467,29 +467,32 @@ void RoboyDarkRoom::showRays() {
                 }
             }
         }
+        trackedObjects[i]->mux.unlock();
     }
 }
 
 void RoboyDarkRoom::showDistances() {
     ROS_DEBUG("show distances clicked");
     for (auto const &object:trackedObjects) {
-        lock_guard<mutex>(object->mux);
+        object->mux.lock();
         object->distances = object->rays = button["show_distances"]->isChecked();
+        object->mux.unlock();
     }
 }
 
 void RoboyDarkRoom::switchLighthouses() {
     ROS_DEBUG("switch lighthouses clicked");
     for (auto const &object:trackedObjects) {
-        lock_guard<mutex>(object->mux);
+        object->mux.lock();
         object->switchLighthouses(button["switch_lighthouses"]->isChecked());
+        object->mux.unlock();
     }
 }
 
 void RoboyDarkRoom::startCalibrateRelativeSensorDistances() {
     ROS_DEBUG("calibrate_relative_distances clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
-        lock_guard<mutex>(trackedObjects[i]->mux);
+        trackedObjects[i]->mux.lock();
         if (button["calibrate_relative_distances"]->isChecked()) {
             ROS_INFO("starting calibration thread");
             trackedObjects[i]->calibrating = true;
@@ -507,13 +510,14 @@ void RoboyDarkRoom::startCalibrateRelativeSensorDistances() {
                 }
             }
         }
+        trackedObjects[i]->mux.unlock();
     }
 }
 
 void RoboyDarkRoom::startTriangulation() {
     ROS_DEBUG("triangulate clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
-//        lock_guard<mutex>(trackedObjects[i]->mux);
+        trackedObjects[i]->mux.lock();
         if (button["triangulate"]->isChecked()) {
             ROS_INFO("starting tracking thread");
             trackedObjects[i]->tracking = true;
@@ -532,13 +536,14 @@ void RoboyDarkRoom::startTriangulation() {
                 }
             }
         }
+        trackedObjects[i]->mux.unlock();
     }
 }
 
 void RoboyDarkRoom::startPoseEstimationSensorCloud() {
     ROS_DEBUG("pose_correction_sensor_cloud clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
-        lock_guard<mutex>(trackedObjects[i]->mux);
+        trackedObjects[i]->mux.lock();
         ROS_INFO("starting pose estimation thread");
         trackedObjects[i]->poseestimating = true;
         trackedObjects[i]->poseestimation_thread = boost::shared_ptr<boost::thread>(
@@ -546,13 +551,14 @@ void RoboyDarkRoom::startPoseEstimationSensorCloud() {
                     this->trackedObjects[i]->lighthousePoseEstimationLeastSquares();
                 }));
         trackedObjects[i]->poseestimation_thread->detach();
+        trackedObjects[i]->mux.unlock();
     }
 }
 
 void RoboyDarkRoom::startObjectPoseEstimationSensorCloud() {
     ROS_DEBUG("object pose estimation clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
-        lock_guard<mutex>(trackedObjects[i]->mux);
+        trackedObjects[i]->mux.lock();
         if (button["object_pose_estimation_least_squares"]->isChecked()) {
             ROS_INFO("starting pose estimation thread");
             trackedObjects[i]->objectposeestimating = true;
@@ -571,13 +577,14 @@ void RoboyDarkRoom::startObjectPoseEstimationSensorCloud() {
                 }
             }
         }
+        trackedObjects[i]->mux.unlock();
     }
 }
 
 void RoboyDarkRoom::startEstimateSensorPositionsUsingRelativeDistances() {
     ROS_DEBUG("position_estimation_relativ_sensor_distances clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
-        lock_guard<mutex>(trackedObjects[i]->mux);
+        trackedObjects[i]->mux.lock();
         ROS_INFO("starting relativ distance thread for lighthouse 1");
         trackedObjects[i]->distance_thread_1 = boost::shared_ptr<boost::thread>(
                 new boost::thread([this, i]() {
@@ -590,26 +597,28 @@ void RoboyDarkRoom::startEstimateSensorPositionsUsingRelativeDistances() {
                     this->trackedObjects[i]->estimateSensorPositionsUsingRelativeDistances(LIGHTHOUSE_B);
                 }));
         trackedObjects[i]->distance_thread_2->detach();
+        trackedObjects[i]->mux.unlock();
     }
 }
 
 void RoboyDarkRoom::startEstimateObjectPoseUsingRelativeDistances() {
     ROS_DEBUG("pose_estimation_relativ_sensor_distances clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
-        lock_guard<mutex>(trackedObjects[i]->mux);
+        trackedObjects[i]->mux.lock();
         ROS_INFO("starting relativ pose thread");
         trackedObjects[i]->relative_pose_thread = boost::shared_ptr<boost::thread>(
                 new boost::thread([this, i]() {
                     this->trackedObjects[i]->estimateObjectPoseUsingRelativeDistances();
                 }));
         trackedObjects[i]->relative_pose_thread->detach();
+        trackedObjects[i]->mux.unlock();
     }
 }
 
 void RoboyDarkRoom::startEstimateObjectPoseEPNP() {
     ROS_DEBUG("pose_estimation_epnp clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
-        lock_guard<mutex>(trackedObjects[i]->mux);
+        trackedObjects[i]->mux.lock();
         ROS_INFO("starting relativ pose epnp thread");
         trackedObjects[i]->poseestimating_epnp = true;
         trackedObjects[i]->relative_pose_epnp_thread = boost::shared_ptr<boost::thread>(
@@ -617,13 +626,14 @@ void RoboyDarkRoom::startEstimateObjectPoseEPNP() {
                     this->trackedObjects[i]->estimateObjectPoseEPNP();
                 }));
         trackedObjects[i]->relative_pose_epnp_thread->detach();
+        trackedObjects[i]->mux.unlock();
     }
 }
 
 void RoboyDarkRoom::startEstimateObjectPoseMultiLighthouse() {
     ROS_DEBUG("pose_estimation_multi_lighthouse clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
-        lock_guard<mutex>(trackedObjects[i]->mux);
+        trackedObjects[i]->mux.lock();
         ROS_INFO("starting multi lighthouse pose estimation thread");
         trackedObjects[i]->poseestimating_multiLighthouse = true;
         trackedObjects[i]->object_pose_estimation_multi_lighthouse_thread = boost::shared_ptr<boost::thread>(
@@ -631,6 +641,7 @@ void RoboyDarkRoom::startEstimateObjectPoseMultiLighthouse() {
                     this->trackedObjects[i]->estimateObjectPoseMultiLighthouse();
                 }));
         trackedObjects[i]->object_pose_estimation_multi_lighthouse_thread->detach();
+        trackedObjects[i]->mux.unlock();
     }
 }
 
@@ -639,7 +650,7 @@ void RoboyDarkRoom::transformPublisher() {
     Vector3d pos(0,0,0), vel(0.3,0.3,0.3);
     double boundary = 0.5;
     while (publish_transform) {
-        lock_guard<mutex> lock(mux);
+        mux.lock();
         tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse1, ros::Time::now(), "world", "lighthouse1"));
         tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse2, ros::Time::now(), "world", "lighthouse2"));
 //        for (auto &simulated:lighthouse_simulation) {
@@ -698,12 +709,13 @@ void RoboyDarkRoom::transformPublisher() {
                                                                   "world", object->name.c_str()));
             }
 //        }
-
+        mux.unlock();
         rate.sleep();
     }
 }
 
 void RoboyDarkRoom::correctPose(const roboy_communication_middleware::LighthousePoseCorrection &msg) {
+    mux.lock();
     tf::Transform tf;
     tf::transformMsgToTF(msg.tf, tf);
     if (msg.id == LIGHTHOUSE_A) {
@@ -717,9 +729,11 @@ void RoboyDarkRoom::correctPose(const roboy_communication_middleware::Lighthouse
         else    // absolut
             lighthouse2 = tf;
     }
+    mux.unlock();
 }
 
 void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::InteractiveMarkerFeedback &msg) {
+    mux.lock();
     tf::Vector3 position(msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
     tf::Quaternion orientation(msg.pose.orientation.x, msg.pose.orientation.y,
                                msg.pose.orientation.z, msg.pose.orientation.w);
@@ -735,6 +749,7 @@ void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::Interac
             object->pose.setRotation(orientation);
         }
     }
+    mux.unlock();
 }
 
 void RoboyDarkRoom::receiveSensorData(const roboy_communication_middleware::DarkRoom::ConstPtr &msg) {
@@ -825,15 +840,15 @@ bool RoboyDarkRoom::fileExists(const string &filepath) {
 }
 
 void RoboyDarkRoom::updateTrackedObjectInfo() {
-    ros::Rate rate(10);
+    ros::Rate rate(1);
     while (update_tracked_object_info) {
-        {
-            for (int i = 0; i < trackedObjects.size(); i++) {
-                char str[100];
-                sprintf(str, "%d/%d", trackedObjects[i]->active_sensors, (int) trackedObjects[i]->sensors.size());
-                trackedObjectsInfo[i].activeSensors->setText(str);
-            }
+        mux.lock();
+        for (int i = 0; i < trackedObjects.size(); i++) {
+            char str[100];
+            sprintf(str, "%d/%d", trackedObjects[i]->active_sensors, (int) trackedObjects[i]->sensors.size());
+            trackedObjectsInfo[i].activeSensors->setText(str);
         }
+        mux.unlock();
         rate.sleep();
     }
 }
@@ -909,101 +924,102 @@ void RoboyDarkRoom::plotStatisticsData() {
 
 void RoboyDarkRoom::useFactoryCalibrationData() {
     ROS_DEBUG("lighthouse_use_factory_calibration_data clicked");
-    // phase
-    if (button["lighthouse_use_factory_calibration_data_phase_1"]->isChecked()) {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_phase[0] = true;
-        }
-    } else {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_phase[0] = false;
-        }
-    }
-    if (button["lighthouse_use_factory_calibration_data_phase_2"]->isChecked()) {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_phase[1] = true;
-        }
-    } else {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_phase[1] = false;
-        }
-    }
-    // tilt
-    if (button["lighthouse_use_factory_calibration_data_tilt_1"]->isChecked()) {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_tilt[0] = true;
-        }
-    } else {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_tilt[0] = false;
-        }
-    }
-    if (button["lighthouse_use_factory_calibration_data_tilt_2"]->isChecked()) {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_tilt[1] = true;
-        }
-    } else {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_tilt[1] = false;
-        }
-    }
-    // gibbous phase
-    if (button["lighthouse_use_factory_calibration_data_gphase_1"]->isChecked()) {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[0] = true;
-        }
-    } else {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[0] = false;
-        }
-    }
-    if (button["lighthouse_use_factory_calibration_data_gphase_2"]->isChecked()) {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[1] = true;
-        }
-    } else {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[1] = false;
-        }
-    }
-    // gibbous magnitude
-    if (button["lighthouse_use_factory_calibration_data_gmag_1"]->isChecked()) {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[0] = true;
-        }
-    } else {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[0] = false;
-        }
-    }
-    if (button["lighthouse_use_factory_calibration_data_gmag_2"]->isChecked()) {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[1] = true;
-        }
-    } else {
-        for (uint i = 0; i < trackedObjects.size(); i++) {
-            lock_guard<mutex>(trackedObjects[i]->mux);
-            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[1] = false;
-        }
-    }
+//    // phase
+//    if (button["lighthouse_use_factory_calibration_data_phase_1"]->isChecked()) {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_phase[0] = true;
+//        }
+//    } else {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_phase[0] = false;
+//        }
+//    }
+//    if (button["lighthouse_use_factory_calibration_data_phase_2"]->isChecked()) {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_phase[1] = true;
+//        }
+//    } else {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_phase[1] = false;
+//        }
+//    }
+//    // tilt
+//    if (button["lighthouse_use_factory_calibration_data_tilt_1"]->isChecked()) {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_tilt[0] = true;
+//        }
+//    } else {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_tilt[0] = false;
+//        }
+//    }
+//    if (button["lighthouse_use_factory_calibration_data_tilt_2"]->isChecked()) {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_tilt[1] = true;
+//        }
+//    } else {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_tilt[1] = false;
+//        }
+//    }
+//    // gibbous phase
+//    if (button["lighthouse_use_factory_calibration_data_gphase_1"]->isChecked()) {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[0] = true;
+//        }
+//    } else {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[0] = false;
+//        }
+//    }
+//    if (button["lighthouse_use_factory_calibration_data_gphase_2"]->isChecked()) {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[1] = true;
+//        }
+//    } else {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[1] = false;
+//        }
+//    }
+//    // gibbous magnitude
+//    if (button["lighthouse_use_factory_calibration_data_gmag_1"]->isChecked()) {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[0] = true;
+//        }
+//    } else {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[0] = false;
+//        }
+//    }
+//    if (button["lighthouse_use_factory_calibration_data_gmag_2"]->isChecked()) {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[1] = true;
+//        }
+//    } else {
+//        for (uint i = 0; i < trackedObjects.size(); i++) {
+//            lock_guard<mutex>(trackedObjects[i]->mux);
+//            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[1] = false;
+//        }
+//    }
 }
 
 bool RoboyDarkRoom::addTrackedObject(const char *config_file_path) {
+    mux.lock();
     TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject());
     if (strlen(config_file_path) == 0) {
         QModelIndexList indexList = ui.tracked_object_browser->selectionModel()->selectedIndexes();
@@ -1073,6 +1089,7 @@ bool RoboyDarkRoom::addTrackedObject(const char *config_file_path) {
     trackedObjectsInfo.push_back(info);
 
     tracked_objects_scrollarea->layout()->addWidget(info.widget);
+    mux.unlock();
     return true;
 }
 
@@ -1080,6 +1097,7 @@ bool RoboyDarkRoom::addTrackedObject(const char *config_file_path) {
  * removes the selected tracked object
  */
 void RoboyDarkRoom::removeTrackedObject() {
+    mux.lock();
     publish_transform = false;
     if (transform_thread->joinable()) {
         ROS_INFO("waiting for transform thread to shut down");
@@ -1118,6 +1136,7 @@ void RoboyDarkRoom::removeTrackedObject() {
     update_tracked_object_info_thread = boost::shared_ptr<std::thread>(
             new std::thread(&RoboyDarkRoom::updateTrackedObjectInfo, this));
     update_tracked_object_info_thread->detach();
+    mux.unlock();
 }
 
 void RoboyDarkRoom::updateCalibrationValues(){
@@ -1718,10 +1737,12 @@ void RoboyDarkRoom::resetFactoryCalibration(){
     text["lighthouse_gibmag_horizontal_2"]->setText(QString::number(0));
     text["lighthouse_gibmag_vertical_2"]->setText(QString::number(0));
     for(auto &object:trackedObjects){
+        object->mux.lock();
         object->calibration[LIGHTHOUSE_A][HORIZONTAL].reset();
         object->calibration[LIGHTHOUSE_A][VERTICAL].reset();
         object->calibration[LIGHTHOUSE_B][HORIZONTAL].reset();
         object->calibration[LIGHTHOUSE_B][VERTICAL].reset();
+        object->mux.unlock();
     }
     if(!lighthouse_simulation.empty()){
         for(auto &lighthouse:lighthouse_simulation){

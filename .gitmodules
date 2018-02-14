@@ -4,3 +4,6 @@
 [submodule "epnp"]
 	path = epnp
 	url = https://github.com/artivis/epnp
+[submodule "yamc"]
+	path = yamc
+	url = https://github.com/yohhoy/yamc

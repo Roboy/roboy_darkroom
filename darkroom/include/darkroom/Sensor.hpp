@@ -44,9 +44,11 @@
 #include <Eigen/Geometry>
 
 // std
-#include <mutex>
+#include "alternate_shared_mutex.hpp"
 #include <vector>
 #include <chrono>
+
+using SharedMutex = yamc::alternate::basic_shared_mutex<yamc::rwlock::WriterPrefer>;
 
 #define NUMBER_OF_LIGHTHOUSES 2
 
@@ -210,6 +212,6 @@ private:
     double m_angles_horizontal[NUMBER_OF_LIGHTHOUSES], m_angles_vertical[NUMBER_OF_LIGHTHOUSES];
     high_resolution_clock::time_point m_angleUpdateTime_cur[NUMBER_OF_LIGHTHOUSES][2], m_angleUpdateTime_prev[NUMBER_OF_LIGHTHOUSES][2];
     float m_updateFrequency[NUMBER_OF_LIGHTHOUSES][2] = {{0,0}};
-    mutex m_lockMutex;
+    SharedMutex mux;
     bool calibrated = false;
 };

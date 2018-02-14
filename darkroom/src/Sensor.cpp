@@ -9,7 +9,7 @@ Sensor::Sensor(){
 }
 
 void Sensor::update(bool lighthouse, int type, double angle){
-    lock_guard<std::mutex> lock(m_lockMutex);
+    mux.lock();
     if (type == HORIZONTAL) {
         m_angles_horizontal[lighthouse] = angle;
         m_angleUpdateTime_prev[lighthouse][HORIZONTAL] = m_angleUpdateTime_cur[lighthouse][HORIZONTAL];
@@ -19,11 +19,13 @@ void Sensor::update(bool lighthouse, int type, double angle){
         m_angleUpdateTime_prev[lighthouse][VERTICAL] = m_angleUpdateTime_cur[lighthouse][VERTICAL];
         m_angleUpdateTime_cur[lighthouse][VERTICAL] = high_resolution_clock::now();
     }
+    mux.unlock();
 }
 
 void Sensor::switchLighthouses(bool switchID){
-    lock_guard<std::mutex> lock(m_lockMutex);
+    mux.lock();
     m_switch = switchID;
+    mux.unlock();
 }
 
 bool Sensor::getSwitchLighthouses(){
@@ -31,50 +33,68 @@ bool Sensor::getSwitchLighthouses(){
 }
 
 void Sensor::get(bool lighthouse, Vector2d &angles){
-    lock_guard<std::mutex> lock(m_lockMutex);
+    mux.lock();
     angles = Vector2d(m_angles_horizontal[m_switch?!lighthouse:lighthouse],
                       m_angles_vertical[m_switch?!lighthouse:lighthouse]);
+    mux.unlock();
 }
 
 void Sensor::get(bool lighthouse, Vector2d &angles, high_resolution_clock::time_point *timestamps){
-    lock_guard<std::mutex> lock(m_lockMutex);
+    mux.lock();
     angles = Vector2d(m_angles_horizontal[m_switch?!lighthouse:lighthouse],
                       m_angles_vertical[m_switch?!lighthouse:lighthouse]);
     timestamps[HORIZONTAL] = m_angleUpdateTime_cur[lighthouse][HORIZONTAL];
     timestamps[VERTICAL] = m_angleUpdateTime_cur[lighthouse][VERTICAL];
+    mux.unlock();
 }
 
 void Sensor::get(bool lighthouse, double &elevation, double &azimuth){
+    mux.lock();
     elevation = m_angles_vertical[m_switch?!lighthouse:lighthouse];
     azimuth = m_angles_horizontal[m_switch?!lighthouse:lighthouse];
+    mux.unlock();
 }
 
 void Sensor::get(bool lighthouse, vector<double> &elevations, vector<double> &azimuths){
+    mux.lock();
     elevations.push_back(m_angles_vertical[m_switch?!lighthouse:lighthouse]);
     azimuths.push_back(m_angles_horizontal[m_switch?!lighthouse:lighthouse]);
+    mux.unlock();
 }
 
 void Sensor::set(bool lighthouse, Vector3d &position3D){
+    mux.lock();
     m_relativePosition3D[m_switch?!lighthouse:lighthouse] = position3D;
     m_relativeOrigin3D[m_switch?!lighthouse:lighthouse] = position3D;
+    mux.unlock();
 }
 
 bool Sensor::get(bool lighthouse, Vector3d &position3D){
+    mux.lock();
     position3D = m_relativePosition3D[m_switch?!lighthouse:lighthouse];
+    mux.unlock();
     return true;
 }
 
 bool Sensor::getPosition3D(Vector3d &position3D){
+    mux.lock();
     position3D = m_position3D;
+    mux.unlock();
     return true;
 }
 
 void Sensor::set(Vector3d &position3D){
+    mux.lock();
     m_position3D = position3D;
+    mux.unlock();
 }
 
 double Sensor::getDistance(bool lighthouse){
-    return m_relativePosition3D[m_switch?!lighthouse:lighthouse].norm();
+    mux.lock();
+    double distance = m_relativePosition3D[m_switch?!lighthouse:lighthouse].norm();
+    mux.unlock();
+    return distance;
+
 }
 
 bool Sensor::isActive(bool lighthouse){
@@ -94,16 +114,22 @@ bool Sensor::hasNewData(high_resolution_clock::time_point *timestamp){
 }
 
 void Sensor::setRelativeLocation(Vector3d &relative_location){
+    mux.lock();
     m_relative_location = relative_location;
     calibrated = true;
+    mux.unlock();
 }
 
 void Sensor::getRelativeLocation(Vector3d &relative_location){
+    mux.lock();
     relative_location = m_relative_location;
+    mux.unlock();
 }
 
 void Sensor::getRelativeLocation(Vector4d &relative_location){
+    mux.lock();
     relative_location  << m_relative_location, 1;
+    mux.unlock();
 }
 
 bool Sensor::isCalibrated(){
@@ -111,7 +137,9 @@ bool Sensor::isCalibrated(){
 }
 
 void Sensor::getRelativeLocation(vector<Vector3d> &relative_locations){
+    mux.lock();
     relative_locations.push_back(m_relative_location);
+    mux.unlock();
 }
 
 void Sensor::updateFrequency(bool lighthouse, float &horizontal, float &vertical){

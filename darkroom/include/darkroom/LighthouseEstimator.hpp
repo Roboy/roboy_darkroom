@@ -206,7 +206,7 @@ public:
             distances, rays, particle_filtering, use_lighthouse_calibration_data_phase[2],
             use_lighthouse_calibration_data_tilt[2], use_lighthouse_calibration_data_gibphase[2],
             use_lighthouse_calibration_data_gibmag[2];
-    mutex mux;
+    SharedMutex mux;
     fs::path mesh;
     bool has_mesh = false;
     string name = "bastiisdoff";

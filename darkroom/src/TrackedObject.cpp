@@ -129,6 +129,7 @@ bool TrackedObject::init(const char* configFile){
 }
 
 void TrackedObject::shutDown(){
+    mux.lock();
     receiveData = false;
     tracking = false;
     calibrating = false;
@@ -186,16 +187,18 @@ void TrackedObject::shutDown(){
             publish_imu_transform->join();
         }
     }
+    mux.unlock();
 }
 
 void TrackedObject::connectObject(const char* broadcastIP, int port){
     uint32_t ip;
     inet_pton(AF_INET, broadcastIP, &ip);
     socket = UDPSocketPtr(new UDPSocket(port, ip));
-    lock_guard<mutex> lock(mux);
+    mux.lock();
     receiveData = true;
     sensor_thread = boost::shared_ptr<boost::thread>(new boost::thread(&TrackedObject::receiveSensorData, this));
     sensor_thread->detach();
+    mux.unlock();
 }
 
 void TrackedObject::switchLighthouses(bool switchID) {
@@ -240,7 +243,6 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware:
     static int message_counter = 0;
 
     uint lighthouse, rotor, sensorID,sweepDuration;
-    lock_guard<mutex> lock(mux);
 
     for (uint32_t const &data:msg->sensor_value) {
         lighthouse = (data >> 31) & 0x1;
@@ -259,8 +261,10 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware:
             double angle = ticksToRadians(sweepDuration);
             sensors[sensorID].update(lighthouse, rotor, angle);
             if (recording) {
+                mux.lock();
                 file << msg->timestamp[sensorID] << ",\t" << sensorID << ",\t"
                      << lighthouse << ",\t" << rotor << ",\t" << sweepDuration << ",\t" << angle << endl;
+                mux.unlock();
             }
         }
 
@@ -316,9 +320,10 @@ void TrackedObject::receiveSensorData(){
                 if (recording) {
                     chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
                     chrono::microseconds time_span = chrono::duration_cast<chrono::microseconds>(t1 - t0);
-                    lock_guard<mutex> lock(mux);
+                    mux.lock();
                     file << time_span.count() << ",\t" << id[i] << ",\t"
                          << lighthouse[i] << ",\t" << rotor[i] << ",\t" << sweepDuration[i] << ",\t" << angle << endl;
+                    mux.unlock();
                 }
             }
 //            Vector2d angles;
@@ -333,7 +338,7 @@ void TrackedObject::receiveSensorData(){
 void TrackedObject::publishImuFrame(){
     ros::Rate rate(30);
     while (publish_transform) {
-        lock_guard<mutex> lock(mux);
+//        lock_guard<mutex> lock(mux);
         tf_broadcaster.sendTransform(tf::StampedTransform(imu, ros::Time::now(), "world", "odom"));
         rate.sleep();
     }

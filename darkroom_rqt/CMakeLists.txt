@@ -49,6 +49,7 @@ include_directories(
     ${CMAKE_CURRENT_BINARY_DIR}/..
     ${catkin_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
+    ../yamc/include
 )
 
 add_library( darkroom_rqt src/darkroom_rqt.cpp ${darkroom_rqt_MOCS} ${darkroom_rqt_UIS_H}
