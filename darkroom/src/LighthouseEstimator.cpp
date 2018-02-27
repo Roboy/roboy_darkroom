@@ -192,7 +192,7 @@ bool LighthouseEstimator::lighthousePoseEstimationLeastSquares() {
 }
 
 void LighthouseEstimator::objectPoseEstimationLeastSquares() {
-    ros::Rate rate(30);
+    ros::Rate rate(60);
     ros::Time t0 = ros::Time::now(), t1;
 
     pose_pub = nh->advertise<geometry_msgs::PoseWithCovarianceStamped>(pose_topic_name.c_str(), 1);
@@ -295,7 +295,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
                 publishMesh("roboy_models", "Roboy2.0_Upper_Body_Xylophone_simplified/meshes/CAD", "xylophone.stl",
                             origin, q, 0.001, "world", "mesh", 9999, 1);
         }
-//        rate.sleep();
+        rate.sleep();
     }
 
     pose_pub.shutdown();
