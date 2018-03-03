@@ -95,6 +95,9 @@ target_link_libraries( LighthouseVisualPlugin ${catkin_LIBRARIES} Transform )
 add_library( ImuModelPlugin src/gazebo/ImuModelPlugin.cpp )
 target_link_libraries( ImuModelPlugin ${catkin_LIBRARIES} )
 
+add_executable(publishOpenVRPoses src/publishOpenVRPoses.cpp)
+target_link_libraries( publishOpenVRPoses ${catkin_LIBRARIES} Transform -lrt)
+
 #==============================================================================
 # Installation
 #==============================================================================

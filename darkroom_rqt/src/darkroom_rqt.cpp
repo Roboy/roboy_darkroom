@@ -111,6 +111,8 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
             "estimate_factory_calibration_values_multi");
     button["reset_factory_calibration_values"] = widget_->findChild<QPushButton *>(
             "reset_factory_calibration_values");
+    button["use_steamVR_lighthouse_poses"] = widget_->findChild<QPushButton *>("use_steamVR_lighthouse_poses");
+    button["compare_to_steamVR"] = widget_->findChild<QPushButton *>("compare_to_steamVR");
     button["reset_pose"] = widget_->findChild<QPushButton *>("reset_pose");
 
     text["lighthouse_phase_horizontal_1"] = widget_->findChild<QLineEdit *>("lighthouse_phase_horizontal_1");
@@ -194,6 +196,8 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     button["object_pose_estimation_least_squares"]->setToolTip("estimates object pose using least squares minimizer");
     button["add_tracked_object"]->setToolTip("adds the selected tracked object from the file browser");
     button["remove_tracked_object"]->setToolTip("removes the selected tracked object");
+    button["use_steamVR_lighthouse_poses"]->setToolTip("instead of using our own lighthouse frames, we listen to the frames published by vive_node");
+    button["compare_to_steamVR"]->setToolTip("toggles recording of steam vr vive_controller1 tracking and all selected tracked objects");
 
     ui.simulate->setToolTip("check this to simulate the sensor data");
     ui.random_pose->setToolTip("check this to randomly change the pose of all tracked objects");
@@ -221,22 +225,6 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(button["clear_all"], SIGNAL(clicked()), this, SLOT(clearAll()));
     QObject::connect(button["object_pose_estimation_least_squares"], SIGNAL(clicked()), this,
                      SLOT(startObjectPoseEstimationSensorCloud()));
-    QObject::connect(button["lighthouse_use_factory_calibration_data_phase_1"], SIGNAL(clicked()), this,
-                     SLOT(useFactoryCalibrationData()));
-    QObject::connect(button["lighthouse_use_factory_calibration_data_tilt_1"], SIGNAL(clicked()), this,
-                     SLOT(useFactoryCalibrationData()));
-    QObject::connect(button["lighthouse_use_factory_calibration_data_gphase_1"], SIGNAL(clicked()), this,
-                     SLOT(useFactoryCalibrationData()));
-    QObject::connect(button["lighthouse_use_factory_calibration_data_gmag_1"], SIGNAL(clicked()), this,
-                     SLOT(useFactoryCalibrationData()));
-    QObject::connect(button["lighthouse_use_factory_calibration_data_phase_2"], SIGNAL(clicked()), this,
-                     SLOT(useFactoryCalibrationData()));
-    QObject::connect(button["lighthouse_use_factory_calibration_data_tilt_2"], SIGNAL(clicked()), this,
-                     SLOT(useFactoryCalibrationData()));
-    QObject::connect(button["lighthouse_use_factory_calibration_data_gphase_2"], SIGNAL(clicked()), this,
-                     SLOT(useFactoryCalibrationData()));
-    QObject::connect(button["lighthouse_use_factory_calibration_data_gmag_2"], SIGNAL(clicked()), this,
-                     SLOT(useFactoryCalibrationData()));
     QObject::connect(button["add_tracked_object"], SIGNAL(clicked()), this, SLOT(addTrackedObject()));
     QObject::connect(button["remove_tracked_object"], SIGNAL(clicked()), this, SLOT(removeTrackedObject()));
     QObject::connect(button["estimate_factory_calibration_values"], SIGNAL(clicked()), this, SLOT(estimateFactoryCalibration()));
@@ -245,6 +233,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(button["estimate_factory_calibration_values_multi"], SIGNAL(clicked()), this, SLOT(estimateFactoryCalibrationMulti()));
     QObject::connect(button["reset_factory_calibration_values"], SIGNAL(clicked()), this, SLOT(resetFactoryCalibration()));
     QObject::connect(button["reset_pose"], SIGNAL(clicked()), this, SLOT(resetPose()));
+    QObject::connect(button["compare_to_steamVR"], SIGNAL(clicked()), this, SLOT(compareToSteamVR()));
 
     QObject::connect(this, SIGNAL(newData()), this, SLOT(plotData()));
     QObject::connect(this, SIGNAL(newStatisticsData()), this, SLOT(plotStatisticsData()));
@@ -356,6 +345,32 @@ void RoboyDarkRoom::saveSettings(qt_gui_cpp::Settings &plugin_settings,
 
 void RoboyDarkRoom::restoreSettings(const qt_gui_cpp::Settings &plugin_settings,
                                     const qt_gui_cpp::Settings &instance_settings) {
+}
+
+void RoboyDarkRoom::compareToSteamVR(){
+    int i = 0;
+    for (auto it = trackedObjects.begin(); it != trackedObjects.end();++it,i++) {
+        if (trackedObjectsInfo[i].selected->isChecked()) {
+            if(button["compare_to_steamVR"]->isChecked()) {
+                char str[100], t[20];
+                time_t now = std::time(0);
+                strftime(t, 20, "%d%m%Y_%H%M%S", localtime(&now));
+                sprintf(str, "record_%s_%s.log", it->get()->name.c_str(), t);
+                it->get()->mux.lock();
+                it->get()->steamVRrecord.open(str);
+                if (it->get()->steamVRrecord.is_open()) {
+                    it->get()->steamVRrecord << "time stamp[ns], \tx[VO], \ty, \tz, \tqx, \tqy, \tqz, \tqw, \tx[VIVE], \ty, \tz, \tqx, \tqy, \tqz, \tqw" << endl;
+                    it->get()->comparesteamvr = true;
+                }
+                it->get()->mux.unlock();
+            }else{
+                it->get()->mux.lock();
+                it->get()->comparesteamvr = false;
+                it->get()->steamVRrecord.close();
+                it->get()->mux.unlock();
+            }
+        }
+    }
 }
 
 void RoboyDarkRoom::connectRoboy() {
@@ -651,8 +666,10 @@ void RoboyDarkRoom::transformPublisher() {
     double boundary = 0.5;
     while (publish_transform) {
         mux.lock();
-        tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse1, ros::Time::now(), "world", "lighthouse1"));
-        tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse2, ros::Time::now(), "world", "lighthouse2"));
+        if(!button["use_steamVR_lighthouse_poses"]->isChecked()){
+            tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse1, ros::Time::now(), "world", "lighthouse1"));
+            tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse2, ros::Time::now(), "world", "lighthouse2"));
+        }
 //        for (auto &simulated:lighthouse_simulation) {
 //            tf_broadcaster.sendTransform(tf::StampedTransform(simulated.second->relative_object_pose, ros::Time::now(),
 //                                                              (simulated.second->id == 0 ? "lighthouse1"
@@ -814,10 +831,6 @@ void RoboyDarkRoom::receiveOOTXData(const roboy_communication_middleware::DarkRo
         text["lighthouse_acc_x_1"]->setText(QString::number(msg->accel_dir_x));
         text["lighthouse_acc_y_1"]->setText(QString::number(msg->accel_dir_y));
         text["lighthouse_acc_z_1"]->setText(QString::number(msg->accel_dir_z));
-        button["lighthouse_use_factory_calibration_data_phase_1"]->setEnabled(true);
-        button["lighthouse_use_factory_calibration_data_tilt_1"]->setEnabled(true);
-        button["lighthouse_use_factory_calibration_data_gphase_1"]->setEnabled(true);
-        button["lighthouse_use_factory_calibration_data_gmag_1"]->setEnabled(true);
     } else {
         text["lighthouse_firmware_version_2"]->setText(QString::number(msg->fw_version >> 6 & 0x3FF, 16));
         text["lighthouse_protocol_version_2"]->setText(QString::number(msg->fw_version & 0x1F, 10));
@@ -827,10 +840,6 @@ void RoboyDarkRoom::receiveOOTXData(const roboy_communication_middleware::DarkRo
         text["lighthouse_acc_x_2"]->setText(QString::number(msg->accel_dir_x));
         text["lighthouse_acc_y_2"]->setText(QString::number(msg->accel_dir_y));
         text["lighthouse_acc_z_2"]->setText(QString::number(msg->accel_dir_z));
-        button["lighthouse_use_factory_calibration_data_phase_2"]->setEnabled(true);
-        button["lighthouse_use_factory_calibration_data_tilt_2"]->setEnabled(true);
-        button["lighthouse_use_factory_calibration_data_gphase_2"]->setEnabled(true);
-        button["lighthouse_use_factory_calibration_data_gmag_2"]->setEnabled(true);
     }
 }
 

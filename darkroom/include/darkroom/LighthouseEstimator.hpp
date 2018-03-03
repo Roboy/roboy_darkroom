@@ -203,9 +203,7 @@ public:
     map<int, vector<double>> calibration_angles;
     int active_sensors = 0;
     atomic<bool> tracking, calibrating, poseestimating, poseestimating_epnp, poseestimating_multiLighthouse, objectposeestimating,
-            distances, rays, particle_filtering, use_lighthouse_calibration_data_phase[2],
-            use_lighthouse_calibration_data_tilt[2], use_lighthouse_calibration_data_gibphase[2],
-            use_lighthouse_calibration_data_gibmag[2];
+            distances, rays, comparesteamvr;
     SharedMutex mux;
     fs::path mesh;
     bool has_mesh = false;
@@ -213,6 +211,7 @@ public:
     string imu_topic_name, pose_topic_name;
     ros::Publisher pose_pub;
     tf::Transform pose;
+    ofstream steamVRrecord;
     static int trackedObjectInstance; //! a unique object instance (helps with unique rviz marker ids)
 private:
     void receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg);
@@ -224,7 +223,6 @@ private:
     void applyCalibrationData(bool lighthouse, double &elevation, double &azimuth);
 
     MatrixXd Pinv(MatrixXd A);
-
 private:
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;

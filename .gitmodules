@@ -7,3 +7,6 @@
 [submodule "yamc"]
 	path = yamc
 	url = https://github.com/yohhoy/yamc
+[submodule "vive_ros"]
+	path = vive_ros
+	url = https://github.com/Roboy/vive_ros

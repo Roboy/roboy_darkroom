@@ -55,7 +55,7 @@
       <rect>
        <x>10</x>
        <y>550</y>
-       <width>261</width>
+       <width>271</width>
        <height>27</height>
       </rect>
      </property>
@@ -71,7 +71,7 @@
       <rect>
        <x>0</x>
        <y>70</y>
-       <width>281</width>
+       <width>291</width>
        <height>221</height>
       </rect>
      </property>
@@ -86,7 +86,7 @@
        <rect>
         <x>10</x>
         <y>10</y>
-        <width>261</width>
+        <width>271</width>
         <height>27</height>
        </rect>
       </property>
@@ -105,7 +105,7 @@
        <rect>
         <x>10</x>
         <y>130</y>
-        <width>261</width>
+        <width>271</width>
         <height>27</height>
        </rect>
       </property>
@@ -121,7 +121,7 @@
        <rect>
         <x>10</x>
         <y>160</y>
-        <width>261</width>
+        <width>271</width>
         <height>27</height>
        </rect>
       </property>
@@ -134,7 +134,7 @@
        <rect>
         <x>10</x>
         <y>70</y>
-        <width>261</width>
+        <width>271</width>
         <height>27</height>
        </rect>
       </property>
@@ -150,7 +150,7 @@
        <rect>
         <x>10</x>
         <y>100</y>
-        <width>261</width>
+        <width>271</width>
         <height>27</height>
        </rect>
       </property>
@@ -166,7 +166,7 @@
        <rect>
         <x>10</x>
         <y>190</y>
-        <width>261</width>
+        <width>271</width>
         <height>27</height>
        </rect>
       </property>
@@ -179,7 +179,7 @@
        <rect>
         <x>10</x>
         <y>40</y>
-        <width>261</width>
+        <width>271</width>
         <height>27</height>
        </rect>
       </property>
@@ -199,7 +199,7 @@
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>281</width>
+       <width>291</width>
        <height>71</height>
       </rect>
      </property>
@@ -214,7 +214,7 @@
        <rect>
         <x>10</x>
         <y>10</y>
-        <width>261</width>
+        <width>271</width>
         <height>29</height>
        </rect>
       </property>
@@ -227,7 +227,7 @@
        <rect>
         <x>10</x>
         <y>40</y>
-        <width>71</width>
+        <width>81</width>
         <height>29</height>
        </rect>
       </property>
@@ -238,7 +238,7 @@
      <widget class="QLineEdit" name="broadcast_ip">
       <property name="geometry">
        <rect>
-        <x>80</x>
+        <x>90</x>
         <y>40</y>
         <width>131</width>
         <height>31</height>
@@ -251,7 +251,7 @@
      <widget class="QLineEdit" name="broadcast_port">
       <property name="geometry">
        <rect>
-        <x>210</x>
+        <x>220</x>
         <y>40</y>
         <width>61</width>
         <height>31</height>
@@ -267,8 +267,8 @@
       <rect>
        <x>0</x>
        <y>290</y>
-       <width>281</width>
-       <height>191</height>
+       <width>291</width>
+       <height>251</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -282,7 +282,7 @@
        <rect>
         <x>10</x>
         <y>10</y>
-        <width>261</width>
+        <width>271</width>
         <height>27</height>
        </rect>
       </property>
@@ -298,7 +298,7 @@
        <rect>
         <x>10</x>
         <y>160</y>
-        <width>261</width>
+        <width>271</width>
         <height>27</height>
        </rect>
       </property>
@@ -311,7 +311,7 @@
        <rect>
         <x>10</x>
         <y>130</y>
-        <width>261</width>
+        <width>271</width>
         <height>27</height>
        </rect>
       </property>
@@ -324,7 +324,7 @@
        <rect>
         <x>10</x>
         <y>40</y>
-        <width>261</width>
+        <width>271</width>
         <height>27</height>
        </rect>
       </property>
@@ -340,7 +340,7 @@
        <rect>
         <x>10</x>
         <y>70</y>
-        <width>261</width>
+        <width>271</width>
         <height>27</height>
        </rect>
       </property>
@@ -356,7 +356,7 @@
        <rect>
         <x>10</x>
         <y>100</y>
-        <width>261</width>
+        <width>271</width>
         <height>27</height>
        </rect>
       </property>
@@ -370,6 +370,38 @@
        <bool>true</bool>
       </property>
      </widget>
+     <widget class="QPushButton" name="use_steamVR_lighthouse_poses">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>190</y>
+        <width>271</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>use steamVR lighthouse poses</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="compare_to_steamVR">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>220</y>
+        <width>271</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>compare to SteamVR</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
     </widget>
     <widget class="QFrame" name="frame_5">
      <property name="geometry">
@@ -377,7 +409,7 @@
        <x>300</x>
        <y>0</y>
        <width>281</width>
-       <height>251</height>
+       <height>221</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -775,90 +807,14 @@
        <bool>true</bool>
       </property>
      </widget>
-     <widget class="QPushButton" name="lighthouse_use_factory_calibration_data_phase_1">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>220</y>
-        <width>71</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>phase</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="lighthouse_use_factory_calibration_data_tilt_1">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="geometry">
-       <rect>
-        <x>70</x>
-        <y>220</y>
-        <width>71</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>tilt</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="lighthouse_use_factory_calibration_data_gphase_1">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="geometry">
-       <rect>
-        <x>140</x>
-        <y>220</y>
-        <width>71</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>gphase</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="lighthouse_use_factory_calibration_data_gmag_1">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="geometry">
-       <rect>
-        <x>210</x>
-        <y>220</y>
-        <width>71</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>gmag</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
-     </widget>
     </widget>
     <widget class="QFrame" name="frame_7">
      <property name="geometry">
       <rect>
        <x>300</x>
-       <y>250</y>
+       <y>220</y>
        <width>281</width>
-       <height>251</height>
+       <height>221</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -1256,88 +1212,12 @@
        <bool>true</bool>
       </property>
      </widget>
-     <widget class="QPushButton" name="lighthouse_use_factory_calibration_data_gmag_2">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="geometry">
-       <rect>
-        <x>210</x>
-        <y>220</y>
-        <width>71</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>gmag</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="lighthouse_use_factory_calibration_data_phase_2">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>220</y>
-        <width>71</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>phase</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="lighthouse_use_factory_calibration_data_tilt_2">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="geometry">
-       <rect>
-        <x>70</x>
-        <y>220</y>
-        <width>71</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>tilt</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="lighthouse_use_factory_calibration_data_gphase_2">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="geometry">
-       <rect>
-        <x>140</x>
-        <y>220</y>
-        <width>71</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>gphase</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
-     </widget>
     </widget>
     <widget class="QCheckBox" name="random_pose">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>500</y>
+       <x>320</x>
+       <y>530</y>
        <width>121</width>
        <height>22</height>
       </rect>
@@ -1352,8 +1232,8 @@
     <widget class="QPushButton" name="reset_pose">
      <property name="geometry">
       <rect>
-       <x>10</x>
-       <y>520</y>
+       <x>320</x>
+       <y>550</y>
        <width>121</width>
        <height>27</height>
       </rect>
@@ -1368,8 +1248,8 @@
     <widget class="QCheckBox" name="random_pose_x">
      <property name="geometry">
       <rect>
-       <x>140</x>
-       <y>480</y>
+       <x>460</x>
+       <y>510</y>
        <width>41</width>
        <height>22</height>
       </rect>
@@ -1384,8 +1264,8 @@
     <widget class="QCheckBox" name="random_pose_y">
      <property name="geometry">
       <rect>
-       <x>180</x>
-       <y>480</y>
+       <x>500</x>
+       <y>510</y>
        <width>41</width>
        <height>22</height>
       </rect>
@@ -1400,8 +1280,8 @@
     <widget class="QCheckBox" name="random_pose_z">
      <property name="geometry">
       <rect>
-       <x>220</x>
-       <y>480</y>
+       <x>540</x>
+       <y>510</y>
        <width>41</width>
        <height>22</height>
       </rect>
@@ -1416,8 +1296,8 @@
     <widget class="QCheckBox" name="random_pose_pitch">
      <property name="geometry">
       <rect>
-       <x>180</x>
-       <y>500</y>
+       <x>500</x>
+       <y>530</y>
        <width>41</width>
        <height>22</height>
       </rect>
@@ -1432,8 +1312,8 @@
     <widget class="QCheckBox" name="random_pose_roll">
      <property name="geometry">
       <rect>
-       <x>140</x>
-       <y>500</y>
+       <x>460</x>
+       <y>530</y>
        <width>41</width>
        <height>22</height>
       </rect>
@@ -1448,8 +1328,8 @@
     <widget class="QCheckBox" name="random_pose_yaw">
      <property name="geometry">
       <rect>
-       <x>220</x>
-       <y>500</y>
+       <x>540</x>
+       <y>530</y>
        <width>41</width>
        <height>22</height>
       </rect>
@@ -1464,9 +1344,9 @@
     <widget class="QSlider" name="random_pose_slider">
      <property name="geometry">
       <rect>
-       <x>140</x>
-       <y>520</y>
-       <width>121</width>
+       <x>450</x>
+       <y>550</y>
+       <width>131</width>
        <height>29</height>
       </rect>
      </property>
@@ -1475,6 +1355,22 @@
      </property>
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+    <widget class="QCheckBox" name="simulate">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>510</y>
+       <width>97</width>
+       <height>21</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>simulate</string>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
      </property>
     </widget>
    </widget>
@@ -3309,22 +3205,6 @@
     </property>
     <property name="text">
      <string>tracked Objects</string>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="simulate">
-    <property name="geometry">
-     <rect>
-      <x>110</x>
-      <y>550</y>
-      <width>97</width>
-      <height>31</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>simulate</string>
-    </property>
-    <property name="checked">
-     <bool>false</bool>
     </property>
    </widget>
   </widget>

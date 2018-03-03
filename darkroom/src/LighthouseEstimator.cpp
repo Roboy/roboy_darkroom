@@ -92,15 +92,6 @@ LighthouseEstimator::LighthouseEstimator() {
     poseestimating = false;
     distances = false;
     rays = false;
-    particle_filtering = false;
-    use_lighthouse_calibration_data_phase[LIGHTHOUSE_A] = false;
-    use_lighthouse_calibration_data_phase[LIGHTHOUSE_B] = false;
-    use_lighthouse_calibration_data_tilt[LIGHTHOUSE_A] = false;
-    use_lighthouse_calibration_data_tilt[LIGHTHOUSE_B] = false;
-    use_lighthouse_calibration_data_gibphase[LIGHTHOUSE_A] = false;
-    use_lighthouse_calibration_data_gibphase[LIGHTHOUSE_B] = false;
-    use_lighthouse_calibration_data_gibmag[LIGHTHOUSE_A] = false;
-    use_lighthouse_calibration_data_gibmag[LIGHTHOUSE_B] = false;
 
     object_pose = VectorXd(6);
     object_pose << 0, 0, 0, 0, 0, 0.001;
@@ -294,6 +285,19 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
             if (has_mesh) // TODO mesh path not properly implemented yet
                 publishMesh("roboy_models", "Roboy2.0_Upper_Body_Xylophone_simplified/meshes/CAD", "xylophone.stl",
                             origin, q, 0.001, "world", "mesh", 9999, 1);
+
+            if (comparesteamvr && steamVRrecord.is_open()) {
+                tf::Transform frame;
+                if (getTransform("world", "vive_controller1", frame)) {
+                    tf::Vector3 origin2 = frame.getOrigin();
+                    tf::Quaternion q2 = frame.getRotation();
+                    steamVRrecord << ros::Time::now().toNSec() << ",\t"
+                                  << origin(0) << ",\t" << origin(1) << ",\t" << origin(2) << ",\t"
+                                  << q.x() << ",\t" << q.y() << ",\t" << q.z() << ",\t" << q.w() << ",\t"
+                                  << origin2.x() << ",\t" << origin2.y() << ",\t" << origin2.z() << ",\t"
+                                  << q2.x() << ",\t" << q2.y() << ",\t" << q2.z() << ",\t" << q2.w() << endl;
+                }
+            }
         }
         rate.sleep();
     }
@@ -1426,19 +1430,19 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
     vector<vector<int>> lighthouse_ids;
 
     int measurement_time = 5;
-    if(nh->hasParam("measurement_time"))
-        nh->getParam("measurement_time",measurement_time);
+    if (nh->hasParam("measurement_time"))
+        nh->getParam("measurement_time", measurement_time);
 
     ROS_INFO("recording lighthouse angles for %d seconds", measurement_time);
     ros::Time t0 = ros::Time::now();
     int iter = 0;
     do {
         Matrix4d object_pose;
-        getTransform(name.c_str(), "world",  object_pose);
+        getTransform(name.c_str(), "world", object_pose);
         object_pose_truth.push_back(object_pose);
 
-        Vector3d pos = object_pose.block(0,3,3,1);
-        publishSphere(pos,"world","recorded trajectory",(iter++)+66666,COLOR(0,1,0,0.2));
+        Vector3d pos = object_pose.block(0, 3, 3, 1);
+        publishSphere(pos, "world", "recorded trajectory", (iter++) + 66666, COLOR(0, 1, 0, 0.2));
 
         vector<int> visible_sensors;
         getVisibleCalibratedSensors(lighthouse, visible_sensors);
@@ -1537,8 +1541,8 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
         elevations_calib = elevations_measured;
         azimuths_calib = azimuths_measured;
         for (int frame = 0; frame < elevations_measured.size(); frame++) {
-            for(int i=0;i<elevations_measured[frame].size();i++){
-                applyCalibrationData(lighthouse,elevations_calib[frame][i],azimuths_calib[frame][i]);
+            for (int i = 0; i < elevations_measured[frame].size(); i++) {
+                applyCalibrationData(lighthouse, elevations_calib[frame][i], azimuths_calib[frame][i]);
             }
 
             PoseEstimatorMultiLighthouse::PoseEstimator estimator(elevations_measured[frame].size());
@@ -1566,8 +1570,8 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
             Matrix4d RT_object;
             getRTmatrix(RT_object, pose);
 
-            Vector3d pos = RT_object.block(0,3,3,1);
-            publishSphere(pos,"world","estimated trajectory",frame+77777,COLOR(1,0,0,0.2));
+            Vector3d pos = RT_object.block(0, 3, 3, 1);
+            publishSphere(pos, "world", "estimated trajectory", frame + 77777, COLOR(1, 0, 0, 0.2));
 
             tf::Transform tf;
             getTFtransform(RT_object, tf);
@@ -1679,9 +1683,9 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
         calibration[lighthouse][VERTICAL].gibmag = x[gibmag_vertical];
 
         iteration++;
-        if(nh->hasParam("max_iterations"))
-            nh->getParam("max_iterations",max_iterations);
-    } while (error > 0.00001 && iteration<max_iterations);
+        if (nh->hasParam("max_iterations"))
+            nh->getParam("max_iterations", max_iterations);
+    } while (error > 0.00001 && iteration < max_iterations);
     ROS_INFO("calibration terminated with error %lf", error);
 }
 

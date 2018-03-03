@@ -90,6 +90,10 @@ public:
 
 public Q_SLOTS:
     /**
+     * compare the tracking of a trackedObject that has a vive controller mounted to it
+     */
+    void compareToSteamVR();
+    /**
      * connect Roboy via ROS
      */
     void connectRoboy();
