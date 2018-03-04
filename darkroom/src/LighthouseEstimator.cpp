@@ -183,7 +183,7 @@ bool LighthouseEstimator::lighthousePoseEstimationLeastSquares() {
 }
 
 void LighthouseEstimator::objectPoseEstimationLeastSquares() {
-    ros::Rate rate(60);
+    ros::Rate rate(200);
     ros::Time t0 = ros::Time::now(), t1;
 
     pose_pub = nh->advertise<geometry_msgs::PoseWithCovarianceStamped>(pose_topic_name.c_str(), 1);
@@ -204,6 +204,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
 
         PoseEstimatorSensorCloud::PoseEstimator estimator(visible_sensors.size());
         uint i = 0;
+        mux.lock();
         for (auto sensor:visible_sensors) {
             Vector3d position3d, relLocation1;
             sensors[sensor].getPosition3D(position3d);
@@ -212,6 +213,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
             estimator.pos3D_B.block(0, i, 4, 1) << relLocation1(0), relLocation1(1), relLocation1(2), 1;
             i++;
         }
+        mux.unlock();
 
         Matrix4d RT_0, RT_correct, RT_object;
         getTransform(LIGHTHOUSE_A, "world", RT_0);
@@ -287,15 +289,32 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
                             origin, q, 0.001, "world", "mesh", 9999, 1);
 
             if (comparesteamvr && steamVRrecord.is_open()) {
-                tf::Transform frame;
-                if (getTransform("world", "vive_controller1", frame)) {
-                    tf::Vector3 origin2 = frame.getOrigin();
-                    tf::Quaternion q2 = frame.getRotation();
+                static high_resolution_clock::time_point t[2];
+                static tf::Vector3 origin[2], origin2[2];
+                t[1] = high_resolution_clock::now();
+                tf::Transform frame[2];
+                if (getTransform("vive_controller1", "lighthouse1", frame[1]) &&
+                    getTransform(tf_name.c_str(), "lighthouse1", frame[0])) {
+                    origin[1] = frame[0].getOrigin();
+                    tf::Quaternion q = frame[0].getRotation();
+                    origin2[1] = frame[1].getOrigin();
+                    tf::Quaternion q2 = frame[1].getRotation();
+                    milliseconds dtms = duration_cast<milliseconds>(t[1] - t[0]);
+                    double dts = dtms.count() / 1000.0;
                     steamVRrecord << ros::Time::now().toNSec() << ",\t"
-                                  << origin(0) << ",\t" << origin(1) << ",\t" << origin(2) << ",\t"
+                                  << origin[1].x() << ",\t" << origin[1].y() << ",\t" << origin[1].z() << ",\t"
+                                  << (origin[1].x() - origin[0].x()) / dts  << ",\t"
+                                  << (origin[1].y() - origin[0].y()) / dts << ",\t"
+                                  << (origin[1].z() - origin[0].z()) / dts << ",\t"
                                   << q.x() << ",\t" << q.y() << ",\t" << q.z() << ",\t" << q.w() << ",\t"
-                                  << origin2.x() << ",\t" << origin2.y() << ",\t" << origin2.z() << ",\t"
+                                  << origin2[1].x() << ",\t" << origin2[1].y() << ",\t" << origin2[1].z() << ",\t"
+                                  << (origin2[1].x() - origin2[0].x()) / dts << ",\t"
+                                  << (origin2[1].y() - origin2[0].y()) / dts << ",\t"
+                                  << (origin2[1].z() - origin2[0].z()) / dts << ",\t"
                                   << q2.x() << ",\t" << q2.y() << ",\t" << q2.z() << ",\t" << q2.w() << endl;
+                    origin[0] = origin[1];
+                    origin2[0] = origin2[1];
+                    t[0] = t[1];
                 }
             }
         }
@@ -851,8 +870,9 @@ void LighthouseEstimator::triangulateSensors() {
                     triangulateFromLighthouseAngles(lighthouse0_angles, lighthouse1_angles, RT_0, RT_1,
                                                     triangulated_position, ray0,
                                                     ray1);
-
+                    mux.lock();
                     sensor.second.set(triangulated_position);
+                    mux.unlock();
 
                     if (!triangulated_position.hasNaN()) {
                         char str[100], str2[2];

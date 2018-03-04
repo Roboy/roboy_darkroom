@@ -307,13 +307,13 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
         ui.update_frequencies_vertical_lighthouse_2->graph(i)->setPen(QPen(color));
     }
     ui.update_frequencies_horizontal_lighthouse_1->yAxis->setLabel("frequency[Hz]");
-    ui.update_frequencies_horizontal_lighthouse_1->yAxis->setRange(0, 1000);
+    ui.update_frequencies_horizontal_lighthouse_1->yAxis->setRange(0, 100);
     ui.update_frequencies_horizontal_lighthouse_2->yAxis->setLabel("frequency[Hz]");
-    ui.update_frequencies_horizontal_lighthouse_2->yAxis->setRange(0, 1000);
+    ui.update_frequencies_horizontal_lighthouse_2->yAxis->setRange(0, 100);
     ui.update_frequencies_vertical_lighthouse_1->yAxis->setLabel("frequency[Hz]");
-    ui.update_frequencies_vertical_lighthouse_1->yAxis->setRange(0, 1000);
+    ui.update_frequencies_vertical_lighthouse_1->yAxis->setRange(0, 100);
     ui.update_frequencies_vertical_lighthouse_2->yAxis->setLabel("frequency[Hz]");
-    ui.update_frequencies_vertical_lighthouse_2->yAxis->setRange(0, 1000);
+    ui.update_frequencies_vertical_lighthouse_2->yAxis->setRange(0, 100);
 
     model = new QFileSystemModel;
     string package_path = ros::package::getPath("roboy_models");
@@ -359,7 +359,7 @@ void RoboyDarkRoom::compareToSteamVR(){
                 it->get()->mux.lock();
                 it->get()->steamVRrecord.open(str);
                 if (it->get()->steamVRrecord.is_open()) {
-                    it->get()->steamVRrecord << "time stamp[ns], \tx[VO], \ty, \tz, \tqx, \tqy, \tqz, \tqw, \tx[VIVE], \ty, \tz, \tqx, \tqy, \tqz, \tqw" << endl;
+                    it->get()->steamVRrecord << "time stamp[ns], \tx[VO], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw, \tx[VIVE], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw" << endl;
                     it->get()->comparesteamvr = true;
                 }
                 it->get()->mux.unlock();

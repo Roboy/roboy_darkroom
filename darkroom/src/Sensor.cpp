@@ -11,13 +11,17 @@ Sensor::Sensor(){
 void Sensor::update(bool lighthouse, int type, double angle){
     mux.lock();
     if (type == HORIZONTAL) {
-        m_angles_horizontal[lighthouse] = angle;
-        m_angleUpdateTime_prev[lighthouse][HORIZONTAL] = m_angleUpdateTime_cur[lighthouse][HORIZONTAL];
-        m_angleUpdateTime_cur[lighthouse][HORIZONTAL] = high_resolution_clock::now();
+        if(m_angles_horizontal[lighthouse] != angle){
+            m_angles_horizontal[lighthouse] = angle;
+            m_angleUpdateTime_prev[lighthouse][HORIZONTAL] = m_angleUpdateTime_cur[lighthouse][HORIZONTAL];
+            m_angleUpdateTime_cur[lighthouse][HORIZONTAL] = high_resolution_clock::now();
+        }
     } else {
-        m_angles_vertical[lighthouse] = angle;
-        m_angleUpdateTime_prev[lighthouse][VERTICAL] = m_angleUpdateTime_cur[lighthouse][VERTICAL];
-        m_angleUpdateTime_cur[lighthouse][VERTICAL] = high_resolution_clock::now();
+        if(m_angles_vertical[lighthouse] != angle){
+            m_angles_vertical[lighthouse] = angle;
+            m_angleUpdateTime_prev[lighthouse][VERTICAL] = m_angleUpdateTime_cur[lighthouse][VERTICAL];
+            m_angleUpdateTime_cur[lighthouse][VERTICAL] = high_resolution_clock::now();
+        }
     }
     mux.unlock();
 }
