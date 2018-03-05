@@ -371,6 +371,22 @@ void RoboyDarkRoom::restoreSettings(const qt_gui_cpp::Settings &plugin_settings,
                                     const qt_gui_cpp::Settings &instance_settings) {
 }
 
+void RoboyDarkRoom::alignToViveController(){
+    int i = 0;
+    for (auto it = trackedObjects.begin(); it != trackedObjects.end();++it,i++) {
+        if (trackedObjectsInfo[i].selected->isChecked()) {
+            if(button["align_to_vive_controller"]->isChecked()) {
+//                if(getTransform("vive_controller1","")
+            }else{
+                it->get()->mux.lock();
+                it->get()->comparesteamvr = false;
+                it->get()->steamVRrecord.close();
+                it->get()->mux.unlock();
+            }
+        }
+    }
+}
+
 void RoboyDarkRoom::compareToSteamVR(){
     int i = 0;
     for (auto it = trackedObjects.begin(); it != trackedObjects.end();++it,i++) {
@@ -600,8 +616,16 @@ void RoboyDarkRoom::startObjectPoseEstimationSensorCloud() {
         trackedObjects[i]->mux.lock();
         if (button["object_pose_estimation_least_squares"]->isChecked()) {
             ROS_INFO("starting pose estimation thread");
-            if(!button["triangulate"]->isChecked())
+            if(!button["triangulate"]->isChecked()){
+                ROS_INFO("starting tracking thread");
+                trackedObjects[i]->tracking = true;
+                trackedObjects[i]->tracking_thread = boost::shared_ptr<boost::thread>(
+                        new boost::thread(
+                                [this, i]() { this->trackedObjects[i]->triangulateSensors(); }
+                        ));
+                trackedObjects[i]->tracking_thread->detach();
                 button["triangulate"]->setChecked(true);
+            }
             trackedObjects[i]->objectposeestimating = true;
             trackedObjects[i]->objectposeestimation_thread = boost::shared_ptr<boost::thread>(
                     new boost::thread([this, i]() {
@@ -869,8 +893,8 @@ void RoboyDarkRoom::receiveOOTXData(const roboy_communication_middleware::DarkRo
         text["lighthouse_acc_z_1"]->setText(QString::number(msg->accel_dir_z));
         calibration[LIGHTHOUSE_A][HORIZONTAL].phase = msg->fcal_0_phase;
         calibration[LIGHTHOUSE_A][VERTICAL].phase = msg->fcal_1_phase;
-        calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = msg->fcal_0_tilt;
-        calibration[LIGHTHOUSE_A][VERTICAL].tilt = msg->fcal_0_tilt;
+        calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = -msg->fcal_0_tilt;
+        calibration[LIGHTHOUSE_A][VERTICAL].tilt = -msg->fcal_0_tilt;
         calibration[LIGHTHOUSE_A][HORIZONTAL].curve = msg->fcal_0_curve;
         calibration[LIGHTHOUSE_A][VERTICAL].curve = msg->fcal_0_curve;
         calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = msg->fcal_0_gibphase;
@@ -904,8 +928,8 @@ void RoboyDarkRoom::receiveOOTXData(const roboy_communication_middleware::DarkRo
         text["lighthouse_acc_z_2"]->setText(QString::number(msg->accel_dir_z));
         calibration[LIGHTHOUSE_B][HORIZONTAL].phase = msg->fcal_0_phase;
         calibration[LIGHTHOUSE_B][VERTICAL].phase = msg->fcal_1_phase;
-        calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = msg->fcal_0_tilt;
-        calibration[LIGHTHOUSE_B][VERTICAL].tilt = msg->fcal_0_tilt;
+        calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = -msg->fcal_0_tilt;
+        calibration[LIGHTHOUSE_B][VERTICAL].tilt = -msg->fcal_0_tilt;
         calibration[LIGHTHOUSE_B][HORIZONTAL].curve = msg->fcal_0_curve;
         calibration[LIGHTHOUSE_B][VERTICAL].curve = msg->fcal_0_curve;
         calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = msg->fcal_0_gibphase;
@@ -923,6 +947,7 @@ void RoboyDarkRoom::receiveOOTXData(const roboy_communication_middleware::DarkRo
         text["lighthouse_gibmag0_2"]->setText(QString::number(msg->fcal_0_gibmag));
         text["lighthouse_gibmag1_2"]->setText(QString::number(msg->fcal_1_gibmag));
     }
+    useViveCalibrationValues();
 }
 
 bool RoboyDarkRoom::fileExists(const string &filepath) {

@@ -1603,10 +1603,13 @@
       <property name="checkable">
        <bool>true</bool>
       </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
      </widget>
      <widget class="QPushButton" name="lighthouse_use_tilt_1">
       <property name="enabled">
-       <bool>false</bool>
+       <bool>true</bool>
       </property>
       <property name="geometry">
        <rect>
@@ -2627,10 +2630,13 @@
       <property name="checkable">
        <bool>true</bool>
       </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
      </widget>
      <widget class="QPushButton" name="lighthouse_use_tilt_2">
       <property name="enabled">
-       <bool>false</bool>
+       <bool>true</bool>
       </property>
       <property name="geometry">
        <rect>

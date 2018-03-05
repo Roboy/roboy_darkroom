@@ -90,6 +90,10 @@ public:
 
 public Q_SLOTS:
     /**
+     * align tracked object coordinate frame with vive controller
+     */
+    void alignToViveController();
+    /**
      * compare the tracking of a trackedObject that has a vive controller mounted to it
      */
     void compareToSteamVR();

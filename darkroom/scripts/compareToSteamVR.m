@@ -8,14 +8,17 @@ g.axes=axes('Linewidth',2,'DataAspectRatio',[1 1 1], 'XGrid','on','YGrid','on','
 view(45,45)
 hold on
 %%
-X = csvread('record_calibration_x.log',1);
+X = csvread('record_calibration_05032018_210645.log',1);
 mX = X(1,2:4)-X(1,12:14);
+% mX = [0 0 0];
 xlabel('x')
 ylabel('y')
 zlabel('z')
 plot3(X(:,2),X(:,3),X(:,4),'r')
 plot3(X(:,12)+mX(1),X(:,13)+mX(2),X(:,14)+mX(3),'r--')
 mseX = immse(X(:,2:4),[X(:,12)+mX(1),X(:,13)+mX(2),X(:,14)+mX(3)])
+figure(6)
+plot(sqrt((X(:,2)-X(:,12)).^2+(X(:,3)-X(:,13)).^2+(X(:,4)-X(:,14)).^2));
 %%
 Y = csvread('record_calibration_y.log',1);
 mY = Y(1,2:4)-Y(1,12:14);

@@ -457,7 +457,7 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
 
         Vector2d angles(azimuths[i], elevations[i]);
         Eigen::Vector3d u0;
-        rayFromLighthouseAngles(angles, u0);
+        rayFromLighthouseAngles(angles, u0, lighthouse);
 
         Vector3d relLocation(d_old(i) * u0(0), d_old(i) * u0(1), d_old(i) * u0(2));
         sensors[id].set(lighthouse, relLocation);
@@ -983,7 +983,7 @@ void LighthouseEstimator::publishRays() {
 
                 if (lighthouse_active[LIGHTHOUSE_A]) {
                     Vector3d ray;
-                    rayFromLighthouseAngles(lighthouse0_angles, ray);
+                    rayFromLighthouseAngles(lighthouse0_angles, ray, LIGHTHOUSE_A);
                     Vector3d pos(0, 0, 0);
                     ray *= 4.0;
                     publishRay(pos, ray, "lighthouse1", "rays_lighthouse_1", getMessageID(RAY, sensor.first, 0),
@@ -991,7 +991,7 @@ void LighthouseEstimator::publishRays() {
                 }
                 if (lighthouse_active[LIGHTHOUSE_B]) {
                     Vector3d ray;
-                    rayFromLighthouseAngles(lighthouse1_angles, ray);
+                    rayFromLighthouseAngles(lighthouse1_angles, ray, LIGHTHOUSE_B);
                     Vector3d pos(0, 0, 0);
                     ray *= 4.0;
                     publishRay(pos, ray, "lighthouse2", "rays_lighthouse_2", getMessageID(RAY, sensor.first, 0),
@@ -1988,11 +1988,11 @@ void LighthouseEstimator::applyCalibrationData(bool lighthouse, Vector2d &lighth
     lighthouse_angles(VERTICAL) += calibration[lighthouse][VERTICAL].curve *
                                    pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
                                    + calibration[lighthouse][VERTICAL].gibmag *
-                                     cos(lighthouse_angles(VERTICAL) + calibration[lighthouse][VERTICAL].gibphase);
+                                     sin(lighthouse_angles(VERTICAL) + calibration[lighthouse][VERTICAL].gibphase);
     lighthouse_angles(HORIZONTAL) += calibration[lighthouse][HORIZONTAL].curve *
                                      pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
                                      + calibration[lighthouse][HORIZONTAL].gibmag *
-                                       cos(lighthouse_angles(HORIZONTAL) +
+                                       sin(lighthouse_angles(HORIZONTAL) +
                                            calibration[lighthouse][HORIZONTAL].gibphase);
 
 }
@@ -2003,11 +2003,11 @@ void LighthouseEstimator::applyCalibrationData(bool lighthouse, double &elevatio
     elevation += calibration[lighthouse][VERTICAL].curve *
                  pow(cos(azimuth) * sin(elevation), 2.0)
                  + calibration[lighthouse][VERTICAL].gibmag *
-                   cos(elevation + calibration[lighthouse][VERTICAL].gibphase);
+                   sin(elevation + calibration[lighthouse][VERTICAL].gibphase);
     azimuth += calibration[lighthouse][HORIZONTAL].curve *
                pow(-sin(azimuth) * cos(elevation), 2.0)
                + calibration[lighthouse][HORIZONTAL].gibmag *
-                 cos(azimuth + calibration[lighthouse][HORIZONTAL].gibphase);
+                 sin(azimuth + calibration[lighthouse][HORIZONTAL].gibphase);
 }
 
 MatrixXd LighthouseEstimator::Pinv(MatrixXd A) {

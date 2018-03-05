@@ -86,8 +86,8 @@ public:
 
     double triangulateFromRays(Vector3d &ray0, Vector3d &ray1, Matrix4d &RT_0, Matrix4d &RT_1, Vector3d &triangulated_position);
 
-    void rayFromLighthouseAngles(Vector2d &angles, Vector3d &ray);
-    void rayFromLighthouseAngles(double elevation, double azimuth, Vector3d &ray);
+    void rayFromLighthouseAngles(Vector2d &angles, Vector3d &ray, int lighthouse);
+    void rayFromLighthouseAngles(double elevation, double azimuth, Vector3d &ray, int lighthouse);
 
     // for each motor and each lighthouse
     LighthouseCalibration calibration[2][2];
