@@ -649,13 +649,17 @@ void RoboyDarkRoom::startEstimateObjectPoseMultiLighthouse() {
     ROS_DEBUG("pose_estimation_multi_lighthouse clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
         trackedObjects[i]->mux.lock();
-        ROS_INFO("starting multi lighthouse pose estimation thread");
-        trackedObjects[i]->poseestimating_multiLighthouse = true;
-        trackedObjects[i]->object_pose_estimation_multi_lighthouse_thread = boost::shared_ptr<boost::thread>(
-                new boost::thread([this, i]() {
-                    this->trackedObjects[i]->estimateObjectPoseMultiLighthouse();
-                }));
-        trackedObjects[i]->object_pose_estimation_multi_lighthouse_thread->detach();
+        if(button["pose_estimation_multi_lighthouse"]->isChecked()) {
+            ROS_INFO("starting multi lighthouse pose estimation thread");
+            trackedObjects[i]->poseestimating_multiLighthouse = true;
+            trackedObjects[i]->object_pose_estimation_multi_lighthouse_thread = boost::shared_ptr<boost::thread>(
+                    new boost::thread([this, i]() {
+                        this->trackedObjects[i]->estimateObjectPoseMultiLighthouse();
+                    }));
+            trackedObjects[i]->object_pose_estimation_multi_lighthouse_thread->detach();
+        }else{
+            trackedObjects[i]->poseestimating_multiLighthouse = false;
+        }
         trackedObjects[i]->mux.unlock();
     }
 }

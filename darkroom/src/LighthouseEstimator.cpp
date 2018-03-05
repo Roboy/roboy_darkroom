@@ -820,7 +820,37 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
 
         tf::Transform tf;
         getTFtransform(RT_object, tf);
-        publishTF(tf, "world", "object_multi_lighthouse");
+        publishTF(tf, "world", (name + "_ML").c_str());
+
+        if (comparesteamvr && steamVRrecord.is_open()) {
+            static high_resolution_clock::time_point t[2];
+            static tf::Vector3 origin[2], origin2[2];
+            t[1] = high_resolution_clock::now();
+            tf::Transform frame[2];
+            if (getTransform("vive_controller1", "lighthouse1", frame[1]) &&
+                getTransform((name + "_ML").c_str(), "lighthouse1", frame[0])) {
+                origin[1] = frame[0].getOrigin();
+                tf::Quaternion q = frame[0].getRotation();
+                origin2[1] = frame[1].getOrigin();
+                tf::Quaternion q2 = frame[1].getRotation();
+                milliseconds dtms = duration_cast<milliseconds>(t[1] - t[0]);
+                double dts = dtms.count() / 1000.0;
+                steamVRrecord << ros::Time::now().toNSec() << ",\t"
+                              << origin[1].x() << ",\t" << origin[1].y() << ",\t" << origin[1].z() << ",\t"
+                              << (origin[1].x() - origin[0].x()) / dts  << ",\t"
+                              << (origin[1].y() - origin[0].y()) / dts << ",\t"
+                              << (origin[1].z() - origin[0].z()) / dts << ",\t"
+                              << q.x() << ",\t" << q.y() << ",\t" << q.z() << ",\t" << q.w() << ",\t"
+                              << origin2[1].x() << ",\t" << origin2[1].y() << ",\t" << origin2[1].z() << ",\t"
+                              << (origin2[1].x() - origin2[0].x()) / dts << ",\t"
+                              << (origin2[1].y() - origin2[0].y()) / dts << ",\t"
+                              << (origin2[1].z() - origin2[0].z()) / dts << ",\t"
+                              << q2.x() << ",\t" << q2.y() << ",\t" << q2.z() << ",\t" << q2.w() << endl;
+                origin[0] = origin[1];
+                origin2[0] = origin2[1];
+                t[0] = t[1];
+            }
+        }
 
         rate.sleep();
     }
