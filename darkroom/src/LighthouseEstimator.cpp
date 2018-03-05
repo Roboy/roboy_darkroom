@@ -773,6 +773,7 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
         for (auto sensor:visible_sensors[LIGHTHOUSE_A]) {
             Vector4d rel_pos;
             sensors[sensor].get(LIGHTHOUSE_A, elevations, azimuths);
+            applyCalibrationData(LIGHTHOUSE_A,elevations.back(),azimuths.back());
             sensors[sensor].getRelativeLocation(rel_pos);
             rel_positions.push_back(rel_pos);
             lighthouse_id.push_back(LIGHTHOUSE_A);
@@ -780,6 +781,7 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
         for (auto sensor:visible_sensors[LIGHTHOUSE_B]) {
             Vector4d rel_pos;
             sensors[sensor].get(LIGHTHOUSE_B, elevations, azimuths);
+            applyCalibrationData(LIGHTHOUSE_B,elevations.back(),azimuths.back());
             sensors[sensor].getRelativeLocation(rel_pos);
             rel_positions.push_back(rel_pos);
             lighthouse_id.push_back(LIGHTHOUSE_B);
