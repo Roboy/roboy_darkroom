@@ -44,35 +44,19 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="tab">
     <attribute name="title">
      <string>control</string>
     </attribute>
-    <widget class="QPushButton" name="record">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>550</y>
-       <width>271</width>
-       <height>27</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>record</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-    </widget>
     <widget class="QFrame" name="frame_3">
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>70</y>
+       <y>80</y>
        <width>291</width>
-       <height>221</height>
+       <height>111</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -81,59 +65,11 @@
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <widget class="QPushButton" name="triangulate">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>10</y>
-        <width>271</width>
-        <height>27</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>triangulate</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
-      <property name="checked">
-       <bool>false</bool>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="switch_lighthouses">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>130</y>
-        <width>271</width>
-        <height>27</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>switch lighthouses</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="reset_lighthouse_poses">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>160</y>
-        <width>271</width>
-        <height>27</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>reset lighthouse poses</string>
-      </property>
-     </widget>
      <widget class="QPushButton" name="show_rays">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>70</y>
+        <y>10</y>
         <width>271</width>
         <height>27</height>
        </rect>
@@ -149,7 +85,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>100</y>
+        <y>40</y>
         <width>271</width>
         <height>27</height>
        </rect>
@@ -165,32 +101,13 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>190</y>
+        <y>70</y>
         <width>271</width>
         <height>27</height>
        </rect>
       </property>
       <property name="text">
        <string>clear all</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="object_pose_estimation_least_squares">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>40</y>
-        <width>271</width>
-        <height>27</height>
-       </rect>
-      </property>
-      <property name="toolTip">
-       <string extracomment="test"/>
-      </property>
-      <property name="text">
-       <string>object pose estimation (least squares)</string>
-      </property>
-      <property name="checkable">
-       <bool>true</bool>
       </property>
      </widget>
     </widget>
@@ -200,7 +117,7 @@
        <x>0</x>
        <y>0</y>
        <width>291</width>
-       <height>71</height>
+       <height>81</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -266,9 +183,9 @@
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>290</y>
+       <y>190</y>
        <width>291</width>
-       <height>251</height>
+       <height>231</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -277,7 +194,129 @@
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <widget class="QPushButton" name="position_estimation_relativ_sensor_distances">
+     <widget class="QPushButton" name="pose_correction_least_squares">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>70</y>
+        <width>271</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>pose correction (least squares)</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="use_steamVR_lighthouse_poses">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>100</y>
+        <width>271</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>use steamVR lighthouse poses</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="compare_to_steamVR">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>130</y>
+        <width>271</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>compare to SteamVR</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="reset_lighthouse_poses">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>40</y>
+        <width>271</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>reset lighthouse poses</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="switch_lighthouses">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>271</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>switch lighthouses</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="record">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>190</y>
+        <width>271</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>record</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="align_to_vive_controller">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>160</y>
+        <width>271</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>align tracked object to Vive contoller</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QFrame" name="frame_9">
+     <property name="geometry">
+      <rect>
+       <x>290</x>
+       <y>0</y>
+       <width>291</width>
+       <height>141</height>
+      </rect>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <widget class="QPushButton" name="object_pose_estimation_least_squares">
       <property name="geometry">
        <rect>
         <x>10</x>
@@ -290,33 +329,10 @@
        <string extracomment="test"/>
       </property>
       <property name="text">
-       <string>position estimation (using relativ)</string>
+       <string>object pose estimation (least squares)</string>
       </property>
-     </widget>
-     <widget class="QPushButton" name="calibrate_relative_distances">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>160</y>
-        <width>271</width>
-        <height>27</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>calibrate relative distances</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="pose_correction_least_squares">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>130</y>
-        <width>271</width>
-        <height>27</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>pose correction (least squares)</string>
+      <property name="checkable">
+       <bool>true</bool>
       </property>
      </widget>
      <widget class="QPushButton" name="pose_estimation_relativ_sensor_distances">
@@ -370,46 +386,259 @@
        <bool>true</bool>
       </property>
      </widget>
-     <widget class="QPushButton" name="use_steamVR_lighthouse_poses">
+    </widget>
+    <widget class="QFrame" name="frame_10">
+     <property name="geometry">
+      <rect>
+       <x>290</x>
+       <y>140</y>
+       <width>291</width>
+       <height>111</height>
+      </rect>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <widget class="QPushButton" name="triangulate">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>190</y>
+        <y>10</y>
         <width>271</width>
         <height>27</height>
        </rect>
       </property>
       <property name="text">
-       <string>use steamVR lighthouse poses</string>
+       <string>triangulate</string>
       </property>
       <property name="checkable">
        <bool>true</bool>
       </property>
+      <property name="checked">
+       <bool>false</bool>
+      </property>
      </widget>
-     <widget class="QPushButton" name="compare_to_steamVR">
+     <widget class="QPushButton" name="position_estimation_relativ_sensor_distances">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>220</y>
+        <y>40</y>
+        <width>271</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string extracomment="test"/>
+      </property>
+      <property name="text">
+       <string>position estimation (using relativ)</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="calibrate_relative_distances">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>70</y>
         <width>271</width>
         <height>27</height>
        </rect>
       </property>
       <property name="text">
-       <string>compare to SteamVR</string>
+       <string>calibrate relative distances</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QFrame" name="frame_11">
+     <property name="geometry">
+      <rect>
+       <x>290</x>
+       <y>250</y>
+       <width>291</width>
+       <height>101</height>
+      </rect>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <widget class="QCheckBox" name="random_pose_pitch">
+      <property name="geometry">
+       <rect>
+        <x>190</x>
+        <y>30</y>
+        <width>41</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>p</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="random_pose">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>30</y>
+        <width>121</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>random pose</string>
+      </property>
+      <property name="checked">
+       <bool>false</bool>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="random_pose_yaw">
+      <property name="geometry">
+       <rect>
+        <x>230</x>
+        <y>30</y>
+        <width>41</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>y</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="simulate">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>97</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>simulate</string>
+      </property>
+      <property name="checked">
+       <bool>false</bool>
+      </property>
+     </widget>
+     <widget class="QSlider" name="random_pose_slider">
+      <property name="geometry">
+       <rect>
+        <x>140</x>
+        <y>50</y>
+        <width>131</width>
+        <height>29</height>
+       </rect>
+      </property>
+      <property name="value">
+       <number>10</number>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="random_pose_y">
+      <property name="geometry">
+       <rect>
+        <x>190</x>
+        <y>10</y>
+        <width>41</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>y</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="random_pose_x">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>10</y>
+        <width>41</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>x</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="random_pose_roll">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>30</y>
+        <width>41</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>r</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="reset_pose">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>60</y>
+        <width>121</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>reset pose</string>
       </property>
       <property name="checkable">
+       <bool>false</bool>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="random_pose_z">
+      <property name="geometry">
+       <rect>
+        <x>230</x>
+        <y>10</y>
+        <width>41</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>z</string>
+      </property>
+      <property name="checked">
        <bool>true</bool>
       </property>
      </widget>
     </widget>
+   </widget>
+   <widget class="QWidget" name="tab_6">
+    <attribute name="title">
+     <string>lighthouse</string>
+    </attribute>
     <widget class="QFrame" name="frame_5">
      <property name="geometry">
       <rect>
-       <x>300</x>
-       <y>0</y>
+       <x>10</x>
+       <y>10</y>
        <width>281</width>
-       <height>221</height>
+       <height>561</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -627,7 +856,7 @@
       <property name="geometry">
        <rect>
         <x>160</x>
-        <y>120</y>
+        <y>180</y>
         <width>111</width>
         <height>21</height>
        </rect>
@@ -652,7 +881,7 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>120</y>
+        <y>180</y>
         <width>141</width>
         <height>20</height>
        </rect>
@@ -673,7 +902,7 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>140</y>
+        <y>200</y>
         <width>141</width>
         <height>20</height>
        </rect>
@@ -694,7 +923,7 @@
       <property name="geometry">
        <rect>
         <x>160</x>
-        <y>140</y>
+        <y>200</y>
         <width>111</width>
         <height>21</height>
        </rect>
@@ -719,7 +948,7 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>160</y>
+        <y>220</y>
         <width>141</width>
         <height>20</height>
        </rect>
@@ -740,7 +969,7 @@
       <property name="geometry">
        <rect>
         <x>160</x>
-        <y>160</y>
+        <y>220</y>
         <width>111</width>
         <height>21</height>
        </rect>
@@ -765,7 +994,7 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>190</y>
+        <y>110</y>
         <width>141</width>
         <height>20</height>
        </rect>
@@ -786,7 +1015,7 @@
       <property name="geometry">
        <rect>
         <x>160</x>
-        <y>190</y>
+        <y>110</y>
         <width>111</width>
         <height>21</height>
        </rect>
@@ -807,14 +1036,633 @@
        <bool>true</bool>
       </property>
      </widget>
+     <widget class="QLabel" name="x_37">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>130</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>fault detect flags</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_fault_detect_flags_1">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>130</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_38">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>150</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>desync counter</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_39">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>270</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>phase 1</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_phase0_1">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>250</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_40">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>250</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>phase 0</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_phase1_1">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>270</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_41">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>290</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>tilt 0</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_tilt1_1">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>310</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_tilt0_1">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>290</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_42">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>310</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>tilt 1</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_43">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>430</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>gibmag 1</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_gibmag0_1">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>410</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_44">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>370</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>gibphase 0</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_45">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>410</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>gibmag 0</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_gibmag1_1">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>430</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_gibphase1_1">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>390</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_gibphase0_1">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>370</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_46">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>390</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>gibphase 1</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_desync_counter_1">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>150</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_curve1_1">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>350</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_curve0_1">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>330</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_57">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>330</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>curve 0</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_58">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>350</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>curve 1</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="lighthouse_use_phase_1">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>460</y>
+        <width>61</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>phase</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="lighthouse_use_tilt_1">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>80</x>
+        <y>460</y>
+        <width>61</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>tilt</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="lighthouse_use_curve_1">
+      <property name="geometry">
+       <rect>
+        <x>140</x>
+        <y>460</y>
+        <width>61</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>curve</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="lighthouse_use_gibbous_1">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>460</y>
+        <width>61</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>gibbous</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
     </widget>
     <widget class="QFrame" name="frame_7">
      <property name="geometry">
       <rect>
        <x>300</x>
-       <y>220</y>
+       <y>10</y>
        <width>281</width>
-       <height>221</height>
+       <height>561</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -1032,7 +1880,7 @@
       <property name="geometry">
        <rect>
         <x>160</x>
-        <y>120</y>
+        <y>180</y>
         <width>111</width>
         <height>21</height>
        </rect>
@@ -1057,7 +1905,7 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>120</y>
+        <y>180</y>
         <width>141</width>
         <height>20</height>
        </rect>
@@ -1078,7 +1926,7 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>140</y>
+        <y>200</y>
         <width>141</width>
         <height>20</height>
        </rect>
@@ -1099,7 +1947,7 @@
       <property name="geometry">
        <rect>
         <x>160</x>
-        <y>140</y>
+        <y>200</y>
         <width>111</width>
         <height>21</height>
        </rect>
@@ -1124,7 +1972,7 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>160</y>
+        <y>220</y>
         <width>141</width>
         <height>20</height>
        </rect>
@@ -1145,7 +1993,7 @@
       <property name="geometry">
        <rect>
         <x>160</x>
-        <y>160</y>
+        <y>220</y>
         <width>111</width>
         <height>21</height>
        </rect>
@@ -1170,7 +2018,7 @@
       <property name="geometry">
        <rect>
         <x>20</x>
-        <y>190</y>
+        <y>110</y>
         <width>141</width>
         <height>20</height>
        </rect>
@@ -1191,7 +2039,7 @@
       <property name="geometry">
        <rect>
         <x>160</x>
-        <y>190</y>
+        <y>110</y>
         <width>111</width>
         <height>21</height>
        </rect>
@@ -1212,166 +2060,625 @@
        <bool>true</bool>
       </property>
      </widget>
-    </widget>
-    <widget class="QCheckBox" name="random_pose">
-     <property name="geometry">
-      <rect>
-       <x>320</x>
-       <y>530</y>
-       <width>121</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>random pose</string>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="reset_pose">
-     <property name="geometry">
-      <rect>
-       <x>320</x>
-       <y>550</y>
-       <width>121</width>
-       <height>27</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>reset pose</string>
-     </property>
-     <property name="checkable">
-      <bool>false</bool>
-     </property>
-    </widget>
-    <widget class="QCheckBox" name="random_pose_x">
-     <property name="geometry">
-      <rect>
-       <x>460</x>
-       <y>510</y>
-       <width>41</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>x</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-    <widget class="QCheckBox" name="random_pose_y">
-     <property name="geometry">
-      <rect>
-       <x>500</x>
-       <y>510</y>
-       <width>41</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>y</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-    <widget class="QCheckBox" name="random_pose_z">
-     <property name="geometry">
-      <rect>
-       <x>540</x>
-       <y>510</y>
-       <width>41</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>z</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-    <widget class="QCheckBox" name="random_pose_pitch">
-     <property name="geometry">
-      <rect>
-       <x>500</x>
-       <y>530</y>
-       <width>41</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>p</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-    <widget class="QCheckBox" name="random_pose_roll">
-     <property name="geometry">
-      <rect>
-       <x>460</x>
-       <y>530</y>
-       <width>41</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>r</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-    <widget class="QCheckBox" name="random_pose_yaw">
-     <property name="geometry">
-      <rect>
-       <x>540</x>
-       <y>530</y>
-       <width>41</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>y</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-    <widget class="QSlider" name="random_pose_slider">
-     <property name="geometry">
-      <rect>
-       <x>450</x>
-       <y>550</y>
-       <width>131</width>
-       <height>29</height>
-      </rect>
-     </property>
-     <property name="value">
-      <number>10</number>
-     </property>
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
-    <widget class="QCheckBox" name="simulate">
-     <property name="geometry">
-      <rect>
-       <x>320</x>
-       <y>510</y>
-       <width>97</width>
-       <height>21</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>simulate</string>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
+     <widget class="QLineEdit" name="lighthouse_fault_detect_flags_2">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>130</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_47">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>150</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>desync counter</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_48">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>130</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>fault detect flags</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_49">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>310</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>tilt 1</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_50">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>250</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>phase 0</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_51">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>290</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>tilt 0</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_52">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>430</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>gibmag 1</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_53">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>270</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>phase 1</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_54">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>370</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>gibphase 0</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_55">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>390</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>gibphase 1</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_56">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>410</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>gibmag 0</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_tilt0_2">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>290</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_gibphase1_2">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>390</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_gibmag1_2">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>430</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_tilt1_2">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>310</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_phase1_2">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>270</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_gibphase0_2">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>370</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_gibmag0_2">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>410</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_phase0_2">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>250</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_desync_counter_2">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>150</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_59">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>330</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>curve 0</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_curve0_2">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>330</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="x_60">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>350</y>
+        <width>141</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <weight>50</weight>
+        <italic>false</italic>
+        <bold>false</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>curve 1</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lighthouse_curve1_2">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>350</y>
+        <width>111</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>10</pointsize>
+        <italic>true</italic>
+       </font>
+      </property>
+      <property name="locale">
+       <locale language="German" country="Germany"/>
+      </property>
+      <property name="text">
+       <string>not available</string>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="lighthouse_use_phase_2">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>460</y>
+        <width>61</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>phase</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="lighthouse_use_tilt_2">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="geometry">
+       <rect>
+        <x>80</x>
+        <y>460</y>
+        <width>61</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>tilt</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="lighthouse_use_curve_2">
+      <property name="geometry">
+       <rect>
+        <x>140</x>
+        <y>460</y>
+        <width>61</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>curve</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="lighthouse_use_gibbous_2">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>460</y>
+        <width>61</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>gibbous</string>
+      </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
+     </widget>
     </widget>
    </widget>
    <widget class="QWidget" name="tab_2">

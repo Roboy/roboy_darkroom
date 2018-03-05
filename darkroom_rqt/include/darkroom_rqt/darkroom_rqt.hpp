@@ -188,7 +188,10 @@ public Q_SLOTS:
      * Updates calibration values
      */
     void updateCalibrationValues();
-
+    /**
+     * Use Vive calibration values
+     */
+    void useViveCalibrationValues();
     /**
      * Estimates the factory calibration values
      */
@@ -301,4 +304,5 @@ private:
     map<int,Vector3d> aruco_position_mean;
     map<int,Vector3d> aruco_position_variance;
     map<int,long> receive_counter;
+    LighthouseCalibration calibration[2][2];
 };

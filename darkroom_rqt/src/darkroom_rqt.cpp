@@ -51,14 +51,22 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     text["lighthouse_hardware_version_1"] = widget_->findChild<QLineEdit *>("lighthouse_hardware_version_1");
     text["lighthouse_protocol_version_1"] = widget_->findChild<QLineEdit *>("lighthouse_protocol_version_1");
     text["lighthouse_selected_mode_1"] = widget_->findChild<QLineEdit *>("lighthouse_selected_mode_1");
-    button["lighthouse_use_factory_calibration_data_phase_1"] = widget_->findChild<QPushButton *>(
-            "lighthouse_use_factory_calibration_data_phase_1");
-    button["lighthouse_use_factory_calibration_data_tilt_1"] = widget_->findChild<QPushButton *>(
-            "lighthouse_use_factory_calibration_data_tilt_1");
-    button["lighthouse_use_factory_calibration_data_gphase_1"] = widget_->findChild<QPushButton *>(
-            "lighthouse_use_factory_calibration_data_gphase_1");
-    button["lighthouse_use_factory_calibration_data_gmag_1"] = widget_->findChild<QPushButton *>(
-            "lighthouse_use_factory_calibration_data_gmag_1");
+    text["lighthouse_fault_detect_flags_1"] = widget_->findChild<QLineEdit *>("lighthouse_fault_detect_flags_1");
+    text["lighthouse_desync_counter_1"] = widget_->findChild<QLineEdit *>("lighthouse_desync_counter_1");
+    text["lighthouse_phase0_1"] = widget_->findChild<QLineEdit *>("lighthouse_phase0_1");
+    text["lighthouse_phase1_1"] = widget_->findChild<QLineEdit *>("lighthouse_phase1_1");
+    text["lighthouse_tilt0_1"] = widget_->findChild<QLineEdit *>("lighthouse_tilt0_1");
+    text["lighthouse_tilt1_1"] = widget_->findChild<QLineEdit *>("lighthouse_tilt1_1");
+    text["lighthouse_curve0_1"] = widget_->findChild<QLineEdit *>("lighthouse_curve0_1");
+    text["lighthouse_curve1_1"] = widget_->findChild<QLineEdit *>("lighthouse_curve1_1");
+    text["lighthouse_gibphase0_1"] = widget_->findChild<QLineEdit *>("lighthouse_gibphase0_1");
+    text["lighthouse_gibphase1_1"] = widget_->findChild<QLineEdit *>("lighthouse_gibphase1_1");
+    text["lighthouse_gibmag0_1"] = widget_->findChild<QLineEdit *>("lighthouse_gibmag0_1");
+    text["lighthouse_gibmag1_1"] = widget_->findChild<QLineEdit *>("lighthouse_gibmag1_1");
+    button["lighthouse_use_phase_1"] = widget_->findChild<QPushButton *>("lighthouse_use_phase_1");
+    button["lighthouse_use_tilt_1"] = widget_->findChild<QPushButton *>("lighthouse_use_tilt_1");
+    button["lighthouse_use_curve_1"] = widget_->findChild<QPushButton *>("lighthouse_use_curve_1");
+    button["lighthouse_use_gibbous_1"] = widget_->findChild<QPushButton *>("lighthouse_use_gibbous_1");
 
     text["lighthouse_ID_2"] = widget_->findChild<QLineEdit *>("lighthouse_ID_2");
     text["lighthouse_acc_x_2"] = widget_->findChild<QLineEdit *>("lighthouse_acc_x_2");
@@ -68,14 +76,22 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     text["lighthouse_hardware_version_2"] = widget_->findChild<QLineEdit *>("lighthouse_hardware_version_2");
     text["lighthouse_protocol_version_2"] = widget_->findChild<QLineEdit *>("lighthouse_protocol_version_2");
     text["lighthouse_selected_mode_2"] = widget_->findChild<QLineEdit *>("lighthouse_selected_mode_2");
-    button["lighthouse_use_factory_calibration_data_phase_2"] = widget_->findChild<QPushButton *>(
-            "lighthouse_use_factory_calibration_data_phase_2");
-    button["lighthouse_use_factory_calibration_data_tilt_2"] = widget_->findChild<QPushButton *>(
-            "lighthouse_use_factory_calibration_data_tilt_2");
-    button["lighthouse_use_factory_calibration_data_gphase_2"] = widget_->findChild<QPushButton *>(
-            "lighthouse_use_factory_calibration_data_gphase_2");
-    button["lighthouse_use_factory_calibration_data_gmag_2"] = widget_->findChild<QPushButton *>(
-            "lighthouse_use_factory_calibration_data_gmag_2");
+    text["lighthouse_fault_detect_flags_2"] = widget_->findChild<QLineEdit *>("lighthouse_fault_detect_flags_2");
+    text["lighthouse_desync_counter_2"] = widget_->findChild<QLineEdit *>("lighthouse_desync_counter_2");
+    text["lighthouse_phase0_2"] = widget_->findChild<QLineEdit *>("lighthouse_phase0_2");
+    text["lighthouse_phase1_2"] = widget_->findChild<QLineEdit *>("lighthouse_phase1_2");
+    text["lighthouse_tilt0_2"] = widget_->findChild<QLineEdit *>("lighthouse_tilt0_2");
+    text["lighthouse_tilt1_2"] = widget_->findChild<QLineEdit *>("lighthouse_tilt1_2");
+    text["lighthouse_curve0_2"] = widget_->findChild<QLineEdit *>("lighthouse_curve0_2");
+    text["lighthouse_curve1_2"] = widget_->findChild<QLineEdit *>("lighthouse_curve1_2");
+    text["lighthouse_gibphase0_2"] = widget_->findChild<QLineEdit *>("lighthouse_gibphase0_2");
+    text["lighthouse_gibphase1_2"] = widget_->findChild<QLineEdit *>("lighthouse_gibphase1_2");
+    text["lighthouse_gibmag0_2"] = widget_->findChild<QLineEdit *>("lighthouse_gibmag0_2");
+    text["lighthouse_gibmag1_2"] = widget_->findChild<QLineEdit *>("lighthouse_gibmag1_2");
+    button["lighthouse_use_phase_2"] = widget_->findChild<QPushButton *>("lighthouse_use_phase_2");
+    button["lighthouse_use_tilt_2"] = widget_->findChild<QPushButton *>("lighthouse_use_tilt_2");
+    button["lighthouse_use_curve_2"] = widget_->findChild<QPushButton *>("lighthouse_use_curve_2");
+    button["lighthouse_use_gibbous_2"] = widget_->findChild<QPushButton *>("lighthouse_use_gibbous_2");
     button["add_tracked_object"] = widget_->findChild<QPushButton *>("add_tracked_object");
     button["remove_tracked_object"] = widget_->findChild<QPushButton *>("remove_tracked_object");
 
@@ -234,6 +250,14 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(button["reset_factory_calibration_values"], SIGNAL(clicked()), this, SLOT(resetFactoryCalibration()));
     QObject::connect(button["reset_pose"], SIGNAL(clicked()), this, SLOT(resetPose()));
     QObject::connect(button["compare_to_steamVR"], SIGNAL(clicked()), this, SLOT(compareToSteamVR()));
+    QObject::connect(button["lighthouse_use_phase_1"], SIGNAL(clicked()), this, SLOT(useViveCalibrationValues()));
+    QObject::connect(button["lighthouse_use_tilt_1"], SIGNAL(clicked()), this, SLOT(useViveCalibrationValues()));
+    QObject::connect(button["lighthouse_use_curve_1"], SIGNAL(clicked()), this, SLOT(useViveCalibrationValues()));
+    QObject::connect(button["lighthouse_use_gibbous_1"], SIGNAL(clicked()), this, SLOT(useViveCalibrationValues()));
+    QObject::connect(button["lighthouse_use_phase_2"], SIGNAL(clicked()), this, SLOT(useViveCalibrationValues()));
+    QObject::connect(button["lighthouse_use_tilt_2"], SIGNAL(clicked()), this, SLOT(useViveCalibrationValues()));
+    QObject::connect(button["lighthouse_use_curve_2"], SIGNAL(clicked()), this, SLOT(useViveCalibrationValues()));
+    QObject::connect(button["lighthouse_use_gibbous_2"], SIGNAL(clicked()), this, SLOT(useViveCalibrationValues()));
 
     QObject::connect(this, SIGNAL(newData()), this, SLOT(plotData()));
     QObject::connect(this, SIGNAL(newStatisticsData()), this, SLOT(plotStatisticsData()));
@@ -576,6 +600,8 @@ void RoboyDarkRoom::startObjectPoseEstimationSensorCloud() {
         trackedObjects[i]->mux.lock();
         if (button["object_pose_estimation_least_squares"]->isChecked()) {
             ROS_INFO("starting pose estimation thread");
+            if(!button["triangulate"]->isChecked())
+                button["triangulate"]->setChecked(true);
             trackedObjects[i]->objectposeestimating = true;
             trackedObjects[i]->objectposeestimation_thread = boost::shared_ptr<boost::thread>(
                     new boost::thread([this, i]() {
@@ -831,19 +857,71 @@ void RoboyDarkRoom::receiveOOTXData(const roboy_communication_middleware::DarkRo
         text["lighthouse_protocol_version_1"]->setText(QString::number(msg->fw_version & 0x1F, 10));
         text["lighthouse_ID_1"]->setText(QString::number(msg->ID, 16));
         text["lighthouse_hardware_version_1"]->setText(QString::number(msg->hw_version, 16));
-        text["lighthouse_selected_mode_1"]->setText(QString::number(msg->mode));
+        switch(msg->mode){
+            case 0: text["lighthouse_selected_mode_1"]->setText("A"); break;
+            case 1: text["lighthouse_selected_mode_1"]->setText("B"); break;
+            case 2: text["lighthouse_selected_mode_1"]->setText("C"); break;
+        }
+        text["lighthouse_fault_detect_flags_1"]->setText(QString::number(msg->faults));
+        text["lighthouse_desync_counter_1"]->setText(QString::number(msg->unlock_count));
         text["lighthouse_acc_x_1"]->setText(QString::number(msg->accel_dir_x));
         text["lighthouse_acc_y_1"]->setText(QString::number(msg->accel_dir_y));
         text["lighthouse_acc_z_1"]->setText(QString::number(msg->accel_dir_z));
+        calibration[LIGHTHOUSE_A][HORIZONTAL].phase = msg->fcal_0_phase;
+        calibration[LIGHTHOUSE_A][VERTICAL].phase = msg->fcal_1_phase;
+        calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = msg->fcal_0_tilt;
+        calibration[LIGHTHOUSE_A][VERTICAL].tilt = msg->fcal_0_tilt;
+        calibration[LIGHTHOUSE_A][HORIZONTAL].curve = msg->fcal_0_curve;
+        calibration[LIGHTHOUSE_A][VERTICAL].curve = msg->fcal_0_curve;
+        calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = msg->fcal_0_gibphase;
+        calibration[LIGHTHOUSE_A][VERTICAL].gibphase = msg->fcal_1_gibphase;
+        calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = msg->fcal_0_gibmag;
+        calibration[LIGHTHOUSE_A][VERTICAL].gibmag = msg->fcal_1_gibmag;
+        text["lighthouse_phase0_1"]->setText(QString::number(msg->fcal_0_phase));
+        text["lighthouse_phase1_1"]->setText(QString::number(msg->fcal_1_phase));
+        text["lighthouse_tilt0_1"]->setText(QString::number(msg->fcal_0_tilt));
+        text["lighthouse_tilt1_1"]->setText(QString::number(msg->fcal_1_tilt));
+        text["lighthouse_curve0_1"]->setText(QString::number(msg->fcal_0_curve));
+        text["lighthouse_curve1_1"]->setText(QString::number(msg->fcal_1_curve));
+        text["lighthouse_gibphase0_1"]->setText(QString::number(msg->fcal_0_gibphase));
+        text["lighthouse_gibphase1_1"]->setText(QString::number(msg->fcal_1_gibphase));
+        text["lighthouse_gibmag0_1"]->setText(QString::number(msg->fcal_0_gibmag));
+        text["lighthouse_gibmag1_1"]->setText(QString::number(msg->fcal_1_gibmag));
     } else {
         text["lighthouse_firmware_version_2"]->setText(QString::number(msg->fw_version >> 6 & 0x3FF, 16));
         text["lighthouse_protocol_version_2"]->setText(QString::number(msg->fw_version & 0x1F, 10));
         text["lighthouse_ID_2"]->setText(QString::number(msg->ID, 16));
         text["lighthouse_hardware_version_2"]->setText(QString::number(msg->hw_version, 16));
-        text["lighthouse_selected_mode_2"]->setText(QString::number(msg->mode));
+        switch(msg->mode){
+            case 0: text["lighthouse_selected_mode_2"]->setText("A"); break;
+            case 1: text["lighthouse_selected_mode_2"]->setText("B"); break;
+            case 2: text["lighthouse_selected_mode_2"]->setText("C"); break;
+        }
+        text["lighthouse_fault_detect_flags_2"]->setText(QString::number(msg->faults));
+        text["lighthouse_desync_counter_2"]->setText(QString::number(msg->unlock_count));
         text["lighthouse_acc_x_2"]->setText(QString::number(msg->accel_dir_x));
         text["lighthouse_acc_y_2"]->setText(QString::number(msg->accel_dir_y));
         text["lighthouse_acc_z_2"]->setText(QString::number(msg->accel_dir_z));
+        calibration[LIGHTHOUSE_B][HORIZONTAL].phase = msg->fcal_0_phase;
+        calibration[LIGHTHOUSE_B][VERTICAL].phase = msg->fcal_1_phase;
+        calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = msg->fcal_0_tilt;
+        calibration[LIGHTHOUSE_B][VERTICAL].tilt = msg->fcal_0_tilt;
+        calibration[LIGHTHOUSE_B][HORIZONTAL].curve = msg->fcal_0_curve;
+        calibration[LIGHTHOUSE_B][VERTICAL].curve = msg->fcal_0_curve;
+        calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = msg->fcal_0_gibphase;
+        calibration[LIGHTHOUSE_B][VERTICAL].gibphase = msg->fcal_1_gibphase;
+        calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = msg->fcal_0_gibmag;
+        calibration[LIGHTHOUSE_B][VERTICAL].gibmag = msg->fcal_1_gibmag;
+        text["lighthouse_phase0_2"]->setText(QString::number(msg->fcal_0_phase));
+        text["lighthouse_phase1_2"]->setText(QString::number(msg->fcal_1_phase));
+        text["lighthouse_tilt0_2"]->setText(QString::number(msg->fcal_0_tilt));
+        text["lighthouse_tilt1_2"]->setText(QString::number(msg->fcal_1_tilt));
+        text["lighthouse_curve0_2"]->setText(QString::number(msg->fcal_0_curve));
+        text["lighthouse_curve1_2"]->setText(QString::number(msg->fcal_1_curve));
+        text["lighthouse_gibphase0_2"]->setText(QString::number(msg->fcal_0_gibphase));
+        text["lighthouse_gibphase1_2"]->setText(QString::number(msg->fcal_1_gibphase));
+        text["lighthouse_gibmag0_2"]->setText(QString::number(msg->fcal_0_gibmag));
+        text["lighthouse_gibmag1_2"]->setText(QString::number(msg->fcal_1_gibmag));
     }
 }
 
@@ -933,102 +1011,6 @@ void RoboyDarkRoom::plotStatisticsData() {
     ui.update_frequencies_vertical_lighthouse_1->replot();
     ui.update_frequencies_horizontal_lighthouse_2->replot();
     ui.update_frequencies_vertical_lighthouse_2->replot();
-}
-
-void RoboyDarkRoom::useFactoryCalibrationData() {
-    ROS_DEBUG("lighthouse_use_factory_calibration_data clicked");
-//    // phase
-//    if (button["lighthouse_use_factory_calibration_data_phase_1"]->isChecked()) {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_phase[0] = true;
-//        }
-//    } else {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_phase[0] = false;
-//        }
-//    }
-//    if (button["lighthouse_use_factory_calibration_data_phase_2"]->isChecked()) {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_phase[1] = true;
-//        }
-//    } else {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_phase[1] = false;
-//        }
-//    }
-//    // tilt
-//    if (button["lighthouse_use_factory_calibration_data_tilt_1"]->isChecked()) {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_tilt[0] = true;
-//        }
-//    } else {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_tilt[0] = false;
-//        }
-//    }
-//    if (button["lighthouse_use_factory_calibration_data_tilt_2"]->isChecked()) {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_tilt[1] = true;
-//        }
-//    } else {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_tilt[1] = false;
-//        }
-//    }
-//    // gibbous phase
-//    if (button["lighthouse_use_factory_calibration_data_gphase_1"]->isChecked()) {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[0] = true;
-//        }
-//    } else {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[0] = false;
-//        }
-//    }
-//    if (button["lighthouse_use_factory_calibration_data_gphase_2"]->isChecked()) {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[1] = true;
-//        }
-//    } else {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_gibphase[1] = false;
-//        }
-//    }
-//    // gibbous magnitude
-//    if (button["lighthouse_use_factory_calibration_data_gmag_1"]->isChecked()) {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[0] = true;
-//        }
-//    } else {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[0] = false;
-//        }
-//    }
-//    if (button["lighthouse_use_factory_calibration_data_gmag_2"]->isChecked()) {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[1] = true;
-//        }
-//    } else {
-//        for (uint i = 0; i < trackedObjects.size(); i++) {
-//            lock_guard<mutex>(trackedObjects[i]->mux);
-//            trackedObjects[i]->use_lighthouse_calibration_data_gibmag[1] = false;
-//        }
-//    }
 }
 
 bool RoboyDarkRoom::addTrackedObject(const char *config_file_path) {
@@ -1224,6 +1206,78 @@ void RoboyDarkRoom::updateCalibrationValues(){
             lighthouse.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
             lighthouse.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
         }
+    }
+}
+
+void RoboyDarkRoom::useViveCalibrationValues(){
+    for(auto &object:trackedObjects){
+        object->mux.lock();
+        if(button["lighthouse_use_phase_1"]->isChecked()){
+            object->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = calibration[LIGHTHOUSE_A][HORIZONTAL].phase;
+            object->calibration[LIGHTHOUSE_A][VERTICAL].phase = calibration[LIGHTHOUSE_A][VERTICAL].phase;
+        }else{
+            object->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = 0;
+            object->calibration[LIGHTHOUSE_A][VERTICAL].phase = 0;
+        }
+        if(button["lighthouse_use_tilt_1"]->isChecked()){
+            object->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = calibration[LIGHTHOUSE_A][HORIZONTAL].tilt;
+            object->calibration[LIGHTHOUSE_A][VERTICAL].tilt = calibration[LIGHTHOUSE_A][VERTICAL].tilt;
+        }else{
+            object->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = 0;
+            object->calibration[LIGHTHOUSE_A][VERTICAL].tilt = 0;
+        }
+        if(button["lighthouse_use_curve_1"]->isChecked()){
+            object->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = calibration[LIGHTHOUSE_A][HORIZONTAL].curve;
+            object->calibration[LIGHTHOUSE_A][VERTICAL].curve = calibration[LIGHTHOUSE_A][VERTICAL].curve;
+        }else{
+            object->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = 0;
+            object->calibration[LIGHTHOUSE_A][VERTICAL].curve = 0;
+        }
+        if(button["lighthouse_use_gibbous_1"]->isChecked()){
+            object->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase;
+            object->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = calibration[LIGHTHOUSE_A][VERTICAL].gibphase;
+            object->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag;
+            object->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = calibration[LIGHTHOUSE_A][VERTICAL].gibmag;
+        }else{
+            object->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = 0;
+            object->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = 0;
+            object->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = 0;
+            object->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = 0;
+        }
+
+        if(button["lighthouse_use_phase_2"]->isChecked()){
+            object->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = calibration[LIGHTHOUSE_B][HORIZONTAL].phase;
+            object->calibration[LIGHTHOUSE_B][VERTICAL].phase = calibration[LIGHTHOUSE_B][VERTICAL].phase;
+        }else{
+            object->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = 0;
+            object->calibration[LIGHTHOUSE_B][VERTICAL].phase = 0;
+        }
+        if(button["lighthouse_use_tilt_2"]->isChecked()){
+            object->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = calibration[LIGHTHOUSE_B][HORIZONTAL].tilt;
+            object->calibration[LIGHTHOUSE_B][VERTICAL].tilt = calibration[LIGHTHOUSE_B][VERTICAL].tilt;
+        }else{
+            object->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = 0;
+            object->calibration[LIGHTHOUSE_B][VERTICAL].tilt = 0;
+        }
+        if(button["lighthouse_use_curve_2"]->isChecked()){
+            object->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = calibration[LIGHTHOUSE_B][HORIZONTAL].curve;
+            object->calibration[LIGHTHOUSE_B][VERTICAL].curve = calibration[LIGHTHOUSE_B][VERTICAL].curve;
+        }else{
+            object->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = 0;
+            object->calibration[LIGHTHOUSE_B][VERTICAL].curve = 0;
+        }
+        if(button["lighthouse_use_gibbous_2"]->isChecked()){
+            object->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase;
+            object->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = calibration[LIGHTHOUSE_B][VERTICAL].gibphase;
+            object->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag;
+            object->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = calibration[LIGHTHOUSE_B][VERTICAL].gibmag;
+        }else{
+            object->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = 0;
+            object->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = 0;
+            object->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = 0;
+            object->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = 0;
+        }
+        object->mux.unlock();
     }
 }
 
