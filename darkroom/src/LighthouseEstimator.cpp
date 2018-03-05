@@ -1988,11 +1988,11 @@ void LighthouseEstimator::applyCalibrationData(bool lighthouse, Vector2d &lighth
     lighthouse_angles(VERTICAL) += calibration[lighthouse][VERTICAL].curve *
                                    pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
                                    + calibration[lighthouse][VERTICAL].gibmag *
-                                     sin(lighthouse_angles(VERTICAL) + calibration[lighthouse][VERTICAL].gibphase);
+                                     cos(lighthouse_angles(VERTICAL) + calibration[lighthouse][VERTICAL].gibphase);
     lighthouse_angles(HORIZONTAL) += calibration[lighthouse][HORIZONTAL].curve *
                                      pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
                                      + calibration[lighthouse][HORIZONTAL].gibmag *
-                                       sin(lighthouse_angles(HORIZONTAL) +
+                                       cos(lighthouse_angles(HORIZONTAL) +
                                            calibration[lighthouse][HORIZONTAL].gibphase);
 
 }
@@ -2003,11 +2003,11 @@ void LighthouseEstimator::applyCalibrationData(bool lighthouse, double &elevatio
     elevation += calibration[lighthouse][VERTICAL].curve *
                  pow(cos(azimuth) * sin(elevation), 2.0)
                  + calibration[lighthouse][VERTICAL].gibmag *
-                   sin(elevation + calibration[lighthouse][VERTICAL].gibphase);
+                   cos(elevation + calibration[lighthouse][VERTICAL].gibphase);
     azimuth += calibration[lighthouse][HORIZONTAL].curve *
                pow(-sin(azimuth) * cos(elevation), 2.0)
                + calibration[lighthouse][HORIZONTAL].gibmag *
-                 sin(azimuth + calibration[lighthouse][HORIZONTAL].gibphase);
+                 cos(azimuth + calibration[lighthouse][HORIZONTAL].gibphase);
 }
 
 MatrixXd LighthouseEstimator::Pinv(MatrixXd A) {

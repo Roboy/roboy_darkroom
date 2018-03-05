@@ -44,7 +44,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="tab">
     <attribute name="title">
@@ -220,6 +220,9 @@
        <string>use steamVR lighthouse poses</string>
       </property>
       <property name="checkable">
+       <bool>true</bool>
+      </property>
+      <property name="checked">
        <bool>true</bool>
       </property>
      </widget>
@@ -1625,6 +1628,9 @@
       <property name="checkable">
        <bool>true</bool>
       </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
      </widget>
      <widget class="QPushButton" name="lighthouse_use_curve_1">
       <property name="geometry">
@@ -1641,6 +1647,9 @@
       <property name="checkable">
        <bool>true</bool>
       </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
      </widget>
      <widget class="QPushButton" name="lighthouse_use_gibbous_1">
       <property name="geometry">
@@ -1655,6 +1664,9 @@
        <string>gibbous</string>
       </property>
       <property name="checkable">
+       <bool>true</bool>
+      </property>
+      <property name="checked">
        <bool>true</bool>
       </property>
      </widget>
@@ -2652,6 +2664,9 @@
       <property name="checkable">
        <bool>true</bool>
       </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
      </widget>
      <widget class="QPushButton" name="lighthouse_use_curve_2">
       <property name="geometry">
@@ -2668,6 +2683,9 @@
       <property name="checkable">
        <bool>true</bool>
       </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
      </widget>
      <widget class="QPushButton" name="lighthouse_use_gibbous_2">
       <property name="geometry">
@@ -2682,6 +2700,9 @@
        <string>gibbous</string>
       </property>
       <property name="checkable">
+       <bool>true</bool>
+      </property>
+      <property name="checked">
        <bool>true</bool>
       </property>
      </widget>
