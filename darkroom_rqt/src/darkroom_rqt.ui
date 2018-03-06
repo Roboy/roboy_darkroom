@@ -369,6 +369,9 @@
       <property name="text">
        <string>pose estimation (epnp)</string>
       </property>
+      <property name="checkable">
+       <bool>true</bool>
+      </property>
      </widget>
      <widget class="QPushButton" name="pose_estimation_multi_lighthouse">
       <property name="geometry">

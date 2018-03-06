@@ -97,7 +97,7 @@ void Triangulation::rayFromLighthouseAngles(Vector2d &angles, Vector3d &ray, int
 //            -sin(calibration[lighthouse][HORIZONTAL].tilt), 0, cos(calibration[lighthouse][HORIZONTAL].tilt);
 //    nh = tilt_trafo_horizontal*nh;
 //    nv = tilt_trafo_vertical*nv;
-    ray = nh.cross(nv);
+    ray = nv.cross(nh);
 //    ray = Vector3d(cos(azimuth)*sin(elevation), sin(azimuth)*sin(elevation), -sin(azimuth)*cos(elevation));
     ray.normalize();
 }
@@ -121,7 +121,7 @@ void Triangulation::rayFromLighthouseAngles(double elevation, double azimuth, Ve
     Vector3d nh, nv;
     nh = vh.cross(oh);
     nv = vv.cross(ov);
-    ray = nh.cross(nv);
+    ray = nv.cross(nh);
 //    ray = Vector3d(cos(azimuth)*sin(elevation), sin(azimuth)*sin(elevation), -sin(azimuth)*cos(elevation));
     ray.normalize();
 }

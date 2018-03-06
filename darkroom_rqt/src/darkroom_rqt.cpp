@@ -378,7 +378,7 @@ void RoboyDarkRoom::alignToViveController(){
             if(button["align_to_vive_controller"]->isChecked()) {
 //                if(getTransform("vive_controller1","")
             }else{
-                
+
             }
         }
     }
@@ -685,13 +685,17 @@ void RoboyDarkRoom::startEstimateObjectPoseEPNP() {
     ROS_DEBUG("pose_estimation_epnp clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
         trackedObjects[i]->mux.lock();
-        ROS_INFO("starting relativ pose epnp thread");
-        trackedObjects[i]->poseestimating_epnp = true;
-        trackedObjects[i]->relative_pose_epnp_thread = boost::shared_ptr<boost::thread>(
-                new boost::thread([this, i]() {
-                    this->trackedObjects[i]->estimateObjectPoseEPNP();
-                }));
-        trackedObjects[i]->relative_pose_epnp_thread->detach();
+        if(button["pose_estimation_epnp"]->isChecked()) {
+            ROS_INFO("starting relativ pose epnp thread");
+            trackedObjects[i]->poseestimating_epnp = true;
+            trackedObjects[i]->relative_pose_epnp_thread = boost::shared_ptr<boost::thread>(
+                    new boost::thread([this, i]() {
+                        this->trackedObjects[i]->estimateObjectPoseEPNP();
+                    }));
+            trackedObjects[i]->relative_pose_epnp_thread->detach();
+        }else{
+            trackedObjects[i]->poseestimating_epnp = false;
+        }
         trackedObjects[i]->mux.unlock();
     }
 }

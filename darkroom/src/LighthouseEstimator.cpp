@@ -623,7 +623,7 @@ bool LighthouseEstimator::estimateObjectPoseUsingRelativeDistances() {
 }
 
 void LighthouseEstimator::estimateObjectPoseEPNP() {
-    ros::Rate rate(30);
+    ros::Rate rate(60);
     Eigen::IOFormat fmt(4, 0, " ", ";\n", "", "", "[", "]");
     while (poseestimating_epnp) {
         vector<int> visible_sensors[2];
@@ -640,8 +640,9 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
                 sensors[sensor].getRelativeLocation(rel_pos);
                 Vector2d angles;
                 sensors[sensor].get(LIGHTHOUSE_A, angles);
-                PnP.add_correspondence(rel_pos[2], rel_pos[1], rel_pos[0], tan(M_PI_2 - angles[HORIZONTAL]),
-                                       tan(M_PI_2 - angles[VERTICAL]));
+                applyCalibrationData(LIGHTHOUSE_A,angles);
+                PnP.add_correspondence(rel_pos[0], rel_pos[2], -rel_pos[1], tan(M_PI_2 - angles[HORIZONTAL]),
+                                       tan(angles[VERTICAL]-M_PI_2));
             }
 
             double R_est[3][3], t_est[3], R_true[3][3], t_true[3];
@@ -652,16 +653,29 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
             RT_object2lighthouse_est.setIdentity();
             RT_object2lighthouse_est.block(0, 0, 3, 3) = Map<Matrix3d>(&R_est[0][0], 3, 3);
             RT_object2lighthouse_est.block(0, 3, 3, 1) = Map<Vector3d>(&t_est[0], 3, 1);
-            RT_object2lighthouse_est_backup = RT_object2lighthouse_est;
-            RT_object2lighthouse_est.block(0, 0, 3, 1) = -1.0 * RT_object2lighthouse_est_backup.block(0, 1, 3, 1);
-            RT_object2lighthouse_est.block(0, 2, 3, 1) = RT_object2lighthouse_est_backup.block(0, 0, 3, 1);
-            RT_object2lighthouse_est.block(0, 1, 3, 1) = -1.0 * RT_object2lighthouse_est_backup.block(0, 2, 3, 1);
-            RT_object2lighthouse_est.block(0, 3, 3, 1) << RT_object2lighthouse_est_backup(0, 3),
-                    RT_object2lighthouse_est_backup(2, 3),
-                    -RT_object2lighthouse_est_backup(1, 3);
+            Matrix4d rotateX, rotateZ;
+            rotateX.setZero();
+            rotateZ.setZero();
+            rotateX(0,0) = 1; rotateX(1,1) = 0; rotateX(1,2) = 1; rotateX(2,1) = -1; rotateX(2,2) = 0; rotateX(3,3) = 1;
+            rotateZ(2,2) = 1; rotateZ(0,0) = 0; rotateZ(1,1) = 0; rotateZ(0,1) = 1; rotateZ(1,0) = -1; rotateZ(3,3) = 1;
+            RT_object2lighthouse_est = rotateX*RT_object2lighthouse_est;
+            RT_object2lighthouse_est(2,3)*=-1.0;
+//            RT_object2lighthouse_est = RT_object2lighthouse_est*rotateZ;
+//            RT_object2lighthouse_est_backup = RT_object2lighthouse_est;
+//            RT_object2lighthouse_est.block(0, 0, 3, 1) = -1.0 * RT_object2lighthouse_est_backup.block(0, 1, 3, 1);
+//            RT_object2lighthouse_est.block(0, 2, 3, 1) = RT_object2lighthouse_est_backup.block(0, 0, 3, 1);
+//            RT_object2lighthouse_est.block(0, 1, 3, 1) = -1.0 * RT_object2lighthouse_est_backup.block(0, 2, 3, 1);
+//            RT_object2lighthouse_est.block(0, 3, 3, 1) << RT_object2lighthouse_est_backup(0, 3),
+//                    RT_object2lighthouse_est_backup(2, 3),
+//                    -RT_object2lighthouse_est_backup(1, 3);
+//            ROS_INFO_STREAM_THROTTLE(1, endl << RT_object2lighthouse_est.format(fmt) );
+//            // swap x and z
+//            Matrix3d swapXZ;
+//            swapXZ.setZero();
+//            swapXZ(1,1) = -1; swapXZ(0,2) = -1; swapXZ(2,0) = -1;
+//            RT_object2lighthouse_est.block(0,0,3,3) = RT_object2lighthouse_est.block(0,0,3,3)*swapXZ;
 
-            ROS_INFO_STREAM_THROTTLE(5, RT_object2lighthouse_est.format(fmt) << endl
-                                                                             << RT_object2lighthouse_true.format(fmt));
+            ROS_INFO_STREAM_THROTTLE(1, endl << RT_object2lighthouse_est.format(fmt) );
 
             tf::Transform tf;
             getTFtransform(RT_object2lighthouse_est, tf);
@@ -699,8 +713,9 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
                 sensors[sensor].getRelativeLocation(rel_pos);
                 Vector2d angles;
                 sensors[sensor].get(LIGHTHOUSE_B, angles);
-                PnP.add_correspondence(rel_pos[2], rel_pos[1], rel_pos[0], tan(M_PI_2 - angles[HORIZONTAL]),
-                                       tan(M_PI_2 - angles[VERTICAL]));
+                applyCalibrationData(LIGHTHOUSE_B,angles);
+                PnP.add_correspondence(rel_pos[0], rel_pos[2], -rel_pos[1], tan(M_PI_2 - angles[HORIZONTAL]),
+                                       tan(angles[VERTICAL]-M_PI_2));
             }
 
             double R_est[3][3], t_est[3], R_true[3][3], t_true[3];
@@ -711,16 +726,29 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
             RT_object2lighthouse_est.setIdentity();
             RT_object2lighthouse_est.block(0, 0, 3, 3) = Map<Matrix3d>(&R_est[0][0], 3, 3);
             RT_object2lighthouse_est.block(0, 3, 3, 1) = Map<Vector3d>(&t_est[0], 3, 1);
-            RT_object2lighthouse_est_backup = RT_object2lighthouse_est;
-            RT_object2lighthouse_est.block(0, 0, 3, 1) = -1.0 * RT_object2lighthouse_est_backup.block(0, 1, 3, 1);
-            RT_object2lighthouse_est.block(0, 2, 3, 1) = RT_object2lighthouse_est_backup.block(0, 0, 3, 1);
-            RT_object2lighthouse_est.block(0, 1, 3, 1) = -1.0 * RT_object2lighthouse_est_backup.block(0, 2, 3, 1);
-            RT_object2lighthouse_est.block(0, 3, 3, 1) << RT_object2lighthouse_est_backup(0, 3),
-                    RT_object2lighthouse_est_backup(2, 3),
-                    -RT_object2lighthouse_est_backup(1, 3);
+            Matrix4d rotateX, rotateZ;
+            rotateX.setZero();
+            rotateZ.setZero();
+            rotateX(0,0) = 1; rotateX(1,1) = 0; rotateX(1,2) = 1; rotateX(2,1) = -1; rotateX(2,2) = 0; rotateX(3,3) = 1;
+            rotateZ(2,2) = 1; rotateZ(0,0) = 0; rotateZ(1,1) = 0; rotateZ(0,1) = 1; rotateZ(1,0) = -1; rotateZ(3,3) = 1;
+            RT_object2lighthouse_est = rotateX*RT_object2lighthouse_est;
+            RT_object2lighthouse_est(2,3)*=-1.0;
+//            RT_object2lighthouse_est = RT_object2lighthouse_est*rotateZ;
+//            RT_object2lighthouse_est_backup = RT_object2lighthouse_est;
+//            RT_object2lighthouse_est.block(0, 0, 3, 1) = -1.0 * RT_object2lighthouse_est_backup.block(0, 1, 3, 1);
+//            RT_object2lighthouse_est.block(0, 2, 3, 1) = RT_object2lighthouse_est_backup.block(0, 0, 3, 1);
+//            RT_object2lighthouse_est.block(0, 1, 3, 1) = -1.0 * RT_object2lighthouse_est_backup.block(0, 2, 3, 1);
+//            RT_object2lighthouse_est.block(0, 3, 3, 1) << RT_object2lighthouse_est_backup(0, 3),
+//                    RT_object2lighthouse_est_backup(2, 3),
+//                    -RT_object2lighthouse_est_backup(1, 3);
+//            ROS_INFO_STREAM_THROTTLE(1, endl << RT_object2lighthouse_est.format(fmt) );
+//            // swap x and z
+//            Matrix3d swapXZ;
+//            swapXZ.setZero();
+//            swapXZ(1,1) = -1; swapXZ(0,2) = -1; swapXZ(2,0) = -1;
+//            RT_object2lighthouse_est.block(0,0,3,3) = RT_object2lighthouse_est.block(0,0,3,3)*swapXZ;
 
-            ROS_INFO_STREAM_THROTTLE(5, endl << RT_object2lighthouse_est.format(fmt) << endl
-                                             << RT_object2lighthouse_true.format(fmt));
+            ROS_INFO_STREAM_THROTTLE(1, endl << RT_object2lighthouse_est.format(fmt) );
 
             tf::Transform tf;
             getTFtransform(RT_object2lighthouse_est, tf);
