@@ -288,7 +288,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
                 publishMesh("roboy_models", "Roboy2.0_Upper_Body_Xylophone_simplified/meshes/CAD", "xylophone.stl",
                             origin, q, 0.001, "world", "mesh", 9999, 1);
 
-            if (comparesteamvr && steamVRrecord.is_open()) {
+            if (comparesteamvr && steamVRrecord[0].is_open()) {
                 static high_resolution_clock::time_point t[2];
                 static tf::Vector3 origin[2], origin2[2];
                 t[1] = high_resolution_clock::now();
@@ -301,7 +301,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
                     tf::Quaternion q2 = frame[1].getRotation();
                     milliseconds dtms = duration_cast<milliseconds>(t[1] - t[0]);
                     double dts = dtms.count() / 1000.0;
-                    steamVRrecord << ros::Time::now().toNSec() << ",\t"
+                    steamVRrecord[0] << ros::Time::now().toNSec() << ",\t"
                                   << origin[1].x() << ",\t" << origin[1].y() << ",\t" << origin[1].z() << ",\t"
                                   << (origin[1].x() - origin[0].x()) / dts  << ",\t"
                                   << (origin[1].y() - origin[0].y()) / dts << ",\t"
@@ -824,7 +824,7 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
         getTFtransform(RT_object, tf);
         publishTF(tf, "world", (name + "_ML").c_str());
 
-        if (comparesteamvr && steamVRrecord.is_open()) {
+        if (comparesteamvr && steamVRrecord[1].is_open()) {
             static high_resolution_clock::time_point t[2];
             static tf::Vector3 origin[2], origin2[2];
             t[1] = high_resolution_clock::now();
@@ -837,7 +837,7 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
                 tf::Quaternion q2 = frame[1].getRotation();
                 milliseconds dtms = duration_cast<milliseconds>(t[1] - t[0]);
                 double dts = dtms.count() / 1000.0;
-                steamVRrecord << ros::Time::now().toNSec() << ",\t"
+                steamVRrecord[1] << ros::Time::now().toNSec() << ",\t"
                               << origin[1].x() << ",\t" << origin[1].y() << ",\t" << origin[1].z() << ",\t"
                               << (origin[1].x() - origin[0].x()) / dts  << ",\t"
                               << (origin[1].y() - origin[0].y()) / dts << ",\t"

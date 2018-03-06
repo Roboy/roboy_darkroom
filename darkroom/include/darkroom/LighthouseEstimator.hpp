@@ -211,7 +211,7 @@ public:
     string imu_topic_name, pose_topic_name;
     ros::Publisher pose_pub;
     tf::Transform pose;
-    ofstream steamVRrecord;
+    ofstream steamVRrecord[2];
     static int trackedObjectInstance; //! a unique object instance (helps with unique rviz marker ids)
 private:
     void receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg);

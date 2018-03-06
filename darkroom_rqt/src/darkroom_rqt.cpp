@@ -378,10 +378,7 @@ void RoboyDarkRoom::alignToViveController(){
             if(button["align_to_vive_controller"]->isChecked()) {
 //                if(getTransform("vive_controller1","")
             }else{
-                it->get()->mux.lock();
-                it->get()->comparesteamvr = false;
-                it->get()->steamVRrecord.close();
-                it->get()->mux.unlock();
+                
             }
         }
     }
@@ -395,18 +392,22 @@ void RoboyDarkRoom::compareToSteamVR(){
                 char str[100], t[20];
                 time_t now = std::time(0);
                 strftime(t, 20, "%d%m%Y_%H%M%S", localtime(&now));
-                sprintf(str, "record_%s_%s.log", it->get()->name.c_str(), t);
                 it->get()->mux.lock();
-                it->get()->steamVRrecord.open(str);
-                if (it->get()->steamVRrecord.is_open()) {
-                    it->get()->steamVRrecord << "time stamp[ns], \tx[VO], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw, \tx[VIVE], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw" << endl;
+                sprintf(str, "record_TPE_%s_%s.log", it->get()->name.c_str(), t);
+                it->get()->steamVRrecord[0].open(str);
+                sprintf(str, "record_MLPE_%s_%s.log", it->get()->name.c_str(), t);
+                it->get()->steamVRrecord[1].open(str);
+                if (it->get()->steamVRrecord[0].is_open() && it->get()->steamVRrecord[1].is_open()) {
+                    it->get()->steamVRrecord[0] << "time stamp[ns], \tx[VO], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw, \tx[VIVE], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw" << endl;
+                    it->get()->steamVRrecord[1] << "time stamp[ns], \tx[VO], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw, \tx[VIVE], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw" << endl;
                     it->get()->comparesteamvr = true;
                 }
                 it->get()->mux.unlock();
             }else{
                 it->get()->mux.lock();
                 it->get()->comparesteamvr = false;
-                it->get()->steamVRrecord.close();
+                it->get()->steamVRrecord[0].close();
+                it->get()->steamVRrecord[1].close();
                 it->get()->mux.unlock();
             }
         }
