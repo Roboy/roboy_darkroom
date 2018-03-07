@@ -341,7 +341,7 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
                 // apply factory calibration correction
                 applyCalibrationData(lighthouse, elevations.back(), azimuths.back());
                 sensor.second.getRelativeLocation(relPos);
-                distanceToLighthouse.push_back(sensor.second.getDistance(lighthouse));
+                distanceToLighthouse.push_back(sensor.second.getDistance(lighthouse)+0.1*rand()/(double)RAND_MAX);
 //                distanceToLighthouse.push_back(rand()/(double)RAND_MAX);
                 cout << sensor.first << "\t";
             }
@@ -368,7 +368,7 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
             // apply factory calibration correction
             applyCalibrationData(lighthouse, elevations.back(), azimuths.back());
             sensors[specificIds.at(i)].getRelativeLocation(relPos);
-            distanceToLighthouse.push_back(sensors[specificIds.at(i)].getDistance(lighthouse));
+            distanceToLighthouse.push_back(sensors[specificIds.at(i)].getDistance(lighthouse)+0.1*rand()/(double)RAND_MAX);
 //            distanceToLighthouse.push_back(rand()/(double)RAND_MAX);
         }
     }

@@ -858,7 +858,7 @@ void RoboyDarkRoom::receiveSensorData(const roboy_communication_middleware::Dark
         }
         id++;
     }
-    if ((message_counter[rotor + lighthouse * 2]++) % 10 == 0 && ui.tabWidget->currentIndex() == 1)
+    if ((message_counter[rotor + lighthouse * 2]++) % 10 == 0 && ui.tabWidget->currentIndex() == 2)
             emit newData();
 }
 
@@ -876,12 +876,12 @@ void RoboyDarkRoom::receiveStatistics(const roboy_communication_middleware::Dark
     if (statistics_time[msg->lighthouse].size() > 50)
         statistics_time[msg->lighthouse].pop_front();
 
-    if (ui.tabWidget->currentIndex() == 2)
+    if (ui.tabWidget->currentIndex() == 3)
             emit newStatisticsData();
 }
 
 void RoboyDarkRoom::receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg) {
-    if (msg->lighthouse == 0) {
+    if (msg->lighthouse == (ui.switch_lighthouse_calibration_values->isChecked()?1:0)) {
         text["lighthouse_firmware_version_1"]->setText(QString::number(msg->fw_version >> 6 & 0x3FF, 16));
         text["lighthouse_protocol_version_1"]->setText(QString::number(msg->fw_version & 0x1F, 10));
         text["lighthouse_ID_1"]->setText(QString::number(msg->ID, 16));

@@ -202,7 +202,7 @@ public:
     vector<int> calibrated_sensors;
     map<int, vector<double>> calibration_angles;
     int active_sensors = 0;
-    atomic<bool> tracking, calibrating, poseestimating, poseestimating_epnp, poseestimating_multiLighthouse, objectposeestimating,
+    atomic<bool> tracking, calibrating, poseestimating, poseestimating_relative, poseestimating_epnp, poseestimating_multiLighthouse, objectposeestimating,
             distances, rays, comparesteamvr;
     SharedMutex mux;
     fs::path mesh;

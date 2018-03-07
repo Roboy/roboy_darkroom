@@ -44,7 +44,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="tab">
     <attribute name="title">
@@ -644,7 +644,7 @@
        <x>10</x>
        <y>10</y>
        <width>281</width>
-       <height>561</height>
+       <height>531</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -1680,7 +1680,7 @@
        <x>300</x>
        <y>10</y>
        <width>281</width>
-       <height>561</height>
+       <height>531</height>
       </rect>
      </property>
      <property name="frameShape">
@@ -2709,6 +2709,22 @@
        <bool>true</bool>
       </property>
      </widget>
+    </widget>
+    <widget class="QPushButton" name="switch_lighthouse_calibration_values">
+     <property name="geometry">
+      <rect>
+       <x>160</x>
+       <y>550</y>
+       <width>271</width>
+       <height>27</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>switch lighthouse calibration values</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
     </widget>
    </widget>
    <widget class="QWidget" name="tab_2">

@@ -84,7 +84,7 @@ void Triangulation::rayFromLighthouseAngles(Vector2d &angles, Vector3d &ray, int
     Vector3d vh(AXIS_OFFSET,sin(elevation),-cos(elevation));
     Vector3d vv(cos(azimuth),sin(azimuth),AXIS_OFFSET);
     Vector3d oh(cos(calibration[lighthouse][HORIZONTAL].tilt),0,sin(calibration[lighthouse][HORIZONTAL].tilt));
-    Vector3d ov(sin(calibration[lighthouse][HORIZONTAL].tilt),0,cos(calibration[lighthouse][HORIZONTAL].tilt));
+    Vector3d ov(sin(calibration[lighthouse][VERTICAL].tilt),0,cos(calibration[lighthouse][VERTICAL].tilt));
     Vector3d nh, nv;
     nh = vh.cross(oh);
     nv = vv.cross(ov);
@@ -117,7 +117,7 @@ void Triangulation::rayFromLighthouseAngles(double elevation, double azimuth, Ve
     Vector3d vh(AXIS_OFFSET,sin(elevation),-cos(elevation));
     Vector3d vv(cos(azimuth),sin(azimuth),AXIS_OFFSET);
     Vector3d oh(cos(calibration[lighthouse][HORIZONTAL].tilt),0,sin(calibration[lighthouse][HORIZONTAL].tilt));
-    Vector3d ov(sin(calibration[lighthouse][HORIZONTAL].tilt),0,cos(calibration[lighthouse][HORIZONTAL].tilt));
+    Vector3d ov(sin(calibration[lighthouse][VERTICAL].tilt),0,cos(calibration[lighthouse][VERTICAL].tilt));
     Vector3d nh, nv;
     nh = vh.cross(oh);
     nv = vv.cross(ov);
