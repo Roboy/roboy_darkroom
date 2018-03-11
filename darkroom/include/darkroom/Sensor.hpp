@@ -132,6 +132,14 @@ public:
      * @return
      */
     bool getPosition3D(Vector3d &position3D);
+
+    /**
+     * Gets the 3d position of a sensor, uncalibrated
+     * @param position3D
+     * @return
+     */
+    bool getPosition3DUncalibrated(Vector3d &position3D);
+
     /**
      * Gets the relative 3d position of a sensor wrt to a lighthouse
      * @param lighthouse
@@ -146,6 +154,12 @@ public:
      * @param position3D
      */
     void set(Vector3d &position3D);
+    /**
+     * Set the absolute 3d position, wrt to a world frame, using uncalibrated angles
+     * @param lighthouse
+     * @param position3D
+     */
+    void setUncalibrated(Vector3d &position3D);
 
     /**
      * Returns the euclidean distance to a lighthouse in meter
@@ -208,7 +222,7 @@ public:
 private:
     static bool m_switch;
     Vector3d m_relative_location;
-    Vector3d m_position3D, m_relativePosition3D[NUMBER_OF_LIGHTHOUSES], m_relativeOrigin3D[NUMBER_OF_LIGHTHOUSES];
+    Vector3d m_position3D, m_position3D_uncalibrated, m_relativePosition3D[NUMBER_OF_LIGHTHOUSES], m_relativeOrigin3D[NUMBER_OF_LIGHTHOUSES];
     double m_angles_horizontal[NUMBER_OF_LIGHTHOUSES], m_angles_vertical[NUMBER_OF_LIGHTHOUSES];
     high_resolution_clock::time_point m_angleUpdateTime_cur[NUMBER_OF_LIGHTHOUSES][2], m_angleUpdateTime_prev[NUMBER_OF_LIGHTHOUSES][2];
     float m_updateFrequency[NUMBER_OF_LIGHTHOUSES][2] = {{0,0}};

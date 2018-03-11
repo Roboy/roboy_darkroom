@@ -87,9 +87,22 @@ bool Sensor::getPosition3D(Vector3d &position3D){
     return true;
 }
 
+bool Sensor::getPosition3DUncalibrated(Vector3d &position3D){
+    mux.lock();
+    position3D = m_position3D_uncalibrated;
+    mux.unlock();
+    return true;
+}
+
 void Sensor::set(Vector3d &position3D){
     mux.lock();
     m_position3D = position3D;
+    mux.unlock();
+}
+
+void Sensor::setUncalibrated(Vector3d &position3D){
+    mux.lock();
+    m_position3D_uncalibrated = position3D;
     mux.unlock();
 }
 

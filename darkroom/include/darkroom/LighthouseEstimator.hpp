@@ -198,6 +198,12 @@ public:
         OBJECT = 2
     };
 
+    enum {
+        VIVE = 0,
+        VO = 1,
+        VO_uncalibrated = 2
+    };
+
     map<int, Sensor> sensors;
     vector<int> calibrated_sensors;
     map<int, vector<double>> calibration_angles;

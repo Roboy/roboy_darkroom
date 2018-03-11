@@ -398,8 +398,8 @@ void RoboyDarkRoom::compareToSteamVR(){
                 sprintf(str, "record_MLPE_%s_%s.log", it->get()->name.c_str(), t);
                 it->get()->steamVRrecord[1].open(str);
                 if (it->get()->steamVRrecord[0].is_open() && it->get()->steamVRrecord[1].is_open()) {
-                    it->get()->steamVRrecord[0] << "time stamp[ns], \tx[VO], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw, \tx[VIVE], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw" << endl;
-                    it->get()->steamVRrecord[1] << "time stamp[ns], \tx[VO], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw, \tx[VIVE], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw" << endl;
+                    it->get()->steamVRrecord[0] << "time stamp[ns], \tx[VO], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw, \tx[VIVE], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw, \tx[VO_uncalibrated], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw " << endl;
+                    it->get()->steamVRrecord[1] << "time stamp[ns], \tx[VO], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw, \tx[VIVE], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw, \tx[VO_uncalibrated], \ty, \tz, \tdx[m/s], \tdy, \tdz, \tqx, \tqy, \tqz, \tqw " << endl;
                     it->get()->comparesteamvr = true;
                 }
                 it->get()->mux.unlock();

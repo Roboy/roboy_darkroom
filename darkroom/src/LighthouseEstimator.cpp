@@ -202,15 +202,18 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
             continue;
         }
 
-        PoseEstimatorSensorCloud::PoseEstimator estimator(visible_sensors.size());
+        PoseEstimatorSensorCloud::PoseEstimator estimator(visible_sensors.size()), estimator2(visible_sensors.size());
         uint i = 0;
         mux.lock();
         for (auto sensor:visible_sensors) {
-            Vector3d position3d, relLocation1;
+            Vector3d position3d, position3dUnCalibrated, relLocation1;
             sensors[sensor].getPosition3D(position3d);
+            sensors[sensor].getPosition3DUncalibrated(position3dUnCalibrated);
             sensors[sensor].getRelativeLocation(relLocation1);
             estimator.pos3D_A.block(0, i, 4, 1) << position3d(0), position3d(1), position3d(2), 1;
             estimator.pos3D_B.block(0, i, 4, 1) << relLocation1(0), relLocation1(1), relLocation1(2), 1;
+            estimator2.pos3D_A.block(0, i, 4, 1) << position3dUnCalibrated(0), position3dUnCalibrated(1), position3dUnCalibrated(2), 1;
+            estimator2.pos3D_B.block(0, i, 4, 1) << relLocation1(0), relLocation1(1), relLocation1(2), 1;
             i++;
         }
         mux.unlock();
@@ -218,26 +221,6 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
         Matrix4d RT_0, RT_correct, RT_object;
         getTransform(LIGHTHOUSE_A, "world", RT_0);
         estimator.pos3D_B = RT_0 * estimator.pos3D_B;
-
-//        static bool show = true;
-//        if((int)(t1-t0).toSec()%3==0){
-//            if(show) {
-//                cout << "using sensors:\n";
-//                int i = 0;
-//                for (auto sensor:visible_sensors) {
-//                    cout << sensor << endl;
-//                    cout << estimator.pos3D_A.block(0, i, 4, 1) << endl;
-////                    cout << estimator.pos3D_B.block(0, i, 4, 1) << endl;
-//                    i++;
-//                }
-//                cout << endl;
-//                show = false;
-//            }
-//        }else{
-//            show = true;
-//        }
-
-//        object_pose << 0.001, 0.001, 0.001, 0.001, 0.001, 0.001;
 
         NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator> *numDiff;
         Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double> *lm;
@@ -288,32 +271,78 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
                 publishMesh("roboy_models", "Roboy2.0_Upper_Body_Xylophone_simplified/meshes/CAD", "xylophone.stl",
                             origin, q, 0.001, "world", "mesh", 9999, 1);
 
-            if (comparesteamvr && steamVRrecord[0].is_open()) {
+            if (comparesteamvr) {
+                Matrix4d RT_0, RT_correct, RT_object;
+                getTransform(LIGHTHOUSE_A, "world", RT_0);
+                estimator2.pos3D_B = RT_0 * estimator2.pos3D_B;
+
+                NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator> *numDiff;
+                Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double> *lm;
+                numDiff = new NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>(estimator2);
+                lm = new LevenbergMarquardt<NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator>, double>(*numDiff);
+                lm->parameters.maxfev = MAX_ITERATIONS;
+                lm->parameters.xtol = 1e-10;
+                int ret = lm->minimize(object_pose);
+
+                getRTmatrix(RT_correct, object_pose);
+                RT_object = RT_correct * RT_0;
+
+                tf::Transform tf;
+                getTFtransform(RT_object, tf);
+                string tf_name = name + "_VO_uncalibrated";
+                publishTF(tf, "world", tf_name.c_str());
+
                 static high_resolution_clock::time_point t[2];
-                static tf::Vector3 origin[2], origin2[2];
+                static tf::Vector3 origin_current[3], origin_previous[3];
                 t[1] = high_resolution_clock::now();
-                tf::Transform frame[2];
-                if (getTransform("vive_controller1", "lighthouse1", frame[1]) &&
-                    getTransform(tf_name.c_str(), "lighthouse1", frame[0])) {
-                    origin[1] = frame[0].getOrigin();
-                    tf::Quaternion q = frame[0].getRotation();
-                    origin2[1] = frame[1].getOrigin();
-                    tf::Quaternion q2 = frame[1].getRotation();
+                tf::Transform frame[3];
+                if (getTransform("vive_controller1", "lighthouse1", frame[VIVE]) &&
+                    getTransform((name + "_VO").c_str(), "lighthouse1", frame[VO]) &&
+                    getTransform((name + "_VO_uncalibrated").c_str(), "lighthouse1", frame[VO_uncalibrated])) {
+                    tf::Quaternion q[3];
+
+                    origin_current[VO] = frame[VO].getOrigin();
+                    q[VO] = frame[VO].getRotation();
+                    origin_current[VIVE] = frame[VIVE].getOrigin();
+                    q[VIVE] = frame[VIVE].getRotation();
+                    origin_current[VO_uncalibrated] = frame[VO_uncalibrated].getOrigin();
+                    q[VO_uncalibrated] = frame[VO_uncalibrated].getRotation();
                     milliseconds dtms = duration_cast<milliseconds>(t[1] - t[0]);
                     double dts = dtms.count() / 1000.0;
-                    steamVRrecord[0] << ros::Time::now().toNSec() << ",\t"
-                                  << origin[1].x() << ",\t" << origin[1].y() << ",\t" << origin[1].z() << ",\t"
-                                  << (origin[1].x() - origin[0].x()) / dts  << ",\t"
-                                  << (origin[1].y() - origin[0].y()) / dts << ",\t"
-                                  << (origin[1].z() - origin[0].z()) / dts << ",\t"
-                                  << q.x() << ",\t" << q.y() << ",\t" << q.z() << ",\t" << q.w() << ",\t"
-                                  << origin2[1].x() << ",\t" << origin2[1].y() << ",\t" << origin2[1].z() << ",\t"
-                                  << (origin2[1].x() - origin2[0].x()) / dts << ",\t"
-                                  << (origin2[1].y() - origin2[0].y()) / dts << ",\t"
-                                  << (origin2[1].z() - origin2[0].z()) / dts << ",\t"
-                                  << q2.x() << ",\t" << q2.y() << ",\t" << q2.z() << ",\t" << q2.w() << endl;
-                    origin[0] = origin[1];
-                    origin2[0] = origin2[1];
+                    if(steamVRrecord[0].is_open()) {
+                        steamVRrecord[0] << ros::Time::now().toNSec() << ",\t"
+                                         << origin_current[VO].x() << ",\t" << origin_current[VO].y() << ",\t"
+                                         << origin_current[VO].z() << ",\t"
+                                         << (origin_current[VO].x() - origin_previous[0].x()) / dts << ",\t"
+                                         << (origin_current[VO].y() - origin_previous[0].y()) / dts << ",\t"
+                                         << (origin_current[VO].z() - origin_previous[0].z()) / dts << ",\t"
+                                         << q[VO].x() << ",\t" << q[VO].y() << ",\t" << q[VO].z() << ",\t" << q[VO].w()
+                                         << ",\t"
+                                         << origin_current[VIVE].x() << ",\t" << origin_current[VIVE].y() << ",\t"
+                                         << origin_current[VIVE].z() << ",\t"
+                                         << (origin_current[VIVE].x() - origin_previous[0].x()) / dts << ",\t"
+                                         << (origin_current[VIVE].y() - origin_previous[0].y()) / dts << ",\t"
+                                         << (origin_current[VIVE].z() - origin_previous[0].z()) / dts << ",\t"
+                                         << q[VIVE].x() << ",\t" << q[VIVE].y() << ",\t" << q[VIVE].z() << ",\t"
+                                         << q[VIVE].w() << ",\t"
+                                         << origin_current[VO_uncalibrated].x() << ",\t"
+                                         << origin_current[VO_uncalibrated].y() << ",\t"
+                                         << origin_current[VO_uncalibrated].z() << ",\t"
+                                         <<
+                                         (origin_current[VO_uncalibrated].x() - origin_previous[VO_uncalibrated].x()) /
+                                         dts << ",\t"
+                                         <<
+                                         (origin_current[VO_uncalibrated].y() - origin_previous[VO_uncalibrated].y()) /
+                                         dts << ",\t"
+                                         <<
+                                         (origin_current[VO_uncalibrated].z() - origin_previous[VO_uncalibrated].z()) /
+                                         dts << ",\t"
+                                         << q[VO_uncalibrated].x() << ",\t" << q[VO_uncalibrated].y() << ",\t"
+                                         << q[VO_uncalibrated].z() << ",\t" << q[VO_uncalibrated].w() << endl;
+                    }
+                    origin_previous[VO] = origin_current[VO];
+                    origin_previous[VIVE] = origin_current[VIVE];
+                    origin_previous[VO_uncalibrated] = origin_current[VO_uncalibrated];
                     t[0] = t[1];
                 }
             }
@@ -341,7 +370,8 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
                 // apply factory calibration correction
                 applyCalibrationData(lighthouse, elevations.back(), azimuths.back());
                 sensor.second.getRelativeLocation(relPos);
-                distanceToLighthouse.push_back(sensor.second.getDistance(lighthouse)+0.1*rand()/(double)RAND_MAX);
+                distanceToLighthouse.push_back(
+                        sensor.second.getDistance(lighthouse) + 0.1 * rand() / (double) RAND_MAX);
 //                distanceToLighthouse.push_back(rand()/(double)RAND_MAX);
                 cout << sensor.first << "\t";
             }
@@ -368,7 +398,8 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
             // apply factory calibration correction
             applyCalibrationData(lighthouse, elevations.back(), azimuths.back());
             sensors[specificIds.at(i)].getRelativeLocation(relPos);
-            distanceToLighthouse.push_back(sensors[specificIds.at(i)].getDistance(lighthouse)+0.1*rand()/(double)RAND_MAX);
+            distanceToLighthouse.push_back(
+                    sensors[specificIds.at(i)].getDistance(lighthouse) + 0.1 * rand() / (double) RAND_MAX);
 //            distanceToLighthouse.push_back(rand()/(double)RAND_MAX);
         }
     }
@@ -640,9 +671,9 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
                 sensors[sensor].getRelativeLocation(rel_pos);
                 Vector2d angles;
                 sensors[sensor].get(LIGHTHOUSE_A, angles);
-                applyCalibrationData(LIGHTHOUSE_A,angles);
+                applyCalibrationData(LIGHTHOUSE_A, angles);
                 PnP.add_correspondence(rel_pos[0], rel_pos[2], -rel_pos[1], tan(M_PI_2 - angles[HORIZONTAL]),
-                                       tan(angles[VERTICAL]-M_PI_2));
+                                       tan(angles[VERTICAL] - M_PI_2));
             }
 
             double R_est[3][3], t_est[3], R_true[3][3], t_true[3];
@@ -656,10 +687,20 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
             Matrix4d rotateX, rotateZ;
             rotateX.setZero();
             rotateZ.setZero();
-            rotateX(0,0) = 1; rotateX(1,1) = 0; rotateX(1,2) = 1; rotateX(2,1) = -1; rotateX(2,2) = 0; rotateX(3,3) = 1;
-            rotateZ(2,2) = 1; rotateZ(0,0) = 0; rotateZ(1,1) = 0; rotateZ(0,1) = 1; rotateZ(1,0) = -1; rotateZ(3,3) = 1;
-            RT_object2lighthouse_est = rotateX*RT_object2lighthouse_est;
-            RT_object2lighthouse_est(2,3)*=-1.0;
+            rotateX(0, 0) = 1;
+            rotateX(1, 1) = 0;
+            rotateX(1, 2) = 1;
+            rotateX(2, 1) = -1;
+            rotateX(2, 2) = 0;
+            rotateX(3, 3) = 1;
+            rotateZ(2, 2) = 1;
+            rotateZ(0, 0) = 0;
+            rotateZ(1, 1) = 0;
+            rotateZ(0, 1) = 1;
+            rotateZ(1, 0) = -1;
+            rotateZ(3, 3) = 1;
+            RT_object2lighthouse_est = rotateX * RT_object2lighthouse_est;
+            RT_object2lighthouse_est(2, 3) *= -1.0;
 //            RT_object2lighthouse_est = RT_object2lighthouse_est*rotateZ;
 //            RT_object2lighthouse_est_backup = RT_object2lighthouse_est;
 //            RT_object2lighthouse_est.block(0, 0, 3, 1) = -1.0 * RT_object2lighthouse_est_backup.block(0, 1, 3, 1);
@@ -675,7 +716,7 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
 //            swapXZ(1,1) = -1; swapXZ(0,2) = -1; swapXZ(2,0) = -1;
 //            RT_object2lighthouse_est.block(0,0,3,3) = RT_object2lighthouse_est.block(0,0,3,3)*swapXZ;
 
-            ROS_INFO_STREAM_THROTTLE(1, endl << RT_object2lighthouse_est.format(fmt) );
+            ROS_INFO_STREAM_THROTTLE(1, endl << RT_object2lighthouse_est.format(fmt));
 
             tf::Transform tf;
             getTFtransform(RT_object2lighthouse_est, tf);
@@ -713,9 +754,9 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
                 sensors[sensor].getRelativeLocation(rel_pos);
                 Vector2d angles;
                 sensors[sensor].get(LIGHTHOUSE_B, angles);
-                applyCalibrationData(LIGHTHOUSE_B,angles);
+                applyCalibrationData(LIGHTHOUSE_B, angles);
                 PnP.add_correspondence(rel_pos[0], rel_pos[2], -rel_pos[1], tan(M_PI_2 - angles[HORIZONTAL]),
-                                       tan(angles[VERTICAL]-M_PI_2));
+                                       tan(angles[VERTICAL] - M_PI_2));
             }
 
             double R_est[3][3], t_est[3], R_true[3][3], t_true[3];
@@ -729,10 +770,20 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
             Matrix4d rotateX, rotateZ;
             rotateX.setZero();
             rotateZ.setZero();
-            rotateX(0,0) = 1; rotateX(1,1) = 0; rotateX(1,2) = 1; rotateX(2,1) = -1; rotateX(2,2) = 0; rotateX(3,3) = 1;
-            rotateZ(2,2) = 1; rotateZ(0,0) = 0; rotateZ(1,1) = 0; rotateZ(0,1) = 1; rotateZ(1,0) = -1; rotateZ(3,3) = 1;
-            RT_object2lighthouse_est = rotateX*RT_object2lighthouse_est;
-            RT_object2lighthouse_est(2,3)*=-1.0;
+            rotateX(0, 0) = 1;
+            rotateX(1, 1) = 0;
+            rotateX(1, 2) = 1;
+            rotateX(2, 1) = -1;
+            rotateX(2, 2) = 0;
+            rotateX(3, 3) = 1;
+            rotateZ(2, 2) = 1;
+            rotateZ(0, 0) = 0;
+            rotateZ(1, 1) = 0;
+            rotateZ(0, 1) = 1;
+            rotateZ(1, 0) = -1;
+            rotateZ(3, 3) = 1;
+            RT_object2lighthouse_est = rotateX * RT_object2lighthouse_est;
+            RT_object2lighthouse_est(2, 3) *= -1.0;
 //            RT_object2lighthouse_est = RT_object2lighthouse_est*rotateZ;
 //            RT_object2lighthouse_est_backup = RT_object2lighthouse_est;
 //            RT_object2lighthouse_est.block(0, 0, 3, 1) = -1.0 * RT_object2lighthouse_est_backup.block(0, 1, 3, 1);
@@ -748,7 +799,7 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
 //            swapXZ(1,1) = -1; swapXZ(0,2) = -1; swapXZ(2,0) = -1;
 //            RT_object2lighthouse_est.block(0,0,3,3) = RT_object2lighthouse_est.block(0,0,3,3)*swapXZ;
 
-            ROS_INFO_STREAM_THROTTLE(1, endl << RT_object2lighthouse_est.format(fmt) );
+            ROS_INFO_STREAM_THROTTLE(1, endl << RT_object2lighthouse_est.format(fmt));
 
             tf::Transform tf;
             getTFtransform(RT_object2lighthouse_est, tf);
@@ -796,32 +847,44 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
         VectorXd pose(6);
 
         vector<Vector4d> rel_positions;
-        vector<double> elevations, azimuths;
+        vector<double> elevations, elevations_uncalibrated, azimuths, azimuths_uncalibrated;
         vector<int> lighthouse_id;
         for (auto sensor:visible_sensors[LIGHTHOUSE_A]) {
             Vector4d rel_pos;
-            sensors[sensor].get(LIGHTHOUSE_A, elevations, azimuths);
-            applyCalibrationData(LIGHTHOUSE_A,elevations.back(),azimuths.back());
+            double elevation, azimuth;
+            sensors[sensor].get(LIGHTHOUSE_A, elevation, azimuth);
+            elevations_uncalibrated.push_back(elevation);
+            azimuths_uncalibrated.push_back(azimuth);
+            applyCalibrationData(LIGHTHOUSE_A, elevation, azimuth);
+            elevations.push_back(elevation);
+            azimuths.push_back(azimuth);
             sensors[sensor].getRelativeLocation(rel_pos);
             rel_positions.push_back(rel_pos);
             lighthouse_id.push_back(LIGHTHOUSE_A);
         }
         for (auto sensor:visible_sensors[LIGHTHOUSE_B]) {
             Vector4d rel_pos;
-            sensors[sensor].get(LIGHTHOUSE_B, elevations, azimuths);
-            applyCalibrationData(LIGHTHOUSE_B,elevations.back(),azimuths.back());
+            double elevation, azimuth;
+            sensors[sensor].get(LIGHTHOUSE_B, elevation, azimuth);
+            elevations_uncalibrated.push_back(elevation);
+            azimuths_uncalibrated.push_back(azimuth);
+            applyCalibrationData(LIGHTHOUSE_B, elevation, azimuth);
+            elevations.push_back(elevation);
+            azimuths.push_back(azimuth);
             sensors[sensor].getRelativeLocation(rel_pos);
             rel_positions.push_back(rel_pos);
             lighthouse_id.push_back(LIGHTHOUSE_B);
         }
 
         PoseEstimatorMultiLighthouse::PoseEstimator estimator(
+                visible_sensors[LIGHTHOUSE_A].size() + visible_sensors[LIGHTHOUSE_B].size()),
+                estimator2(
                 visible_sensors[LIGHTHOUSE_A].size() + visible_sensors[LIGHTHOUSE_B].size());
-        Matrix4d lighthousePose;
-        getTransform("world", LIGHTHOUSE_A, lighthousePose);
-        estimator.lighthousePose.push_back(lighthousePose);
-        getTransform("world", LIGHTHOUSE_B, lighthousePose);
-        estimator.lighthousePose.push_back(lighthousePose);
+        Matrix4d lighthousePose[2];
+        getTransform("world", LIGHTHOUSE_A, lighthousePose[LIGHTHOUSE_A]);
+        getTransform("world", LIGHTHOUSE_B, lighthousePose[LIGHTHOUSE_B]);
+        estimator.lighthousePose.push_back(lighthousePose[LIGHTHOUSE_A]);
+        estimator.lighthousePose.push_back(lighthousePose[LIGHTHOUSE_B]);
         estimator.rel_pos = rel_positions;
         estimator.azimuths = azimuths;
         estimator.elevations = elevations;
@@ -852,32 +915,85 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
         getTFtransform(RT_object, tf);
         publishTF(tf, "world", (name + "_ML").c_str());
 
-        if (comparesteamvr && steamVRrecord[1].is_open()) {
+        if (comparesteamvr) {
+
+            { //uncalibrated
+                estimator2.lighthousePose.push_back(lighthousePose[LIGHTHOUSE_A]);
+                estimator2.lighthousePose.push_back(lighthousePose[LIGHTHOUSE_B]);
+                estimator2.rel_pos = rel_positions;
+                estimator2.azimuths = azimuths_uncalibrated;
+                estimator2.elevations = elevations_uncalibrated;
+                estimator2.lighthouse_id = lighthouse_id;
+
+                NumericalDiff<PoseEstimatorMultiLighthouse::PoseEstimator> *numDiff;
+                Eigen::LevenbergMarquardt<Eigen::NumericalDiff<PoseEstimatorMultiLighthouse::PoseEstimator>, double> *lm;
+                numDiff = new NumericalDiff<PoseEstimatorMultiLighthouse::PoseEstimator>(estimator2);
+                lm = new LevenbergMarquardt<NumericalDiff<PoseEstimatorMultiLighthouse::PoseEstimator>, double>(*numDiff);
+                lm->parameters.maxfev = MAX_ITERATIONS;
+                lm->parameters.xtol = 1e-10;
+                pose << 0, 0, 0, 0, 0, 0.0001;
+                int ret = lm->minimize(pose);
+                ROS_INFO_THROTTLE(1,
+                                  "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
+                                  visible_sensors[LIGHTHOUSE_A].size() + visible_sensors[LIGHTHOUSE_B].size(), lm->iter,
+                                  lm->fnorm);
+
+                Matrix4d RT_object;
+                getRTmatrix(RT_object, pose);
+
+                tf::Transform tf;
+                getTFtransform(RT_object, tf);
+                publishTF(tf, "world", (name + "_ML_uncalibrated").c_str());
+            }
+
             static high_resolution_clock::time_point t[2];
-            static tf::Vector3 origin[2], origin2[2];
+            static tf::Vector3 origin_current[3], origin_previous[3];
             t[1] = high_resolution_clock::now();
-            tf::Transform frame[2];
-            if (getTransform("vive_controller1", "lighthouse1", frame[1]) &&
-                getTransform((name + "_ML").c_str(), "lighthouse1", frame[0])) {
-                origin[1] = frame[0].getOrigin();
-                tf::Quaternion q = frame[0].getRotation();
-                origin2[1] = frame[1].getOrigin();
-                tf::Quaternion q2 = frame[1].getRotation();
+            tf::Transform frame[3];
+            if (getTransform("vive_controller1", "lighthouse1", frame[VIVE]) &&
+                getTransform((name + "_ML").c_str(), "lighthouse1", frame[VO]) &&
+                getTransform((name + "_ML_uncalibrated").c_str(), "lighthouse1", frame[VO_uncalibrated])) {
+                tf::Quaternion q[3];
+
+                origin_current[VO] = frame[VO].getOrigin();
+                q[VO] = frame[VO].getRotation();
+                origin_current[VIVE] = frame[VIVE].getOrigin();
+                q[VIVE] = frame[VIVE].getRotation();
+                origin_current[VO_uncalibrated] = frame[VO_uncalibrated].getOrigin();
+                q[VO_uncalibrated] = frame[VO_uncalibrated].getRotation();
                 milliseconds dtms = duration_cast<milliseconds>(t[1] - t[0]);
                 double dts = dtms.count() / 1000.0;
-                steamVRrecord[1] << ros::Time::now().toNSec() << ",\t"
-                              << origin[1].x() << ",\t" << origin[1].y() << ",\t" << origin[1].z() << ",\t"
-                              << (origin[1].x() - origin[0].x()) / dts  << ",\t"
-                              << (origin[1].y() - origin[0].y()) / dts << ",\t"
-                              << (origin[1].z() - origin[0].z()) / dts << ",\t"
-                              << q.x() << ",\t" << q.y() << ",\t" << q.z() << ",\t" << q.w() << ",\t"
-                              << origin2[1].x() << ",\t" << origin2[1].y() << ",\t" << origin2[1].z() << ",\t"
-                              << (origin2[1].x() - origin2[0].x()) / dts << ",\t"
-                              << (origin2[1].y() - origin2[0].y()) / dts << ",\t"
-                              << (origin2[1].z() - origin2[0].z()) / dts << ",\t"
-                              << q2.x() << ",\t" << q2.y() << ",\t" << q2.z() << ",\t" << q2.w() << endl;
-                origin[0] = origin[1];
-                origin2[0] = origin2[1];
+                if(steamVRrecord[1].is_open()) {
+                    steamVRrecord[1] << ros::Time::now().toNSec() << ",\t"
+                                     << origin_current[VO].x() << ",\t" << origin_current[VO].y() << ",\t"
+                                     << origin_current[VO].z() << ",\t"
+                                     << (origin_current[VO].x() - origin_previous[0].x()) / dts << ",\t"
+                                     << (origin_current[VO].y() - origin_previous[0].y()) / dts << ",\t"
+                                     << (origin_current[VO].z() - origin_previous[0].z()) / dts << ",\t"
+                                     << q[VO].x() << ",\t" << q[VO].y() << ",\t" << q[VO].z() << ",\t" << q[VO].w()
+                                     << ",\t"
+                                     << origin_current[VIVE].x() << ",\t" << origin_current[VIVE].y() << ",\t"
+                                     << origin_current[VIVE].z() << ",\t"
+                                     << (origin_current[VIVE].x() - origin_previous[0].x()) / dts << ",\t"
+                                     << (origin_current[VIVE].y() - origin_previous[0].y()) / dts << ",\t"
+                                     << (origin_current[VIVE].z() - origin_previous[0].z()) / dts << ",\t"
+                                     << q[VIVE].x() << ",\t" << q[VIVE].y() << ",\t" << q[VIVE].z() << ",\t"
+                                     << q[VIVE].w() << ",\t"
+                                     << origin_current[VO_uncalibrated].x() << ",\t"
+                                     << origin_current[VO_uncalibrated].y() << ",\t"
+                                     << origin_current[VO_uncalibrated].z() << ",\t"
+                                     << (origin_current[VO_uncalibrated].x() - origin_previous[VO_uncalibrated].x()) /
+                                        dts << ",\t"
+                                     << (origin_current[VO_uncalibrated].y() - origin_previous[VO_uncalibrated].y()) /
+                                        dts << ",\t"
+                                     << (origin_current[VO_uncalibrated].z() - origin_previous[VO_uncalibrated].z()) /
+                                        dts << ",\t"
+                                     << q[VO_uncalibrated].x() << ",\t" << q[VO_uncalibrated].y() << ",\t"
+                                     << q[VO_uncalibrated].z() << ",\t" << q[VO_uncalibrated].w() << endl;
+                }
+                origin_previous[VO] = origin_current[VO];
+                origin_previous[VIVE] = origin_current[VIVE];
+                origin_previous[VO_uncalibrated] = origin_current[VO_uncalibrated];
                 t[0] = t[1];
             }
         }
@@ -924,6 +1040,13 @@ void LighthouseEstimator::triangulateSensors() {
                     active_sensors_counter++;
 
                     Vector3d triangulated_position;
+
+                    triangulateFromLighthouseAngles(lighthouse0_angles, lighthouse1_angles, RT_0, RT_1,
+                                                    triangulated_position, ray0,
+                                                    ray1);
+                    mux.lock();
+                    sensor.second.setUncalibrated(triangulated_position);
+                    mux.unlock();
 
                     applyCalibrationData(lighthouse0_angles, lighthouse1_angles);
 
@@ -2013,31 +2136,31 @@ void LighthouseEstimator::applyCalibrationData(Vector2d &lighthouse0_angles, Vec
 }
 
 void LighthouseEstimator::applyCalibrationData(bool lighthouse, Vector2d &lighthouse_angles) {
-    lighthouse_angles(VERTICAL) += calibration[lighthouse][VERTICAL].phase;
-    lighthouse_angles(HORIZONTAL) += calibration[lighthouse][HORIZONTAL].phase;
     lighthouse_angles(VERTICAL) += calibration[lighthouse][VERTICAL].curve *
                                    pow(cos(lighthouse_angles(HORIZONTAL)) * sin(lighthouse_angles(VERTICAL)), 2.0)
                                    + calibration[lighthouse][VERTICAL].gibmag *
-                                     cos(lighthouse_angles(VERTICAL) + calibration[lighthouse][VERTICAL].gibphase);
+                                     cos(lighthouse_angles(VERTICAL) + degreesToRadians(calibration[lighthouse][VERTICAL].gibphase));
     lighthouse_angles(HORIZONTAL) += calibration[lighthouse][HORIZONTAL].curve *
                                      pow(-sin(lighthouse_angles(HORIZONTAL)) * cos(lighthouse_angles(VERTICAL)), 2.0)
                                      + calibration[lighthouse][HORIZONTAL].gibmag *
                                        cos(lighthouse_angles(HORIZONTAL) +
-                                           calibration[lighthouse][HORIZONTAL].gibphase);
+                                                   degreesToRadians(calibration[lighthouse][HORIZONTAL].gibphase));
+    lighthouse_angles(VERTICAL) += calibration[lighthouse][VERTICAL].phase;
+    lighthouse_angles(HORIZONTAL) += calibration[lighthouse][HORIZONTAL].phase;
 
 }
 
 void LighthouseEstimator::applyCalibrationData(bool lighthouse, double &elevation, double &azimuth) {
-    elevation += calibration[lighthouse][VERTICAL].phase;
-    azimuth += calibration[lighthouse][HORIZONTAL].phase;
     elevation += calibration[lighthouse][VERTICAL].curve *
                  pow(cos(azimuth) * sin(elevation), 2.0)
                  + calibration[lighthouse][VERTICAL].gibmag *
-                   cos(elevation + calibration[lighthouse][VERTICAL].gibphase);
+                   cos(elevation + degreesToRadians(calibration[lighthouse][VERTICAL].gibphase));
     azimuth += calibration[lighthouse][HORIZONTAL].curve *
                pow(-sin(azimuth) * cos(elevation), 2.0)
                + calibration[lighthouse][HORIZONTAL].gibmag *
-                 cos(azimuth + calibration[lighthouse][HORIZONTAL].gibphase);
+                 cos(azimuth + degreesToRadians(calibration[lighthouse][HORIZONTAL].gibphase));
+    elevation += calibration[lighthouse][VERTICAL].phase;
+    azimuth += calibration[lighthouse][HORIZONTAL].phase;
 }
 
 MatrixXd LighthouseEstimator::Pinv(MatrixXd A) {

@@ -2,7 +2,7 @@ close all
 clear 
 clc
 
-MLPEonly = false
+MLPEonly = true
 step = 10;
 
 g.figure1=figure('Name','compare steamVR and custom tracking');  
@@ -20,8 +20,7 @@ zlabel('z')
 if(MLPEonly)
     X_MLPE = csvread('record_MLPE_calibration_x.log',1);
     mX_MLPE = X_MLPE(1,2:4)-X_MLPE(1,12:14);
-    mseX_MLPE = immse(X_MLPE(:,2:4),[X_MLPE(:,12)+mX_MLPE(1),X_MLPE(:,13)+mX_MLPE(2),X_MLPE(:,14)+mX_MLPE(3)])
-    plot3(X_MLPE(:,12)+mX_MLPE(1),X_MLPE(:,13)+mX_MLPE(2),X_MLPE(:,14)+mX_MLPE(3),'m--')
+    plot3(X_MLPE(:,12)+mX_MLPE(1),X_MLPE(:,13)+mX_MLPE(2),X_MLPE(:,14)+mX_MLPE(3),'m')
     f = plot3(X_MLPE(:,2),X_MLPE(:,3),X_MLPE(:,4),'g');
     set(f,'LineWidth',2);
     legend('VIVE','MLPE')
@@ -30,11 +29,9 @@ else
     mX_TPE = X_TPE(1,2:4)-X_TPE(1,12:14);
     X_MLPE = csvread('record_MLPE_calibration_x.log',1);
     mX_MLPE = X_MLPE(1,2:4)-X_MLPE(1,12:14);
-    mseX_TPE = immse(X_TPE(:,2:4),[X_TPE(:,12)+mX_TPE(1),X_TPE(:,13)+mX_TPE(2),X_TPE(:,14)+mX_TPE(3)])
-    mseX_MLPE = immse(X_MLPE(:,2:4),[X_MLPE(:,12)+mX_MLPE(1),X_MLPE(:,13)+mX_MLPE(2),X_MLPE(:,14)+mX_MLPE(3)])
     f = plot3(X_TPE(:,2),X_TPE(:,3),X_TPE(:,4),'b');
     set(f,'LineWidth',2);
-    plot3(X_TPE(:,12)+mX_TPE(1),X_TPE(:,13)+mX_TPE(2),X_TPE(:,14)+mX_TPE(3),'m--')
+    plot3(X_TPE(:,12)+mX_TPE(1),X_TPE(:,13)+mX_TPE(2),X_TPE(:,14)+mX_TPE(3),'m')
     f = plot3(X_MLPE(:,2),X_MLPE(:,3),X_MLPE(:,4),'g');
     set(f,'LineWidth',2);
     legend('TPE','VIVE','MLPE')
@@ -43,8 +40,7 @@ end
 if(MLPEonly)
     Y_MLPE = csvread('record_MLPE_calibration_y.log',1);
     mY_MLPE = Y_MLPE(1,2:4)-Y_MLPE(1,12:14);
-    mseY_MLPE = immse(Y_MLPE(:,2:4),[Y_MLPE(:,12)+mY_MLPE(1),Y_MLPE(:,13)+mY_MLPE(2),Y_MLPE(:,14)+mY_MLPE(3)])
-    plot3(Y_MLPE(:,12)+mY_MLPE(1),Y_MLPE(:,13)+mY_MLPE(2),Y_MLPE(:,14)+mY_MLPE(3),'m--')
+    plot3(Y_MLPE(:,12)+mY_MLPE(1),Y_MLPE(:,13)+mY_MLPE(2),Y_MLPE(:,14)+mY_MLPE(3),'m')
     f = plot3(Y_MLPE(:,2),Y_MLPE(:,3),Y_MLPE(:,4),'g');
     set(f,'LineWidth',2);
     legend('VIVE','MLPE')
@@ -53,11 +49,9 @@ else
     mY_TPE = Y_TPE(1,2:4)-Y_TPE(1,12:14);
     Y_MLPE = csvread('record_MLPE_calibration_y.log',1);
     mY_MLPE = Y_MLPE(1,2:4)-Y_MLPE(1,12:14);
-    mseY_TPE = immse(Y_TPE(:,2:4),[Y_TPE(:,12)+mY_TPE(1),Y_TPE(:,13)+mY_TPE(2),Y_TPE(:,14)+mY_TPE(3)])
-    mseY_MLPE = immse(Y_MLPE(:,2:4),[Y_MLPE(:,12)+mY_MLPE(1),Y_MLPE(:,13)+mY_MLPE(2),Y_MLPE(:,14)+mY_MLPE(3)])
     f = plot3(Y_TPE(:,2),Y_TPE(:,3),Y_TPE(:,4),'b');
     set(f,'LineWidth',2);
-    plot3(Y_TPE(:,12)+mY_TPE(1),Y_TPE(:,13)+mY_TPE(2),Y_TPE(:,14)+mY_TPE(3),'m--')
+    plot3(Y_TPE(:,12)+mY_TPE(1),Y_TPE(:,13)+mY_TPE(2),Y_TPE(:,14)+mY_TPE(3),'m')
     f = plot3(Y_MLPE(:,2),Y_MLPE(:,3),Y_MLPE(:,4),'g');
     set(f,'LineWidth',2);
     legend('TPE','VIVE','MLPE')
@@ -66,8 +60,7 @@ end
 if(MLPEonly)
     Z_MLPE = csvread('record_MLPE_calibration_z.log',1);
     mZ_MLPE = Z_MLPE(1,2:4)-Z_MLPE(1,12:14);
-    mseZ_MLPE = immse(Z_MLPE(:,2:4),[Z_MLPE(:,12)+mZ_MLPE(1),Z_MLPE(:,13)+mZ_MLPE(2),Z_MLPE(:,14)+mZ_MLPE(3)])
-    plot3(Z_MLPE(:,12)+mZ_MLPE(1),Z_MLPE(:,13)+mZ_MLPE(2),Z_MLPE(:,14)+mZ_MLPE(3),'m--')
+    plot3(Z_MLPE(:,12)+mZ_MLPE(1),Z_MLPE(:,13)+mZ_MLPE(2),Z_MLPE(:,14)+mZ_MLPE(3),'m')
     f = plot3(Z_MLPE(:,2),Z_MLPE(:,3),Z_MLPE(:,4),'g');
     set(f,'LineWidth',2);
     legend('VIVE','MLPE')
@@ -76,11 +69,9 @@ else
     mZ_TPE = Z_TPE(1,2:4)-Z_TPE(1,12:14);
     Z_MLPE = csvread('record_MLPE_calibration_z.log',1);
     mZ_MLPE = Z_MLPE(1,2:4)-Z_MLPE(1,12:14);
-    mseZ_TPE = immse(Z_TPE(:,2:4),[Z_TPE(:,12)+mZ_TPE(1),Z_TPE(:,13)+mZ_TPE(2),Z_TPE(:,14)+mZ_TPE(3)])
-    mseZ_MLPE = immse(Z_MLPE(:,2:4),[Z_MLPE(:,12)+mZ_MLPE(1),Z_MLPE(:,13)+mZ_MLPE(2),Z_MLPE(:,14)+mZ_MLPE(3)])
     f = plot3(Z_TPE(:,2),Z_TPE(:,3),Z_TPE(:,4),'b');
     set(f,'LineWidth',2);
-    plot3(Z_TPE(:,12)+mZ_TPE(1),Z_TPE(:,13)+mZ_TPE(2),Z_TPE(:,14)+mZ_TPE(3),'m--')
+    plot3(Z_TPE(:,12)+mZ_TPE(1),Z_TPE(:,13)+mZ_TPE(2),Z_TPE(:,14)+mZ_TPE(3),'m')
     f = plot3(Z_MLPE(:,2),Z_MLPE(:,3),Z_MLPE(:,4),'g');
     set(f,'LineWidth',2);
     legend('TPE','VIVE','MLPE')
@@ -89,7 +80,7 @@ end
 figure(3)
 clf
 hold on
-plot(X_TPE(1:end,12)+mX_TPE(1),X_TPE(1:end,13)+mX_TPE(2),'m-')
+plot(X_TPE(1:end,12)+mX_TPE(1),X_TPE(1:end,13)+mX_TPE(2),'m')
 plot(X_MLPE(1:end,2),X_MLPE(1:end,3),'g')
 plot(X_TPE(1:end,2),X_TPE(1:end,3),'b')
 xlabel('x[m]')
@@ -102,7 +93,7 @@ tX_MLPE = (X_MLPE(:,1) - X_MLPE(1,1))./1000000; % convert to milliseconds
 tX_TPE = (X_TPE(:,1) - X_TPE(1,1))./1000000; % convert to milliseconds
 vel = sqrt(X_TPE(:,15).^2+X_TPE(:,16).^2+X_TPE(:,17).^2);
 indices = vel~=0;
-figure(5)
+figure(4)
 clf
 hold on
 plot(tX_TPE(indices,1),vel(indices) ,'m')
@@ -114,7 +105,7 @@ xlabel('t[ms]')
 ylabel('velocity[m/s]')
 legend('Vive')
 matlab2tikz('x_calibratedComparisonVelocity.tex','width','\fwidth','height','\fheight');
-figure(6)
+figure(5)
 clf
 hold on
 plot(tX_MLPE(:,1), poserrorMLPE,'g')
@@ -129,7 +120,7 @@ ylabel('MSE[m]')
 legend('MLPE','TPE')
 matlab2tikz('x_calibratedComparisonPositionError.tex','width','\fwidth','height','\fheight');
 %%
-figure(3)
+figure(6)
 clf
 hold on
 plot(Y_TPE(1:end,12)+mY_TPE(1),Y_TPE(1:end,13)+mY_TPE(2),'m-')
@@ -145,7 +136,7 @@ tY_MLPE = (Y_MLPE(:,1) - Y_MLPE(1,1))./1000000; % convert to milliseconds
 tY_TPE = (Y_TPE(:,1) - Y_TPE(1,1))./1000000; % convert to milliseconds
 vel = sqrt(Y_TPE(:,15).^2+Y_TPE(:,16).^2+Y_TPE(:,17).^2);
 indices = vel~=0;
-figure(5)
+figure(7)
 clf
 hold on
 plot(tY_TPE(indices,1),vel(indices) ,'m')
@@ -157,7 +148,7 @@ xlabel('t[ms]')
 ylabel('velocity[m/s]')
 legend('Vive')
 matlab2tikz('y_calibratedComparisonVelocity.tex','width','\fwidth','height','\fheight');
-figure(6)
+figure(8)
 clf
 hold on
 plot(tY_MLPE(:,1), poserrorMLPE,'g')
@@ -172,7 +163,7 @@ ylabel('MSE[m]')
 legend('MLPE','TPE')
 matlab2tikz('y_calibratedComparisonPositionError.tex','width','\fwidth','height','\fheight');
 %%
-figure(3)
+figure(9)
 clf
 hold on
 plot(Z_TPE(1:end,12)+mZ_TPE(1),Z_TPE(1:end,14)+mZ_TPE(3),'m-')
@@ -188,7 +179,7 @@ tZ_MLPE = (Z_MLPE(:,1) - Z_MLPE(1,1))./1000000; % convert to milliseconds
 tZ_TPE = (Z_TPE(:,1) - Z_TPE(1,1))./1000000; % convert to milliseconds
 vel = sqrt(Z_TPE(:,15).^2+Z_TPE(:,16).^2+Z_TPE(:,17).^2);
 indices = vel~=0;
-figure(5)
+figure(10)
 clf
 hold on
 plot(tZ_TPE(indices,1),vel(indices) ,'m')
@@ -200,7 +191,7 @@ xlabel('t[ms]')
 ylabel('velocity[m/s]')
 legend('Vive')
 matlab2tikz('z_calibratedComparisonVelocity.tex','width','\fwidth','height','\fheight');
-figure(6)
+figure(11)
 clf
 hold on
 plot(tZ_MLPE(:,1), poserrorMLPE,'g')
