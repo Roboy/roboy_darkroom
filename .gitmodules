@@ -10,3 +10,6 @@
 [submodule "vive_ros"]
 	path = vive_ros
 	url = https://github.com/Roboy/vive_ros
+[submodule "darkroom/scripts/matlab2tikz"]
+	path = darkroom/scripts/matlab2tikz
+	url = https://github.com/matlab2tikz/matlab2tikz
