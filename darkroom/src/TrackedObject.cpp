@@ -193,7 +193,7 @@ void TrackedObject::shutDown(){
 void TrackedObject::connectObject(const char* broadcastIP, int port){
     uint32_t ip;
     inet_pton(AF_INET, broadcastIP, &ip);
-    socket = UDPSocketPtr(new UDPSocket(port, ip));
+    socket = UDPSocketPtr(new UDPSocket(port, ip, false));
     mux.lock();
     receiveData = true;
     sensor_thread = boost::shared_ptr<boost::thread>(new boost::thread(&TrackedObject::receiveSensorData, this));
