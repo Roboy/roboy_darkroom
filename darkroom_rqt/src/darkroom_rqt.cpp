@@ -272,6 +272,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     pose_correction_sub = nh->subscribe("/roboy/middleware/DarkRoom/LighthousePoseCorrection", 1,
                                         &RoboyDarkRoom::correctPose, this);
     sensor_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensors", 1, &RoboyDarkRoom::receiveSensorData, this);
+    sensor_status_sub = nh->subscribe("/roboy/middleware/DarkRoom/status", 1, &RoboyDarkRoom::receiveSensorStatus, this);
     statistics_sub = nh->subscribe("/roboy/middleware/DarkRoom/Statistics", 2, &RoboyDarkRoom::receiveStatistics, this);
     ootx_sub = nh->subscribe("/roboy/middleware/DarkRoom/ootx", 1, &RoboyDarkRoom::receiveOOTXData, this);
     aruco_pose_sub = nh->subscribe("/roboy/middleware/ArucoPose", 1, &RoboyDarkRoom::receiveArucoPose, this);
@@ -862,6 +863,17 @@ void RoboyDarkRoom::receiveSensorData(const roboy_communication_middleware::Dark
             emit newData();
 }
 
+void RoboyDarkRoom::receiveSensorStatus(const roboy_communication_middleware::DarkRoomStatus::ConstPtr &msg){
+    int active_sensors = 0;
+    for(auto status:msg->sensor_state){
+        if(status == 1)
+            active_sensors++;
+    }
+    ptrdiff_t pos = find(trackedObjectsIDs.begin(), trackedObjectsIDs.end(), msg->objectID) - trackedObjectsIDs.begin();
+    if(pos<trackedObjects.size())
+        trackedObjects[pos]->active_sensors = active_sensors;
+}
+
 void RoboyDarkRoom::receiveStatistics(const roboy_communication_middleware::DarkRoomStatistics::ConstPtr &msg) {
     ROS_DEBUG_THROTTLE(10, "receiving statistics data");
     for (uint i = 0; i < msg->updateFrequency_horizontal.size(); i++) {
@@ -1081,6 +1093,7 @@ bool RoboyDarkRoom::addTrackedObject(const char *config_file_path) {
 
     ROS_DEBUG_STREAM("adding tracked object " << config_file_path);
     trackedObjects.push_back(newObject);
+    trackedObjectsIDs.push_back(newObject->objectID);
     object_counter++;
 
     TrackedObjectInfo info;

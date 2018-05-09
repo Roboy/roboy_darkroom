@@ -51,6 +51,7 @@
 #include <roboy_communication_middleware/ArucoPose.h>
 #include <roboy_communication_middleware/DarkRoom.h>
 #include <roboy_communication_middleware/DarkRoomStatistics.h>
+#include <roboy_communication_middleware/DarkRoomStatus.h>
 #include <roboy_communication_middleware/DarkRoomOOTX.h>
 #include <map>
 #include <QLineEdit>
@@ -247,6 +248,10 @@ private:
      */
     void receiveSensorData(const roboy_communication_middleware::DarkRoom::ConstPtr &msg);
     /**
+     * Callback for DarkRoom sensor status
+     */
+    void receiveSensorStatus(const roboy_communication_middleware::DarkRoomStatus::ConstPtr &msg);
+    /**
      * Callback for DarkRoom statistics
      * @param msg
      */
@@ -281,7 +286,7 @@ private:
     ros::NodeHandlePtr nh;
     boost::shared_ptr<ros::AsyncSpinner> spinner;
     boost::shared_ptr<std::thread> transform_thread = nullptr, update_tracked_object_info_thread = nullptr;
-    ros::Subscriber pose_correction_sub, interactive_marker_sub, sensor_sub, statistics_sub, ootx_sub, aruco_pose_sub;
+    ros::Subscriber pose_correction_sub, interactive_marker_sub, sensor_sub, sensor_status_sub, statistics_sub, ootx_sub, aruco_pose_sub;
     tf::TransformListener tf_listener;
     tf::TransformBroadcaster tf_broadcaster;
     static tf::Transform lighthouse1, lighthouse2, tf_world, tf_map,
@@ -289,6 +294,7 @@ private:
     atomic<bool> publish_transform, update_tracked_object_info;
     int object_counter = 0, values_in_plot = 300, message_counter[4] = {0}, message_counter_statistics[2] = {0};
     vector<TrackedObjectPtr> trackedObjects;
+    vector<string> trackedObjectsIDs;
     SharedMutex mux;
     static map<string, QLineEdit*> text;
     static map<string, QSlider*> slider;
