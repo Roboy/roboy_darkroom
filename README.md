@@ -23,5 +23,6 @@ This is the body of darkroom. It is a ROS package (and rqt plugin), using the da
 ### roboy_de10_nano_soc
 This is the fpga code decoding the sensor signals and sending the data via SPI to the esp. For building this you will need Quartus 16.0 or above. Checkout the README.md inside to get an idea what you need to do for building this.
 
-
+### openvr
+follow this tutorial http://help.triadsemi.com/steamvr-tracking/steamvr-tracking-without-an-hmd/
 
