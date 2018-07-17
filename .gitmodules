@@ -13,3 +13,6 @@
 [submodule "darkroom/scripts/matlab2tikz"]
 	path = darkroom/scripts/matlab2tikz
 	url = https://github.com/matlab2tikz/matlab2tikz
+[submodule "triad_openvr"]
+	path = triad_openvr
+	url = https://github.com/TriadSemi/triad_openvr
