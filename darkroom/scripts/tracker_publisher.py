@@ -22,8 +22,9 @@ initial_pose = v.devices["tracker_1"].get_pose_quaternion()
 q_init = Quaternion(initial_pose[6],initial_pose[3],initial_pose[4],initial_pose[5])
 q_init_wrist = Quaternion()
 
+print("waiting for roboy/middleware/FrameIK service to become available")
 rospy.wait_for_service('roboy/middleware/FrameIK')
-
+print("let's go then")
 
 import sys, select
 
@@ -57,11 +58,11 @@ while not rospy.is_shutdown():
                      rospy.Time.now(),
                      "tracker_1",
                      "world")
-    i, o, e = select.select( [sys.stdin], [], [], 0.01 )
-    if (i):
-        sys.stdin.readline().strip()
-        try:
-            key_srv = rospy.ServiceProxy('roboy/middleware/FrameIK', FrameIK)
-            resp1 = key_srv(ik_type=1, frame_id='tracker_1')
-        except rospy.ServiceException, e:
-            print "Service call failed: %s"%e
+    # i, o, e = select.select( [sys.stdin], [], [], 0.01 )
+    # if (i):
+    #     sys.stdin.readline().strip()
+    try:
+        key_srv = rospy.ServiceProxy('roboy/middleware/FrameIK', FrameIK)
+        resp1 = key_srv(ik_type=0, frame_id='tracker_1')
+    except rospy.ServiceException, e:
+        print "Service call failed: %s"%e
