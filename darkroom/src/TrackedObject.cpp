@@ -302,6 +302,7 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware:
 
 void TrackedObject::receiveSensorData(){
     chrono::high_resolution_clock::time_point t0 = chrono::high_resolution_clock::now();
+    int message_counter = 0;
     while(receiveData){
         vector<uint32_t> id;
         vector<bool> lighthouse;
@@ -310,12 +311,8 @@ void TrackedObject::receiveSensorData(){
         if(socket->receiveSensorData(id,lighthouse,rotor,sweepDuration)){
             for(uint i=0; i<id.size(); i++) {
                 double angle = ticksToRadians(sweepDuration[i]);
-                ROS_INFO_STREAM_THROTTLE(10,
-                        "id:              " << id[i] <<
-                                            "\tlighthouse:    " << lighthouse[i] <<
-                                            "\trotor:         " << rotor[i] <<
-                                            "\tsweepDuration: " << sweepDuration[i]<<
-                                            "\tangle: " << ticksToDegrees(sweepDuration[i]));
+                ROS_INFO_THROTTLE(10, "id: %d lighthouse: %d rotor: %d sweepDuration: %d angle: %.3f", id[i], lighthouse[i],
+                          rotor[i], sweepDuration[i],ticksToDegrees(sweepDuration[i]));
                 sensors[id[i]].update(lighthouse[i], rotor[i], angle);
                 if (recording) {
                     chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
@@ -326,11 +323,33 @@ void TrackedObject::receiveSensorData(){
                     mux.unlock();
                 }
             }
-//            Vector2d angles;
-//            sensors[id].get(0,angles);
-//            cout << angles << endl;
-//            sensors[id].get(1,angles);
-//            cout << angles << endl;
+
+            if(message_counter++%50==0){ // publish statistics from time to time
+                {
+                    roboy_communication_middleware::DarkRoomStatistics statistics_msg;
+                    statistics_msg.object_name = name;
+                    statistics_msg.lighthouse = LIGHTHOUSE_A;
+                    for (uint32_t i:id) {
+                        float horizontal, vertical;
+                        sensors[i].updateFrequency(LIGHTHOUSE_A, horizontal, vertical);
+                        statistics_msg.updateFrequency_horizontal.push_back(horizontal);
+                        statistics_msg.updateFrequency_vertical.push_back(vertical);
+                    }
+                    darkroom_statistics_pub.publish(statistics_msg);
+                }
+                {
+                    roboy_communication_middleware::DarkRoomStatistics statistics_msg;
+                    statistics_msg.object_name = name;
+                    statistics_msg.lighthouse = LIGHTHOUSE_B;
+                    for (uint32_t i:id) {
+                        float horizontal, vertical;
+                        sensors[i].updateFrequency(LIGHTHOUSE_B, horizontal, vertical);
+                        statistics_msg.updateFrequency_horizontal.push_back(horizontal);
+                        statistics_msg.updateFrequency_vertical.push_back(vertical);
+                    }
+                    darkroom_statistics_pub.publish(statistics_msg);
+                }
+            }
         }
     }
 }

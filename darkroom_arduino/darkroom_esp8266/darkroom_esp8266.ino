@@ -73,7 +73,7 @@ void setup() {
   Serial.println("                    DARKROOM ESP");
   Serial.println("------------------------------------------------------");
 
-  IPAddress hostIP(129,187,142,26); // UDP packets will be sent to this IP (you can use a broadcast IP aswell)
+  IPAddress hostIP(192,168,255,255); // UDP packets will be sent to this IP (you can use a broadcast IP aswell)
   wifi = new WirelessLove("roboy","wiihackroboy", hostIP); 
   wifi->initUDPSockets();
 
@@ -88,11 +88,11 @@ void setup() {
             printBits(val);
             Serial.println();            
             Serial.printf("   \tlighthouse %d\t rotor %d\t valid %d\t duration %d\t\t angle ", (val >> 31) & 0x1, (val >> 31) & 0x1, (val >> 29) & 0x1, val & 0x7FFFF);
-            Serial.println( (val & 0x7FFFF)* 0.021600864 / 50.0);
+            Serial.println( (uint32_t)(val & 0x7FFFF)* 0.021600864 / 16.0);
           }
-      }
-      wifi->broadcast_send(data, len);
-      sensor_value_counter++;
+        }
+        wifi->broadcast_send(data, len);
+        sensor_value_counter++;
   });
   SPISlave.begin();
 }
