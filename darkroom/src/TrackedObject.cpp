@@ -12,7 +12,7 @@ TrackedObject::TrackedObject() {
     }
     nh = ros::NodeHandlePtr(new ros::NodeHandle("~"));
 
-    darkroom_statistics_pub = nh->advertise<roboy_communication_middleware::DarkRoomStatistics>(
+    darkroom_statistics_pub = nh->advertise<roboy_middleware_msgs::DarkRoomStatistics>(
             "/roboy/middleware/DarkRoom/Statistics", 1);
 
     receiveData = true;
@@ -231,10 +231,10 @@ bool TrackedObject::record(bool start) {
     }
 }
 
-void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware::DarkRoom::ConstPtr &msg) {
-    if(msg->objectID != objectID){
+void TrackedObject::receiveSensorDataRoboy(const roboy_middleware_msgs::DarkRoom::ConstPtr &msg) {
+    if(msg->object_id != objectID){
         // only use messages for me
-        ROS_DEBUG_STREAM_THROTTLE(1,"receiving sensor data, but it's not for me " << objectID << " " << msg->objectID);
+        ROS_DEBUG_STREAM_THROTTLE(1,"receiving sensor data, but it's not for me " << objectID << " " << msg->object_id);
         return;
     }
     ROS_WARN_THROTTLE(10, "receiving sensor data");
@@ -273,26 +273,26 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_communication_middleware:
 
     if(message_counter++%50==0){ // publish statistics from time to time
         {
-            roboy_communication_middleware::DarkRoomStatistics statistics_msg;
+            roboy_middleware_msgs::DarkRoomStatistics statistics_msg;
             statistics_msg.object_name = name;
             statistics_msg.lighthouse = LIGHTHOUSE_A;
             for (uint i = 0; i < msg->sensor_value.size(); i++) {
                 float horizontal, vertical;
                 sensors[i].updateFrequency(LIGHTHOUSE_A, horizontal, vertical);
-                statistics_msg.updateFrequency_horizontal.push_back(horizontal);
-                statistics_msg.updateFrequency_vertical.push_back(vertical);
+                statistics_msg.update_frequency_horizontal.push_back(horizontal);
+                statistics_msg.update_frequency_vertical.push_back(vertical);
             }
             darkroom_statistics_pub.publish(statistics_msg);
         }
         {
-            roboy_communication_middleware::DarkRoomStatistics statistics_msg;
+            roboy_middleware_msgs::DarkRoomStatistics statistics_msg;
             statistics_msg.object_name = name;
             statistics_msg.lighthouse = LIGHTHOUSE_B;
             for (uint i = 0; i < msg->sensor_value.size(); i++) {
                 float horizontal, vertical;
                 sensors[i].updateFrequency(LIGHTHOUSE_B, horizontal, vertical);
-                statistics_msg.updateFrequency_horizontal.push_back(horizontal);
-                statistics_msg.updateFrequency_vertical.push_back(vertical);
+                statistics_msg.update_frequency_horizontal.push_back(horizontal);
+                statistics_msg.update_frequency_vertical.push_back(vertical);
             }
             darkroom_statistics_pub.publish(statistics_msg);
         }
@@ -326,26 +326,26 @@ void TrackedObject::receiveSensorData(){
 
             if(message_counter++%50==0){ // publish statistics from time to time
                 {
-                    roboy_communication_middleware::DarkRoomStatistics statistics_msg;
+                    roboy_middleware_msgs::DarkRoomStatistics statistics_msg;
                     statistics_msg.object_name = name;
                     statistics_msg.lighthouse = LIGHTHOUSE_A;
                     for (uint32_t i:id) {
                         float horizontal, vertical;
                         sensors[i].updateFrequency(LIGHTHOUSE_A, horizontal, vertical);
-                        statistics_msg.updateFrequency_horizontal.push_back(horizontal);
-                        statistics_msg.updateFrequency_vertical.push_back(vertical);
+                        statistics_msg.update_frequency_horizontal.push_back(horizontal);
+                        statistics_msg.update_frequency_vertical.push_back(vertical);
                     }
                     darkroom_statistics_pub.publish(statistics_msg);
                 }
                 {
-                    roboy_communication_middleware::DarkRoomStatistics statistics_msg;
+                    roboy_middleware_msgs::DarkRoomStatistics statistics_msg;
                     statistics_msg.object_name = name;
                     statistics_msg.lighthouse = LIGHTHOUSE_B;
                     for (uint32_t i:id) {
                         float horizontal, vertical;
                         sensors[i].updateFrequency(LIGHTHOUSE_B, horizontal, vertical);
-                        statistics_msg.updateFrequency_horizontal.push_back(horizontal);
-                        statistics_msg.updateFrequency_vertical.push_back(vertical);
+                        statistics_msg.update_frequency_horizontal.push_back(horizontal);
+                        statistics_msg.update_frequency_vertical.push_back(vertical);
                     }
                     darkroom_statistics_pub.publish(statistics_msg);
                 }

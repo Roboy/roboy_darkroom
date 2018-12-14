@@ -42,9 +42,7 @@ namespace gazebo
             // Listen to the update event. This event is broadcast every
             // simulation iteration.
             this->update_connection_ = gazebo::event::Events::ConnectRender(boost::bind(&LighthouseVisualPlugin::UpdateChild, this));
-
-            trans = boost::shared_ptr<DarkRoom::Transform>(new DarkRoom::Transform);
-
+            
             sprintf(name, "lighthouse%d", instance_counter);
             instance_counter++;
 
@@ -67,7 +65,7 @@ namespace gazebo
         {
             ros::spinOnce();
 
-            if(trans->getTransform(name,"world",pose)){
+            if(getTransform(name,"world",pose)){
                 tf::Vector3 origin = pose.getOrigin();
                 tf::Quaternion orientation = pose.getRotation();
                 math::Pose p(origin.getX(), origin.getY(), origin.getZ(), 0, 0, 0);

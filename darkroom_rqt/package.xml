@@ -11,7 +11,7 @@
   <depend>rqt_gui</depend>
   <depend>rqt_gui_cpp</depend>
   <depend>std_msgs</depend>
-  <depend>roboy_communication_middleware</depend>
+  <depend>roboy_middleware_msgs</depend>
   <depend>darkroom</depend>
   <depend>common_utilities</depend>
 

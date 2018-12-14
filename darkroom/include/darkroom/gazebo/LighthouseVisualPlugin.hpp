@@ -23,7 +23,8 @@
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 
-#include "darkroom/Transform.hpp"
+#include <common_utilities/rviz_visualization.hpp>
+
 
 using namespace std;
 
@@ -31,7 +32,7 @@ namespace gazebo
 {
     namespace rendering
     {
-        class LighthouseVisualPlugin : public VisualPlugin
+        class LighthouseVisualPlugin : public VisualPlugin, rviz_visualization
         {
         public:
             /// \brief Constructor
@@ -67,7 +68,6 @@ namespace gazebo
             // Pointer to the update event connection
             event::ConnectionPtr update_connection_;
 
-            boost::shared_ptr<DarkRoom::Transform> trans;
             tf::Transform pose;
         };
     }

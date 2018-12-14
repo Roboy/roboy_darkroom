@@ -8,7 +8,7 @@ LighthouseSimulator::LighthouseSimulator(int id, vector<fs::path> &configFile) :
                   ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     }
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
-    sensors_pub = nh->advertise<roboy_communication_middleware::DarkRoom>(
+    sensors_pub = nh->advertise<roboy_middleware_msgs::DarkRoom>(
             "/roboy/middleware/DarkRoom/sensors", 100);
 
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
@@ -163,10 +163,10 @@ void LighthouseSimulator::PublishSensorData() {
                 pose_changed[i] = false;
             }
 
-            roboy_communication_middleware::DarkRoom msg0,msg1;
+            roboy_middleware_msgs::DarkRoom msg0,msg1;
 
-            msg0.objectID = objectID[i];
-            msg1.objectID = objectID[i];
+            msg0.object_id = objectID[i];
+            msg1.object_id = objectID[i];
             int j= 0;
             for (auto const &sensor:sensor_position[i]) {
                 Vector4d sensor_pos;

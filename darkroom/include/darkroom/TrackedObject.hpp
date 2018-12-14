@@ -37,8 +37,8 @@
 
 #include <ros/ros.h>
 #include <ros/package.h>
-#include <roboy_communication_middleware/DarkRoom.h>
-#include <roboy_communication_middleware/DarkRoomStatistics.h>
+#include <roboy_middleware_msgs/DarkRoom.h>
+#include <roboy_middleware_msgs/DarkRoomStatistics.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -99,7 +99,7 @@ private:
     /**
      * Continuously receiving, decoding and updating the sensor data from ROS message
      */
-    void receiveSensorDataRoboy(const roboy_communication_middleware::DarkRoom::ConstPtr &msg);
+    void receiveSensorDataRoboy(const roboy_middleware_msgs::DarkRoom::ConstPtr &msg);
 
     /**
      * Listen for sensor data via UDP

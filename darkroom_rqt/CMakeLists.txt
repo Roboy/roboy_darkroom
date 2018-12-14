@@ -4,7 +4,7 @@ project( darkroom_rqt )
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O0 -g")
 
 find_package(catkin REQUIRED COMPONENTS roscpp roslint rqt_gui rqt_gui_cpp std_msgs
-        roboy_communication_middleware darkroom common_utilities )
+        roboy_middleware_msgs darkroom common_utilities )
 
 # Eigen
 find_package(PkgConfig REQUIRED )
@@ -31,7 +31,7 @@ catkin_python_setup()
 roslint_cpp()
 
 catkin_package( INCLUDE_DIRS include LIBRARIES ${PROJECT_NAME} CATKIN_DEPENDS roscpp rqt_gui_cpp std_msgs
-        roboy_communication_middleware darkroom common_utilities )
+        roboy_middleware_msgs darkroom common_utilities )
 
 if("${qt_gui_cpp_USE_QT_MAJOR_VERSION} " STREQUAL "5 ")
   qt5_wrap_cpp(darkroom_rqt_MOCS include/darkroom_rqt/darkroom_rqt.hpp qcustomplot/qcustomplot.h)
@@ -54,7 +54,7 @@ include_directories(
 
 add_library( darkroom_rqt src/darkroom_rqt.cpp ${darkroom_rqt_MOCS} ${darkroom_rqt_UIS_H}
         qcustomplot/qcustomplot.cpp)
-add_dependencies(darkroom_rqt roboy_communication_middleware_gencpp)
+add_dependencies(darkroom_rqt roboy_middleware_msgs_gencpp)
 target_link_libraries(darkroom_rqt ${catkin_LIBRARIES} )
 
 add_executable(test_this src/main.cpp ${test_RESOURCES_RCC})

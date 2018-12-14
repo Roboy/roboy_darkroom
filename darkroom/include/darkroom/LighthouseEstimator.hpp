@@ -40,10 +40,10 @@
 #include "darkroom/Sensor.hpp"
 #include <common_utilities/rviz_visualization.hpp>
 #include <common_utilities/CommonDefinitions.h>
-#include <roboy_communication_middleware/LighthousePoseCorrection.h>
-#include <roboy_communication_middleware/DarkRoomSensor.h>
-#include <roboy_communication_middleware/DarkRoomOOTX.h>
-#include <roboy_communication_middleware/ArucoPose.h>
+#include <roboy_middleware_msgs/LighthousePoseCorrection.h>
+#include <roboy_middleware_msgs/DarkRoomSensor.h>
+#include <roboy_middleware_msgs/DarkRoomOOTX.h>
+#include <roboy_middleware_msgs/ArucoPose.h>
 #include <common_utilities/CommonDefinitions.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <boost/filesystem.hpp>
@@ -220,7 +220,7 @@ public:
     ofstream steamVRrecord[2];
     static int trackedObjectInstance; //! a unique object instance (helps with unique rviz marker ids)
 private:
-    void receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg);
+    void receiveOOTXData(const roboy_middleware_msgs::DarkRoomOOTX::ConstPtr &msg);
 
     void applyCalibrationData(Vector2d &lighthouse0_angles, Vector2d &lighthouse1_angles);
 

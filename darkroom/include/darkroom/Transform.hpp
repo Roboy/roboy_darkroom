@@ -49,42 +49,6 @@ namespace DarkRoom {
     class Transform {
     public:
         /**
-         * Queries the tf listener for the specified transform
-         * @param from we whant the transformation from this frame
-         * @param to another frame
-         * @param transform the transform if available
-         * @return true if available
-         */
-        bool getTransform(const char *from, const char *to, Matrix4d &transform);
-
-        /**
-         * Queries the tf listener for the specified transform
-         * @param lighthouse
-         * @param to another frame
-         * @param transform the transform if available
-         * @return true if available
-         */
-        bool getTransform(bool lighthouse, const char *to, Matrix4d &transform);
-
-        /**
-         * Queries the tf listener for the specified transform
-         * @param lighthouse
-         * @param from another frame
-         * @param transform the transform if available
-         * @return true if available
-         */
-        bool getTransform(const char *from, bool lighthouse, Matrix4d &transform);
-
-        /**
-         * Queries the tf listener for the specified transform
-         * @param to this frame
-         * @param from another frame
-         * @param transform the transform if available
-         * @return true if available
-         */
-        bool getTransform(const char *from, const char *to, tf::Transform &transform);
-
-        /**
          * Constructs 4x4 RT matrix from 6 pose parameters
          * @param RT filled with
          * @param pose the pose parameters (r,p,y,x,y,z)

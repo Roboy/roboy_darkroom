@@ -38,7 +38,7 @@
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <common_utilities/rviz_visualization.hpp>
-#include <roboy_communication_middleware/DarkRoom.h>
+#include <roboy_middleware_msgs/DarkRoom.h>
 #include <atomic>
 #include <mutex>
 #include <Eigen/Dense>

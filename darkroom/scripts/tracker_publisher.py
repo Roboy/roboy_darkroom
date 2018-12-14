@@ -6,7 +6,7 @@ import tf
 import numpy as np
 from pyquaternion import Quaternion
 import math
-from roboy_communication_middleware.srv import FrameIK
+from roboy_middleware_msgs.srv import FrameIK
 
 br = tf.TransformBroadcaster()
 li = tf.TransformListener()

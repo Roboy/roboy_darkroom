@@ -791,7 +791,7 @@ void RoboyDarkRoom::transformPublisher() {
     }
 }
 
-void RoboyDarkRoom::correctPose(const roboy_communication_middleware::LighthousePoseCorrection &msg) {
+void RoboyDarkRoom::correctPose(const roboy_middleware_msgs::LighthousePoseCorrection &msg) {
     mux.lock();
     tf::Transform tf;
     tf::transformMsgToTF(msg.tf, tf);
@@ -829,7 +829,7 @@ void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::Interac
     mux.unlock();
 }
 
-void RoboyDarkRoom::receiveSensorData(const roboy_communication_middleware::DarkRoom::ConstPtr &msg) {
+void RoboyDarkRoom::receiveSensorData(const roboy_middleware_msgs::DarkRoom::ConstPtr &msg) {
     ROS_DEBUG_THROTTLE(10, "receiving sensor data");
     uint id = 0;
     uint lighthouse, rotor, sweepDuration;
@@ -863,22 +863,22 @@ void RoboyDarkRoom::receiveSensorData(const roboy_communication_middleware::Dark
             emit newData();
 }
 
-void RoboyDarkRoom::receiveSensorStatus(const roboy_communication_middleware::DarkRoomStatus::ConstPtr &msg){
+void RoboyDarkRoom::receiveSensorStatus(const roboy_middleware_msgs::DarkRoomStatus::ConstPtr &msg){
     int active_sensors = 0;
     for(auto status:msg->sensor_state){
         if(status == 1)
             active_sensors++;
     }
-    ptrdiff_t pos = find(trackedObjectsIDs.begin(), trackedObjectsIDs.end(), msg->objectID) - trackedObjectsIDs.begin();
+    ptrdiff_t pos = find(trackedObjectsIDs.begin(), trackedObjectsIDs.end(), msg->object_id) - trackedObjectsIDs.begin();
     if(pos<trackedObjects.size())
         trackedObjects[pos]->active_sensors = active_sensors;
 }
 
-void RoboyDarkRoom::receiveStatistics(const roboy_communication_middleware::DarkRoomStatistics::ConstPtr &msg) {
+void RoboyDarkRoom::receiveStatistics(const roboy_middleware_msgs::DarkRoomStatistics::ConstPtr &msg) {
     ROS_DEBUG_THROTTLE(10, "receiving statistics data");
-    for (uint i = 0; i < msg->updateFrequency_horizontal.size(); i++) {
-        updateFrequencies[msg->lighthouse][i][0].push_back(msg->updateFrequency_horizontal[i]);
-        updateFrequencies[msg->lighthouse][i][1].push_back(msg->updateFrequency_vertical[i]);
+    for (uint i = 0; i < msg->update_frequency_horizontal.size(); i++) {
+        updateFrequencies[msg->lighthouse][i][0].push_back(msg->update_frequency_horizontal[i]);
+        updateFrequencies[msg->lighthouse][i][1].push_back(msg->update_frequency_vertical[i]);
         if (updateFrequencies[msg->lighthouse][i][0].size() > 50)
             updateFrequencies[msg->lighthouse][i][0].pop_front();
         if (updateFrequencies[msg->lighthouse][i][1].size() > 50)
@@ -892,11 +892,11 @@ void RoboyDarkRoom::receiveStatistics(const roboy_communication_middleware::Dark
             emit newStatisticsData();
 }
 
-void RoboyDarkRoom::receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg) {
+void RoboyDarkRoom::receiveOOTXData(const roboy_middleware_msgs::DarkRoomOOTX::ConstPtr &msg) {
     if (msg->lighthouse == (ui.switch_lighthouse_calibration_values->isChecked()?1:0)) {
         text["lighthouse_firmware_version_1"]->setText(QString::number(msg->fw_version >> 6 & 0x3FF, 16));
         text["lighthouse_protocol_version_1"]->setText(QString::number(msg->fw_version & 0x1F, 10));
-        text["lighthouse_ID_1"]->setText(QString::number(msg->ID, 16));
+        text["lighthouse_ID_1"]->setText(QString::number(msg->id, 16));
         text["lighthouse_hardware_version_1"]->setText(QString::number(msg->hw_version, 16));
         switch(msg->mode){
             case 0: text["lighthouse_selected_mode_1"]->setText("A"); break;
@@ -931,7 +931,7 @@ void RoboyDarkRoom::receiveOOTXData(const roboy_communication_middleware::DarkRo
     } else {
         text["lighthouse_firmware_version_2"]->setText(QString::number(msg->fw_version >> 6 & 0x3FF, 16));
         text["lighthouse_protocol_version_2"]->setText(QString::number(msg->fw_version & 0x1F, 10));
-        text["lighthouse_ID_2"]->setText(QString::number(msg->ID, 16));
+        text["lighthouse_ID_2"]->setText(QString::number(msg->id, 16));
         text["lighthouse_hardware_version_2"]->setText(QString::number(msg->hw_version, 16));
         switch(msg->mode){
             case 0: text["lighthouse_selected_mode_2"]->setText("A"); break;
@@ -986,7 +986,7 @@ void RoboyDarkRoom::updateTrackedObjectInfo() {
     }
 }
 
-void RoboyDarkRoom::receiveArucoPose(const roboy_communication_middleware::ArucoPose::ConstPtr &msg){
+void RoboyDarkRoom::receiveArucoPose(const roboy_middleware_msgs::ArucoPose::ConstPtr &msg){
     int i=0;
     // running mean and variance (cf https://www.johndcook.com/blog/standard_deviation/ )
     stringstream str;

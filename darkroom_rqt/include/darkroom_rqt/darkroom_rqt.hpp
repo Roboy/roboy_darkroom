@@ -47,12 +47,12 @@
 #include <darkroom/LighthouseSimulator.hpp>
 #include <darkroom/TrackedObject.hpp>
 #include <darkroom/Transform.hpp>
-#include <roboy_communication_middleware/LighthousePoseCorrection.h>
-#include <roboy_communication_middleware/ArucoPose.h>
-#include <roboy_communication_middleware/DarkRoom.h>
-#include <roboy_communication_middleware/DarkRoomStatistics.h>
-#include <roboy_communication_middleware/DarkRoomStatus.h>
-#include <roboy_communication_middleware/DarkRoomOOTX.h>
+#include <roboy_middleware_msgs/LighthousePoseCorrection.h>
+#include <roboy_middleware_msgs/ArucoPose.h>
+#include <roboy_middleware_msgs/DarkRoom.h>
+#include <roboy_middleware_msgs/DarkRoomStatistics.h>
+#include <roboy_middleware_msgs/DarkRoomStatus.h>
+#include <roboy_middleware_msgs/DarkRoomOOTX.h>
 #include <map>
 #include <QLineEdit>
 #include <QSlider>
@@ -235,7 +235,7 @@ private:
      * Callback for pose correction message
      * @param msg
      */
-    void correctPose(const roboy_communication_middleware::LighthousePoseCorrection &msg);
+    void correctPose(const roboy_middleware_msgs::LighthousePoseCorrection &msg);
 
     /**
      * Callback for interactive markers
@@ -246,21 +246,21 @@ private:
     /**
      * Callback for DarkRoom data
      */
-    void receiveSensorData(const roboy_communication_middleware::DarkRoom::ConstPtr &msg);
+    void receiveSensorData(const roboy_middleware_msgs::DarkRoom::ConstPtr &msg);
     /**
      * Callback for DarkRoom sensor status
      */
-    void receiveSensorStatus(const roboy_communication_middleware::DarkRoomStatus::ConstPtr &msg);
+    void receiveSensorStatus(const roboy_middleware_msgs::DarkRoomStatus::ConstPtr &msg);
     /**
      * Callback for DarkRoom statistics
      * @param msg
      */
-    void receiveStatistics(const roboy_communication_middleware::DarkRoomStatistics::ConstPtr &msg);
+    void receiveStatistics(const roboy_middleware_msgs::DarkRoomStatistics::ConstPtr &msg);
     /**
      * Callback for DarkRoom ootx
      * @param msg
      */
-    void receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg);
+    void receiveOOTXData(const roboy_middleware_msgs::DarkRoomOOTX::ConstPtr &msg);
     /**
      * Checks if a file exists
      * @param filepath
@@ -270,7 +270,7 @@ private:
 
     void updateTrackedObjectInfo();
 
-    void receiveArucoPose(const roboy_communication_middleware::ArucoPose::ConstPtr &msg);
+    void receiveArucoPose(const roboy_middleware_msgs::ArucoPose::ConstPtr &msg);
 Q_SIGNALS:
     void newData();
     void newStatisticsData();

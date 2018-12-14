@@ -79,9 +79,9 @@ LighthouseEstimator::LighthouseEstimator() {
                   ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
     }
     nh = ros::NodeHandlePtr(new ros::NodeHandle);
-    sensor_location_pub = nh->advertise<roboy_communication_middleware::DarkRoomSensor>(
+    sensor_location_pub = nh->advertise<roboy_middleware_msgs::DarkRoomSensor>(
             "/roboy/middleware/DarkRoom/sensor_location", 1);
-    lighthouse_pose_correction = nh->advertise<roboy_communication_middleware::LighthousePoseCorrection>(
+    lighthouse_pose_correction = nh->advertise<roboy_middleware_msgs::LighthousePoseCorrection>(
             "/roboy/middleware/DarkRoom/LighthousePoseCorrection", 1);
     ootx_sub = nh->subscribe("/roboy/middleware/DarkRoom/ootx", 1, &LighthouseEstimator::receiveOOTXData, this);
     spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
@@ -157,8 +157,8 @@ bool LighthouseEstimator::lighthousePoseEstimationLeastSquares() {
     pose << 0, 0, 0, 0, 0, 0.001;
 
     Matrix4d RT_0, RT_1;
-    getTransform(LIGHTHOUSE_A, "world", RT_0);
-    getTransform(LIGHTHOUSE_B, "world", RT_1);
+    getLighthouseTransform(LIGHTHOUSE_A, "world", RT_0);
+    getLighthouseTransform(LIGHTHOUSE_B, "world", RT_1);
     estimator.pos3D_A = RT_0 * estimator.pos3D_A;
     estimator.pos3D_B = RT_1 * estimator.pos3D_B;
 
@@ -174,7 +174,7 @@ bool LighthouseEstimator::lighthousePoseEstimationLeastSquares() {
     tf::Transform tf;
     getTFtransform(pose, tf);
 
-    roboy_communication_middleware::LighthousePoseCorrection msg;
+    roboy_middleware_msgs::LighthousePoseCorrection msg;
     msg.id = LIGHTHOUSE_B;
     msg.type = RELATIV;
     tf::transformTFToMsg(tf, msg.tf);
@@ -219,7 +219,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
         mux.unlock();
 
         Matrix4d RT_0, RT_correct, RT_object;
-        getTransform(LIGHTHOUSE_A, "world", RT_0);
+        getLighthouseTransform(LIGHTHOUSE_A, "world", RT_0);
         estimator.pos3D_B = RT_0 * estimator.pos3D_B;
 
         NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator> *numDiff;
@@ -273,7 +273,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
 
             if (comparesteamvr) {
                 Matrix4d RT_0, RT_correct, RT_object;
-                getTransform(LIGHTHOUSE_A, "world", RT_0);
+                getLighthouseTransform(LIGHTHOUSE_A, "world", RT_0);
                 estimator2.pos3D_B = RT_0 * estimator2.pos3D_B;
 
                 NumericalDiff<PoseEstimatorSensorCloud::PoseEstimator> *numDiff;
@@ -646,7 +646,7 @@ bool LighthouseEstimator::estimateObjectPoseUsingRelativeDistances() {
 
     tf.setBasis(rot_matrix);
 
-    roboy_communication_middleware::LighthousePoseCorrection msg;
+    roboy_middleware_msgs::LighthousePoseCorrection msg;
     msg.id = LIGHTHOUSE_B;
     msg.type = RELATIV;
     tf::transformTFToMsg(tf, msg.tf);
@@ -881,8 +881,8 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
                 estimator2(
                 visible_sensors[LIGHTHOUSE_A].size() + visible_sensors[LIGHTHOUSE_B].size());
         Matrix4d lighthousePose[2];
-        getTransform("world", LIGHTHOUSE_A, lighthousePose[LIGHTHOUSE_A]);
-        getTransform("world", LIGHTHOUSE_B, lighthousePose[LIGHTHOUSE_B]);
+        getLighthouseTransform("world", LIGHTHOUSE_A, lighthousePose[LIGHTHOUSE_A]);
+        getLighthouseTransform("world", LIGHTHOUSE_B, lighthousePose[LIGHTHOUSE_B]);
         estimator.lighthousePose.push_back(lighthousePose[LIGHTHOUSE_A]);
         estimator.lighthousePose.push_back(lighthousePose[LIGHTHOUSE_B]);
         estimator.rel_pos = rel_positions;
@@ -1009,14 +1009,14 @@ void LighthouseEstimator::triangulateSensors() {
     ros::Rate rate(30);
     bool lighthouse_active[2];
     while (tracking) {
-        roboy_communication_middleware::DarkRoomSensor msg;
+        roboy_middleware_msgs::DarkRoomSensor msg;
 
         Matrix4d RT_0, RT_1;
-        if (!getTransform(LIGHTHOUSE_A, "world", RT_0)) {
+        if (!getLighthouseTransform(LIGHTHOUSE_A, "world", RT_0)) {
             rate.sleep(); // no need to query for frame faster than it is published
             continue;
         }
-        if (!getTransform(LIGHTHOUSE_B, "world", RT_1)) {
+        if (!getLighthouseTransform(LIGHTHOUSE_B, "world", RT_1)) {
             rate.sleep(); // no need to query for frame faster than it is published
             continue;
         }
@@ -1173,9 +1173,9 @@ void LighthouseEstimator::calibrateRelativeSensorDistances() {
 
     // get the lighthouse poses
     Matrix4d RT_0, RT_1;
-    if (!getTransform("world", LIGHTHOUSE_A, RT_0))
+    if (!getLighthouseTransform("world", LIGHTHOUSE_A, RT_0))
         return;
-    if (!getTransform("world", LIGHTHOUSE_B, RT_1))
+    if (!getLighthouseTransform("world", LIGHTHOUSE_B, RT_1))
         return;
 
     while ((ros::Time::now() - start_time) < ros::Duration(10) && calibrating) {
@@ -1619,11 +1619,11 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
     vector<Matrix4d> object_pose_truth;
     Matrix4d lighthousePose[2], world2lighthouse;
 
-    while (!getTransform("world", lighthouse, world2lighthouse))
+    while (!getLighthouseTransform("world", lighthouse, world2lighthouse))
         ROS_INFO_THROTTLE(1, "waiting for transform to lighthouse");
-    while (!getTransform("world", LIGHTHOUSE_A, lighthousePose[LIGHTHOUSE_A]))
+    while (!getLighthouseTransform("world", LIGHTHOUSE_A, lighthousePose[LIGHTHOUSE_A]))
         ROS_INFO_THROTTLE(1, "waiting for transform to lighthouse 1");
-    while (!getTransform("world", LIGHTHOUSE_B, lighthousePose[LIGHTHOUSE_B]))
+    while (!getLighthouseTransform("world", LIGHTHOUSE_B, lighthousePose[LIGHTHOUSE_B]))
         ROS_INFO_THROTTLE(1, "waiting for transform to lighthouse 2");
 
     ROS_INFO_STREAM_THROTTLE(1, "lighthouse poses: " << endl << lighthousePose[LIGHTHOUSE_A].format(fmt) << endl
@@ -2108,9 +2108,9 @@ int LighthouseEstimator::getMessageID(int type, int sensor, bool lighthouse) {
     }
 }
 
-void LighthouseEstimator::receiveOOTXData(const roboy_communication_middleware::DarkRoomOOTX::ConstPtr &msg) {
+void LighthouseEstimator::receiveOOTXData(const roboy_middleware_msgs::DarkRoomOOTX::ConstPtr &msg) {
     ootx[msg->lighthouse].fw_version = msg->fw_version;
-    ootx[msg->lighthouse].ID = msg->ID;
+    ootx[msg->lighthouse].ID = msg->id;
     ootx[msg->lighthouse].fcal_0_phase = msg->fcal_0_phase;
     ootx[msg->lighthouse].fcal_1_phase = msg->fcal_1_phase;
     ootx[msg->lighthouse].fcal_0_tilt = msg->fcal_0_tilt;

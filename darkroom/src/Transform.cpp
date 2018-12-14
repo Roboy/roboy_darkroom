@@ -1,68 +1,6 @@
 #include "darkroom/Transform.hpp"
 
 namespace DarkRoom {
-
-    bool Transform::getTransform(const char *from, const char *to, Matrix4d &transform){
-        tf::StampedTransform trans;
-        try {
-            tf_listener.lookupTransform(to, from, ros::Time(0), trans);
-        }
-        catch (tf::TransformException ex) {
-            ROS_WARN_THROTTLE(1,"%s", ex.what());
-            return false;
-        }
-
-        Eigen::Affine3d trans_;
-        tf::transformTFToEigen(trans, trans_);
-        transform = trans_.matrix();
-        return true;
-    }
-
-    bool Transform::getTransform(bool lighthouse, const char *to, Matrix4d &transform){
-        tf::StampedTransform trans;
-        try {
-            tf_listener.lookupTransform(to, (lighthouse?"lighthouse2":"lighthouse1"), ros::Time(0), trans);
-        }
-        catch (tf::TransformException ex) {
-            ROS_WARN_THROTTLE(1,"%s", ex.what());
-            return false;
-        }
-
-        Eigen::Affine3d trans_;
-        tf::transformTFToEigen(trans, trans_);
-        transform = trans_.matrix();
-        return true;
-    }
-
-    bool Transform::getTransform(const char *from, bool lighthouse, Matrix4d &transform){
-        tf::StampedTransform trans;
-        try {
-            tf_listener.lookupTransform((lighthouse?"lighthouse2":"lighthouse1"), from, ros::Time(0), trans);
-        }
-        catch (tf::TransformException ex) {
-            ROS_WARN_THROTTLE(1,"%s", ex.what());
-            return false;
-        }
-
-        Eigen::Affine3d trans_;
-        tf::transformTFToEigen(trans, trans_);
-        transform = trans_.matrix();
-        return true;
-    }
-
-    bool Transform::getTransform(const char *from, const char *to, tf::Transform &transform){
-        tf::StampedTransform trans;
-        try {
-            tf_listener.lookupTransform(to, from, ros::Time(0), trans);
-        }
-        catch (tf::TransformException ex) {
-            ROS_WARN_THROTTLE(1,"%s", ex.what());
-            return false;
-        }
-        transform = tf::Transform(trans);
-        return true;
-    }
-
     void Transform::getRTmatrix(Matrix4d &RT, VectorXd &pose){
         RT = Matrix4d::Identity();
         // construct quaternion (cf unit-sphere projection Terzakis paper)

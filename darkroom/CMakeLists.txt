@@ -10,7 +10,7 @@ SET(CMAKE_BUILD_TYPE Debug)
 # Dependencies
 #==============================================================================
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation tf tf_conversions visualization_msgs
-		roboy_communication_middleware common_utilities robot_localization xmlrpcpp pcl_ros epnp)
+		roboy_middleware_msgs common_utilities robot_localization xmlrpcpp pcl_ros epnp)
 
 # Eigen
 find_package(PkgConfig REQUIRED )
@@ -34,7 +34,7 @@ link_directories(${GAZEBO_LIBRARY_DIRS})
 find_package(ALGLIB REQUIRED)
 include_directories(${ALGLIB_INCLUDE_DIRS})
 
-catkin_package(CATKIN_DEPENDS message_runtime roboy_communication_middleware common_utilities robot_localization xmlrpcpp
+catkin_package(CATKIN_DEPENDS message_runtime roboy_middleware_msgs common_utilities robot_localization xmlrpcpp
 		pcl_ros epnp
 		INCLUDE_DIRS include
         LIBRARIES PoseEstimatorSensorCloud Transform Triangulate LighthouseEstimator LighthouseSimulator
@@ -72,24 +72,24 @@ add_library( Utilities src/Utilities.cpp )
 target_link_libraries( Utilities ${catkin_LIBRARIES} )
 
 add_library( LighthouseSimulator src/LighthouseSimulator.cpp )
-add_dependencies(LighthouseSimulator roboy_communication_middleware_gencpp )
+add_dependencies(LighthouseSimulator roboy_middleware_msgs_gencpp )
 target_link_libraries( LighthouseSimulator ${catkin_LIBRARIES} Transform)
 
 add_library( LighthouseEstimator src/LighthouseEstimator.cpp )
-add_dependencies(LighthouseEstimator roboy_communication_middleware_gencpp )
+add_dependencies(LighthouseEstimator roboy_middleware_msgs_gencpp )
 target_link_libraries( LighthouseEstimator ${catkin_LIBRARIES} PoseEstimatorSensorCloud Transform Triangulate
 		InYourGibbousPhase InYourGibbousPhase3 InYourGibbousPhase4 PoseEstimatorMultiLighthouse ${ALGLIB_LIBRARIES})
 
 add_library( TrackedObject src/TrackedObject.cpp )
-add_dependencies(TrackedObject roboy_communication_middleware_gencpp )
+add_dependencies(TrackedObject roboy_middleware_msgs_gencpp )
 target_link_libraries( TrackedObject ${yaml-cpp_LIBRARIES} ${catkin_LIBRARIES} ${OpenCV_LIBS} Sensor LighthouseEstimator Utilities )
 
 add_library( DarkRoomVisualPlugin src/gazebo/DarkRoomVisualPlugin.cpp )
-add_dependencies(DarkRoomVisualPlugin roboy_communication_middleware_gencpp )
+add_dependencies(DarkRoomVisualPlugin roboy_middleware_msgs_gencpp )
 target_link_libraries( DarkRoomVisualPlugin ${catkin_LIBRARIES} )
 
 add_library( LighthouseVisualPlugin src/gazebo/LighthouseVisualPlugin.cpp )
-add_dependencies(LighthouseVisualPlugin roboy_communication_middleware_gencpp )
+add_dependencies(LighthouseVisualPlugin roboy_middleware_msgs_gencpp )
 target_link_libraries( LighthouseVisualPlugin ${catkin_LIBRARIES} Transform )
 
 add_library( ImuModelPlugin src/gazebo/ImuModelPlugin.cpp )
