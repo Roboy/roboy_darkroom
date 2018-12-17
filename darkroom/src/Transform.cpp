@@ -1,6 +1,7 @@
 #include "darkroom/Transform.hpp"
 
 namespace DarkRoom {
+
     void Transform::getRTmatrix(Matrix4d &RT, VectorXd &pose){
         RT = Matrix4d::Identity();
         // construct quaternion (cf unit-sphere projection Terzakis paper)
@@ -18,9 +19,9 @@ namespace DarkRoom {
     void Transform::getPose(Quaterniond &q, Vector3d &origin, VectorXd &pose){
         double alpha_squared = pow(pow(pose(0), 2.0) + pow(pose(1), 2.0) + pow(pose(2), 2.0), 2.0);
         q = Quaterniond((1 - alpha_squared) / (alpha_squared + 1),
-                      2.0 * pose(0) / (alpha_squared + 1),
-                      2.0 * pose(1) / (alpha_squared + 1),
-                      2.0 * pose(2) / (alpha_squared + 1));
+                        2.0 * pose(0) / (alpha_squared + 1),
+                        2.0 * pose(1) / (alpha_squared + 1),
+                        2.0 * pose(2) / (alpha_squared + 1));
         q.normalize();
         origin = Vector3d(pose(3), pose(4), pose(5));
     }

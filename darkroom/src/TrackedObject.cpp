@@ -248,15 +248,15 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_middleware_msgs::DarkRoom
         lighthouse = (data >> 31) & 0x1;
         rotor = (data >> 30) & 0x1;
         int valid = (data >> 29) & 0x1;
-        sweepDuration = (data & 0x1fffffff); // raw sensor duration is 50 ticks per microsecond
         sensorID= ((data >>19) & 0x3FF);
         sweepDuration= ((data & 0x7FFFF));
-//        ROS_INFO_STREAM_THROTTLE(1,"timestamp:     " << timestamp << endl <<
+//        ROS_INFO_STREAM_THROTTLE(1,
 //                "valid:         " << valid << endl <<
-//                "id:            " << id << endl <<
+//                "sensorID:      " << sensorID << endl <<
 //                "lighthouse:    " << lighthouse << endl <<
 //                "rotor:         " << rotor << endl <<
-//                "sweepDuration: " << sweepDuration);
+//                "sweepDuration: " << sweepDuration << endl <<
+//                "angle:         " << ticksToRadians(sweepDuration));
         if (valid == 1) {
             double angle = ticksToRadians(sweepDuration);
             sensors[sensorID].update(lighthouse, rotor, angle);

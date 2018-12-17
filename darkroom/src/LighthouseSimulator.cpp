@@ -26,8 +26,10 @@ LighthouseSimulator::LighthouseSimulator(int id, vector<fs::path> &configFile) :
         map<int, Sensor> sensors;
         map<int,vector<double>> calibrationAngles;
 
-        if(!readConfig(configFile[i], objectID[i], name[i], meshPath, calibrated_sensors, sensors, calibrationAngles))
-            return;
+        if(!readConfig(configFile[i], objectID[i], name[i], meshPath, calibrated_sensors, sensors, calibrationAngles)){
+            ROS_WARN("could not read config file");
+        }
+
         imu_pub.push_back(nh->advertise<sensor_msgs::Imu>(("/roboy/middleware/"+name[i]+"/imu").c_str(), 1));
 
         if(!meshPath.empty()){
@@ -54,6 +56,7 @@ LighthouseSimulator::LighthouseSimulator(int id, vector<fs::path> &configFile) :
             sensor_visible[i].push_back(true);
         }
     }
+    number_of_markers_to_publish_at_once = 100;
 }
 
 LighthouseSimulator::~LighthouseSimulator() {
@@ -172,11 +175,6 @@ void LighthouseSimulator::PublishSensorData() {
                 Vector4d sensor_pos;
                 sensor_pos = RT_object2lighthouse[i] * sensor.second;
 
-                Matrix4d tilt_trafo = Matrix4d::Identity();
-                tilt_trafo.block(0, 0, 3, 3) << cos(calibration[id][motor].tilt), 0, sin(calibration[id][motor].tilt),
-                        0, 1, 0,
-                        -sin(calibration[id][motor].tilt), 0, cos(calibration[id][motor].tilt);
-
                 Vector4d sensor_pos_motor_vertical, sensor_pos_motor_horizontal;
                 sensor_pos_motor_vertical = sensor_pos - Vector4d(-AXIS_OFFSET,0,0,0);
                 sensor_pos_motor_horizontal = sensor_pos - Vector4d(0,0,-AXIS_OFFSET,0);
@@ -184,7 +182,7 @@ void LighthouseSimulator::PublishSensorData() {
                 double elevation_true = M_PI -  atan2(sensor_pos_motor_vertical(1), sensor_pos_motor_vertical(2));
                 double azimuth_true = atan2(sensor_pos_motor_horizontal[1], sensor_pos_motor_horizontal[0]);
 
-                ROS_DEBUG_STREAM_THROTTLE(1,"measured sensor pos: " << sensor_pos.transpose() << "\t elevation " << elevation_true << "\t azimuth " <<azimuth_true);
+//                ROS_INFO_STREAM_THROTTLE(1,"measured sensor pos: " << sensor_pos.transpose() << "\t elevation " << elevation_true << "\t azimuth " <<azimuth_true);
 
                 // excentric parameters, assumed to be from y axis -> cos
                 double temp_elevation1 = calibration[id][VERTICAL].curve*pow(cos(azimuth_true)*sin(elevation_true),2.0);

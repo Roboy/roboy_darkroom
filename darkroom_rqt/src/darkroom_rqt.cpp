@@ -417,7 +417,7 @@ void RoboyDarkRoom::compareToSteamVR(){
 
 void RoboyDarkRoom::connectRoboy() {
     ROS_DEBUG("connect roboy clicked");
-    string package_path = ros::package::getPath("roboy_models");
+    string package_path = ros::package::getPath("robots");
     // vector<fs::path> roboy_parts = {
     //         package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/xylophone.yaml",
     //         package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/head.yaml",
@@ -426,7 +426,7 @@ void RoboyDarkRoom::connectRoboy() {
     //         package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/upper_arm_right.yaml"
     // };
     vector<fs::path> roboy_parts = {
-            package_path + "/TestCube/calibration.yaml"
+            package_path + "/msj_platform/lighthouseSensors/top.yaml"
 //            package_path+"/Roboy2.0_Head_simplified/lighthouseSensors/upper_arm_left.yaml",
 //            package_path+"/Roboy2.0_Head_simplified/lighthouseSensors/lower_arm_left.yaml",
 //            package_path+"/Roboy2.0_Head_simplified/lighthouseSensors/upper_arm_right.yaml",
