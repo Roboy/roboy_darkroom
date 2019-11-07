@@ -60,7 +60,7 @@ using namespace std;
 
 class TrackedObject : public LighthouseEstimator, public RobotLocalization::RosEkf {
 public:
-    TrackedObject();
+    TrackedObject(ros::NodeHandlePtr nh);
 
     ~TrackedObject();
 

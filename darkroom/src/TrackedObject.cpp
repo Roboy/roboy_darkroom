@@ -3,7 +3,7 @@
 int LighthouseEstimator::trackedObjectInstance = 0;
 bool TrackedObject::m_switch = false;
 
-TrackedObject::TrackedObject() {
+TrackedObject::TrackedObject(ros::NodeHandlePtr nh):RobotLocalization::RosEkf(*nh,*nh) {
     if (!ros::isInitialized()) {
         int argc = 0;
         char **argv = NULL;

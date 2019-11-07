@@ -1,3 +1,4 @@
+#include <tinyxml.h>
 #include "darkroom/gazebo/ImuModelPlugin.hpp"
 
 ImuModelPlugin::ImuModelPlugin() {
@@ -56,7 +57,7 @@ void ImuModelPlugin::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
     }
 
 
-    physics::PhysicsEnginePtr physics_engine = parent_model->GetWorld()->GetPhysicsEngine();
+    physics::PhysicsEnginePtr physics_engine = parent_model->GetWorld()->Physics();
 
     // Get the Gazebo solver type
     std::string solver_type = boost::any_cast<std::string>(physics_engine->GetParam("solver_type"));
@@ -74,7 +75,7 @@ void ImuModelPlugin::Load(gazebo::physics::ModelPtr parent_, sdf::ElementPtr sdf
 
 void ImuModelPlugin::Update() {
     // Get the simulation time and period
-    gz_time_now = parent_model->GetWorld()->GetSimTime();
+    gz_time_now = parent_model->GetWorld()->SimTime();
     ros::Time sim_time_ros(gz_time_now.sec, gz_time_now.nsec);
     ros::Duration update_period = sim_time_ros - last_update_sim_time_ros;
 
@@ -98,7 +99,7 @@ void ImuModelPlugin::readSim(ros::Time time, ros::Duration period) {
     for(ImuInfo imu:imus){
         switch(imu.type){
             case ACC:{
-                math::Vector3 acc = imu.link->GetWorldLinearAccel();
+                ignition::math::Vector3d acc = imu.link->WorldLinearAccel();
                 sensor_msgs::Imu msg;
                 msg.header.stamp = ros::Time::now();
                 msg.header.frame_id = imu.link->GetName();
@@ -109,9 +110,9 @@ void ImuModelPlugin::readSim(ros::Time time, ros::Duration period) {
                         0, 0, 1
                 };
 
-                msg.linear_acceleration.x = acc.x;
-                msg.linear_acceleration.y = acc.y;
-                msg.linear_acceleration.z = acc.z;
+                msg.linear_acceleration.x = acc.X();
+                msg.linear_acceleration.y = acc.Y();
+                msg.linear_acceleration.z = acc.Z();
 
                 imu_pub[i].publish(msg);
                 ROS_DEBUG_THROTTLE(1,"%f %f %f", acc[0], acc[1], acc[2]);

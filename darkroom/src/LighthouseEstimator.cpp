@@ -1952,7 +1952,7 @@ bool LighthouseEstimator::estimateFactoryCalibration2(int lighthouse) {
     minlmreport rep;
 
     minlmcreatev(trajectory_points * 2, x, 0.0001, state);
-    minlmsetcond(state, epsg, epsf, epsx, maxits);
+    minlmsetcond(state, epsx, maxits);
     alglib::minlmoptimize(state, function1_fvec);
     minlmresults(state, x, rep);
 

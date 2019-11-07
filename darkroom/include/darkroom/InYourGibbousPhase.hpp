@@ -60,9 +60,9 @@ namespace InYourGibbousPhase {
             InputsAtCompileTime = NX,
             ValuesAtCompileTime = NY
         };
-        typedef Matrix<Scalar, InputsAtCompileTime, 1> InputType;
-        typedef Matrix<Scalar, ValuesAtCompileTime, 1> ValueType;
-        typedef Matrix<Scalar, ValuesAtCompileTime, InputsAtCompileTime> JacobianType;
+        typedef Eigen::Matrix<Scalar, InputsAtCompileTime, 1> InputType;
+        typedef Eigen::Matrix<Scalar, ValuesAtCompileTime, 1> ValueType;
+        typedef Eigen::Matrix<Scalar, ValuesAtCompileTime, InputsAtCompileTime> JacobianType;
 
         const int m_inputs, m_values;
 

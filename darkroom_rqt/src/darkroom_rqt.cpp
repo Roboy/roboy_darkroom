@@ -341,7 +341,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     ui.update_frequencies_vertical_lighthouse_2->yAxis->setRange(0, 100);
 
     model = new QFileSystemModel;
-    string package_path = ros::package::getPath("roboy_models");
+    string package_path = ros::package::getPath("robots");
     model->setRootPath(QString(package_path.c_str()));
     ui.tracked_object_browser->setModel(model);
     ui.tracked_object_browser->setRootIndex(model->index(QString(package_path.c_str())));
@@ -1057,7 +1057,7 @@ void RoboyDarkRoom::plotStatisticsData() {
 
 bool RoboyDarkRoom::addTrackedObject(const char *config_file_path) {
     mux.lock();
-    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject());
+    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject(nh));
     if (strlen(config_file_path) == 0) {
         QModelIndexList indexList = ui.tracked_object_browser->selectionModel()->selectedIndexes();
         if (indexList.empty())
@@ -1461,7 +1461,7 @@ void RoboyDarkRoom::estimateFactoryCalibration2(){
     }
 
     ROS_DEBUG_STREAM("adding tracked object " << calibration_object_path);
-    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject());
+    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject(nh));
     newObject->init(calibration_object_path.c_str());
     trackedObjects.push_back(newObject);
     object_counter++;
@@ -1597,7 +1597,7 @@ void RoboyDarkRoom::estimateFactoryCalibrationEPNP(){
     }
 
     ROS_DEBUG_STREAM("adding tracked object " << calibration_object_path);
-    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject());
+    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject(nh));
     newObject->init(calibration_object_path.c_str());
     trackedObjects.push_back(newObject);
     object_counter++;
@@ -1733,7 +1733,7 @@ void RoboyDarkRoom::estimateFactoryCalibrationMulti(){
     }
 
     ROS_DEBUG_STREAM("adding tracked object " << calibration_object_path);
-    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject());
+    TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject(nh));
     newObject->init(calibration_object_path.c_str());
     trackedObjects.push_back(newObject);
     object_counter++;
@@ -1879,4 +1879,10 @@ void RoboyDarkRoom::resetPose(){
     }
 }
 
-PLUGINLIB_DECLARE_CLASS(roboy_darkroom, RoboyDarkRoom, RoboyDarkRoom, rqt_gui_cpp::Plugin)
+#if ROS_VERSION_MINOR == 14 // ros melodic
+    PLUGINLIB_EXPORT_CLASS(RoboyDarkRoom, rqt_gui_cpp::Plugin)
+#else // earlier
+    PLUGINLIB_DECLARE_CLASS(roboy_darkroom, RoboyDarkRoom, RoboyDarkRoom, rqt_gui_cpp::Plugin)
+#endif
+
+

@@ -58,7 +58,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <optimization.h>
+#include <libalglib/optimization.h>
 #include <epnp/epnp.h>
 
 using namespace alglib;
