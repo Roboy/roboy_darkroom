@@ -44,7 +44,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="tab">
     <attribute name="title">
@@ -223,7 +223,7 @@
        <bool>true</bool>
       </property>
       <property name="checked">
-       <bool>true</bool>
+       <bool>false</bool>
       </property>
      </widget>
      <widget class="QPushButton" name="compare_to_steamVR">
@@ -533,7 +533,7 @@
        <string>simulate</string>
       </property>
       <property name="checked">
-       <bool>false</bool>
+       <bool>true</bool>
       </property>
      </widget>
      <widget class="QSlider" name="random_pose_slider">

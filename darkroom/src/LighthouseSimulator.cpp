@@ -29,8 +29,9 @@ LighthouseSimulator::LighthouseSimulator(int id, vector<fs::path> &configFile) :
         if(!readConfig(configFile[i], objectID[i], name[i], meshPath, calibrated_sensors, sensors, calibrationAngles)){
             ROS_WARN("could not read config file");
         }
-
-        imu_pub.push_back(nh->advertise<sensor_msgs::Imu>(("/roboy/middleware/"+name[i]+"/imu").c_str(), 1));
+//        std::replace(name[i].begin(),name[i].end(),"-","_");
+//
+//        imu_pub.push_back(nh->advertise<sensor_msgs::Imu>(("/roboy/middleware/"+name[i]+"/imu").c_str(), 1));
 
         if(!meshPath.empty()){
             ROS_DEBUG_STREAM("loading mesh file " << meshPath);
@@ -136,7 +137,7 @@ bool LighthouseSimulator::record(bool start) {
 }
 
 void LighthouseSimulator::PublishSensorData() {
-    ros::Rate rate(120);
+    ros::Rate rate(30);
     bool motor = HORIZONTAL;
     high_resolution_clock::time_point t0 = high_resolution_clock::now();
     vector<Matrix4d> RT_object2lighthouse(meshes.size()), RT_object2lighthouse_new(meshes.size());
@@ -145,10 +146,10 @@ void LighthouseSimulator::PublishSensorData() {
     while (sensor_publishing) {
         for (int i=0; i<meshes.size();i++) {
             // we need the transform from object to lighthouse frame
-            if (!getTransform(name[i].c_str(), (id == 0 ? "lighthouse1" : "lighthouse2"), RT_object2lighthouse_new[i]))
+            if (!getTransform((id == 0 ? "lighthouse1" : "lighthouse2"),name[i].c_str(), RT_object2lighthouse_new[i]))
                 continue;
             Matrix4d RT_object2world;
-            if (!getTransform(name[i].c_str(), "world", RT_object2world))
+            if (!getTransform("world", name[i].c_str(), RT_object2world))
                 continue;
 
             // because checking the visiblity of a sensor is costly, we only do it, when the pose has changed
@@ -185,15 +186,18 @@ void LighthouseSimulator::PublishSensorData() {
 //                ROS_INFO_STREAM_THROTTLE(1,"measured sensor pos: " << sensor_pos.transpose() << "\t elevation " << elevation_true << "\t azimuth " <<azimuth_true);
 
                 // excentric parameters, assumed to be from y axis -> cos
-                double temp_elevation1 = calibration[id][VERTICAL].curve*pow(cos(azimuth_true)*sin(elevation_true),2.0);
-                double temp_elevation2 = calibration[id][VERTICAL].gibmag*cos(elevation_true+calibration[id][VERTICAL].gibphase);
-                double temp_azimuth1 = calibration[id][HORIZONTAL].curve*pow(-sin(azimuth_true)*cos(elevation_true),2.0);
-                double temp_azimuth2 = calibration[id][HORIZONTAL].gibmag*cos(azimuth_true+calibration[id][HORIZONTAL].gibphase);
-                double elevation = elevation_true - (calibration[id][VERTICAL].phase + temp_elevation1 + temp_elevation2);
-                double azimuth = azimuth_true - (calibration[id][HORIZONTAL].phase + temp_azimuth1 + temp_azimuth2);
+                ROS_WARN_ONCE("calibration overide");
+//                double temp_elevation1 = calibration[id][VERTICAL].curve*pow(cos(azimuth_true)*sin(elevation_true),2.0);
+//                double temp_elevation2 = calibration[id][VERTICAL].gibmag*cos(elevation_true+calibration[id][VERTICAL].gibphase);
+//                double temp_azimuth1 = calibration[id][HORIZONTAL].curve*pow(-sin(azimuth_true)*cos(elevation_true),2.0);
+//                double temp_azimuth2 = calibration[id][HORIZONTAL].gibmag*cos(azimuth_true+calibration[id][HORIZONTAL].gibphase);
+//                double elevation = elevation_true - (calibration[id][VERTICAL].phase + temp_elevation1 + temp_elevation2);
+//                double azimuth = azimuth_true - (calibration[id][HORIZONTAL].phase + temp_azimuth1 + temp_azimuth2);
+                double elevation = elevation_true;
+                double azimuth = azimuth_true;
 
-                if (elevation >= 0 && elevation <= 180.0 && azimuth >= 0 &&
-                    azimuth <= 180.0 && sensor_visible[i][j]) { // if the sensor is visible by lighthouse
+                if (elevation >= 0 && elevation <= M_PI && azimuth >= 0 &&
+                    azimuth <= M_PI && sensor_visible[i][j]) { // if the sensor is visible by lighthouse
                     uint32_t sensor_value[2];
                     uint32_t elevation_in_ticks = (uint32_t) (radiansToTicks(elevation));
                     sensor_value[VERTICAL] = (uint32_t) (id << 31 | 1 << 30 | true << 29 | sensor.first<<19 | elevation_in_ticks & 0x7FFFF);
@@ -224,10 +228,10 @@ void LighthouseSimulator::PublishSensorData() {
 
                     Vector3d pos(sensor_pos[0], sensor_pos[1], sensor_pos[2]);
                     publishSphere(pos, (id == 0 ? "lighthouse1" : "lighthouse2"), "simulated_sensor_positions",
-                                  sensor.first + id * sensor_position.size() + i*1000000, COLOR(0.5, 0, 0.5, 1), 0.01);
+                                  sensor.first + id * sensor_position.size() + i*1000000, COLOR(0.5, 0.5, 0.5, 1), 0.01);
                 } else {
                     Vector3d pos(sensor_pos[0], sensor_pos[1], sensor_pos[2]);
-                    publishSphere(pos, (id == 0 ? "lighthouse1" : "lighthouse2"), "simulated_sensor_positions",
+                    publishSphere(pos, (id == 0 ? "lighthouse1" : "lighthouse2"), "simulated_sensor_positions_not_visible",
                                   sensor.first + id * sensor_position.size() + i*1000000, COLOR(1, 0, 0, 1), 0.01, 1);
                 }
 

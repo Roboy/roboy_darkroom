@@ -3,15 +3,7 @@
 int LighthouseEstimator::trackedObjectInstance = 0;
 bool TrackedObject::m_switch = false;
 
-TrackedObject::TrackedObject(ros::NodeHandlePtr nh):RobotLocalization::RosEkf(*nh,*nh) {
-    if (!ros::isInitialized()) {
-        int argc = 0;
-        char **argv = NULL;
-        ros::init(argc, argv, "TrackedObject",
-                  ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
-    }
-    nh = ros::NodeHandlePtr(new ros::NodeHandle("~"));
-
+TrackedObject::TrackedObject(ros::NodeHandlePtr nh):RobotLocalization::RosEkf(*nh,*nh), nh(nh) {
     darkroom_statistics_pub = nh->advertise<roboy_middleware_msgs::DarkRoomStatistics>(
             "/roboy/middleware/DarkRoom/Statistics", 1);
 
@@ -64,6 +56,7 @@ bool TrackedObject::init(const char* configFile){
 //    nh->setParam("world_frame", "world");
     nh->setParam("base_link_frame", name);
 //    nh->setParam("odom_frame", "odom");
+//    std::replace(name.begin(),name.end(),"-","_");
     imu_topic_name = "roboy/middleware/"+name+"/imu";
     pose_topic_name = "roboy/middleware/"+name+"/pose";
 

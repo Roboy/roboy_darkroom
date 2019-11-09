@@ -426,7 +426,7 @@ void RoboyDarkRoom::connectRoboy() {
     //         package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/upper_arm_right.yaml"
     // };
     vector<fs::path> roboy_parts = {
-            package_path + "/msj_platform/lighthouseSensors/top.yaml"
+            package_path + "/exohaptic/lighthouseSensors/left_link6.yaml"
 //            package_path+"/Roboy2.0_Head_simplified/lighthouseSensors/upper_arm_left.yaml",
 //            package_path+"/Roboy2.0_Head_simplified/lighthouseSensors/lower_arm_left.yaml",
 //            package_path+"/Roboy2.0_Head_simplified/lighthouseSensors/upper_arm_right.yaml",
@@ -445,7 +445,7 @@ void RoboyDarkRoom::connectRoboy() {
 
         simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, roboy_parts));
         simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, roboy_parts));
-        simulation.first->startIMUPublisher();
+//        simulation.first->startIMUPublisher();
         simulation.first->startSensorPublisher();
         simulation.second->startSensorPublisher();
 
@@ -478,11 +478,12 @@ void RoboyDarkRoom::resetLighthousePoses() {
     tf_world.setRotation(quat);
     tf_map.setRotation(quat);
     bool ok;
+    quat.setRPY(0, 0, 0);
     lighthouse1.setRotation(quat);
-//    lighthouse1.setOrigin(tf::Vector3(0, -2.4, -0.115));
+//    lighthouse1.setOrigin(tf::Vector3(1, -2, 0));
     lighthouse1.setOrigin(tf::Vector3(0, -1, 0));
     lighthouse2.setRotation(quat);
-//    lighthouse2.setOrigin(tf::Vector3(-0.825, -2.4, -0.115));
+//    lighthouse2.setOrigin(tf::Vector3(-1, -2, 0));
     lighthouse2.setOrigin(tf::Vector3(-0.825, -1, 0));
 }
 
