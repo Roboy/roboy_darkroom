@@ -911,9 +911,8 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
         Matrix4d RT_object;
         getRTmatrix(RT_object, pose);
 
-        tf::Transform tf;
-        getTFtransform(RT_object, tf);
-        publishTF(tf, "world", (name + "_ML").c_str());
+        getTFtransform(RT_object, this->pose);
+        publishTF(this->pose, "world", (name + "_ML").c_str());
 
         if (comparesteamvr) {
 
