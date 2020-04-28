@@ -1,0 +1,2 @@
+/usr/bin/ar qc libTriangulate.a  CMakeFiles/Triangulate.dir/src/Triangulation.cpp.o
+/usr/bin/ranlib libTriangulate.a

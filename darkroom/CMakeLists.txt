@@ -103,25 +103,25 @@ ament_target_dependencies( TrackedObject rclcpp  robot_localization common_utili
 #ament_target_dependencies(publishOpenVRPoses rclcpp)
 
 ament_export_dependencies(roboy_middleware_msgs common_utilities robot_localization xmlrpcpp
-		pcl_ros epnp)
+		epnp)
 ament_export_include_directories(include)
-ament_export_libraries(PoseEstimatorSensorCloud Transform Triangulate LighthouseEstimator LighthouseSimulator
+ament_export_libraries(PoseEstimatorSensorCloud Transform Triangulate LighthouseEstimator
 		Sensor TrackedObject )
 ament_package()
 
 #==============================================================================
 # Installation
 #==============================================================================
-#install(TARGETS
-##		PoseEstimatorSensorCloud
-#        Transform
-#        Triangulate
-#        LighthouseEstimator
-#        Sensor
-#        TrackedObject
+install(TARGETS
+		Sensor
+		TrackedObject
+		PoseEstimatorSensorCloud
+        Transform
+        Triangulate
+        LighthouseEstimator
 ##        ImuModelPlugin
-#	    LIBRARY DESTINATION lib
-#        )
+	    LIBRARY DESTINATION lib/${PROJECT_NAME}
+        )
 
 install(FILES
         package.xml
@@ -129,11 +129,11 @@ install(FILES
 )
 
 install(DIRECTORY include/darkroom/
-        DESTINATION include
+        DESTINATION include/${PROJECT_NAME}
         FILES_MATCHING PATTERN "*.hpp"
         )
 
 install(DIRECTORY include/darkroom/
-        DESTINATION include
+        DESTINATION include/${PROJECT_NAME}
         FILES_MATCHING PATTERN "*.h"
         )

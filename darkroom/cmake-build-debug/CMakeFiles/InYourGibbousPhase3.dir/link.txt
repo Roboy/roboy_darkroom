@@ -1,0 +1,2 @@
+/usr/bin/ar qc libInYourGibbousPhase3.a  CMakeFiles/InYourGibbousPhase3.dir/src/InYourGibbousPhase3.cpp.o
+/usr/bin/ranlib libInYourGibbousPhase3.a

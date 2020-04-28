@@ -1673,7 +1673,7 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
 
         RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1, "waiting for transform to lighthouse 2");
 
-    
+
         RCLCPP_INFO_STREAM_THROTTLE(nh->get_logger(), clock,1, "lighthouse poses: " << endl << lighthousePose[LIGHTHOUSE_A].format(fmt) << endl
                                                      << lighthousePose[LIGHTHOUSE_B].format(fmt) << endl <<
                                                      "world to lighthouse: " << endl << world2lighthouse);

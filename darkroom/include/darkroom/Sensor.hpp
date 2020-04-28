@@ -44,7 +44,8 @@
 #include <Eigen/Geometry>
 
 // std
-#include "../../../yamc/include/alternate_shared_mutex.hpp"
+#include "alternate_shared_mutex.hpp"
+//#include "../../../yamc/include/alternate_shared_mutex.hpp"
 #include <vector>
 #include <chrono>
 

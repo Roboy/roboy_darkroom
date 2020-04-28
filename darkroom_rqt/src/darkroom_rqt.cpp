@@ -1,11 +1,11 @@
 #include <darkroom_rqt/darkroom_rqt.hpp>
 
-tf::Transform RoboyDarkRoom::lighthouse1;
-tf::Transform RoboyDarkRoom::lighthouse2;
-tf::Transform RoboyDarkRoom::simulated_object_lighthouse1;
-tf::Transform RoboyDarkRoom::simulated_object_lighthouse2;
-tf::Transform RoboyDarkRoom::tf_world;
-tf::Transform RoboyDarkRoom::tf_map;
+tf2::Transform RoboyDarkRoom::lighthouse1;
+tf2::Transform RoboyDarkRoom::lighthouse2;
+tf2::Transform RoboyDarkRoom::simulated_object_lighthouse1;
+tf2::Transform RoboyDarkRoom::simulated_object_lighthouse2;
+tf2::Transform RoboyDarkRoom::tf_world;
+tf2::Transform RoboyDarkRoom::tf_map;
 
 map<string, QLineEdit *> RoboyDarkRoom::text;
 map<string, QPushButton *> RoboyDarkRoom::button;
@@ -14,6 +14,7 @@ map<string, QSlider *> RoboyDarkRoom::slider;
 RoboyDarkRoom::RoboyDarkRoom()
         : rqt_gui_cpp::Plugin(), widget_(0) {
     setObjectName("RoboyDarkRoom");
+    tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(nh);
 }
 
 RoboyDarkRoom::~RoboyDarkRoom() {
@@ -22,11 +23,11 @@ RoboyDarkRoom::~RoboyDarkRoom() {
     publish_transform = false;
     update_tracked_object_info = false;
     if (transform_thread->joinable()) {
-        ROS_INFO("waiting for transform thread to shut down");
+        RCLCPP_INFO(nh->get_logger(),"waiting for transform thread to shut down");
         transform_thread->join();
     }
     if (update_tracked_object_info_thread->joinable()) {
-        ROS_INFO("waiting for update_tracked_object_info_thread to shut down");
+        RCLCPP_INFO(nh->get_logger(),"waiting for update_tracked_object_info_thread to shut down");
         update_tracked_object_info_thread->join();
     }
     mux.unlock();
@@ -262,23 +263,28 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(this, SIGNAL(newData()), this, SLOT(plotData()));
     QObject::connect(this, SIGNAL(newStatisticsData()), this, SLOT(plotStatisticsData()));
 
-    nh = ros::NodeHandlePtr(new ros::NodeHandle);
-    if (!ros::isInitialized()) {
+    if (!rclcpp::is_initialized()) {
         int argc = 0;
         char **argv = NULL;
-        ros::init(argc, argv, "darkroom_rqt_plugin");
+        rclcpp::init(argc, argv); //, node_name, rclcpp::init_options::NoSigintHandler);
     }
 
-    pose_correction_sub = nh->subscribe("/roboy/middleware/DarkRoom/LighthousePoseCorrection", 1,
-                                        &RoboyDarkRoom::correctPose, this);
-    sensor_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensors", 1, &RoboyDarkRoom::receiveSensorData, this);
-    sensor_status_sub = nh->subscribe("/roboy/middleware/DarkRoom/status", 1, &RoboyDarkRoom::receiveSensorStatus, this);
-    statistics_sub = nh->subscribe("/roboy/middleware/DarkRoom/Statistics", 2, &RoboyDarkRoom::receiveStatistics, this);
-    ootx_sub = nh->subscribe("/roboy/middleware/DarkRoom/ootx", 1, &RoboyDarkRoom::receiveOOTXData, this);
-    aruco_pose_sub = nh->subscribe("/roboy/middleware/ArucoPose", 1, &RoboyDarkRoom::receiveArucoPose, this);
+    nh = rclcpp::Node::make_shared("darkroom_qt");
 
-    spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
-    spinner->start();
+    pose_correction_sub = nh->create_subscription<roboy_middleware_msgs::msg::LighthousePoseCorrection>
+            ("/roboy/middleware/DarkRoom/LighthousePoseCorrection", 1,
+             bind(&RoboyDarkRoom::correctPose, this, placeholders::_1));
+    sensor_sub = nh->create_subscription<roboy_middleware_msgs::msg::DarkRoom>("/roboy/middleware/DarkRoom/sensors", 1, bind(&RoboyDarkRoom::receiveSensorData, this, placeholders::_1));
+    sensor_status_sub = nh->create_subscription<roboy_middleware_msgs::msg::DarkRoomStatus>("/roboy/middleware/DarkRoom/status", 1, bind(&RoboyDarkRoom::receiveSensorStatus, this, placeholders::_1));
+    statistics_sub = nh->create_subscription<roboy_middleware_msgs::msg::DarkRoomStatistics>("/roboy/middleware/DarkRoom/Statistics", 2, bind(&RoboyDarkRoom::receiveStatistics, this, placeholders::_1));
+    ootx_sub = nh->create_subscription<roboy_middleware_msgs::msg::DarkRoomOOTX>("/roboy/middleware/DarkRoom/ootx", 1, bind(&RoboyDarkRoom::receiveOOTXData, this, placeholders::_1));
+//    aruco_pose_sub = nh->subscribe("/roboy/middleware/ArucoPose", 1, &RoboyDarkRoom::receiveArucoPose, this);
+
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(nh);
+    executor.spin();
+//    spinner = boost::shared_ptr<rclcpp::AsyncSpinner>(new rclcpp::AsyncSpinner(1));
+//    spinner->start();
 
     resetLighthousePoses();
 
@@ -291,12 +297,12 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
             new std::thread(&RoboyDarkRoom::updateTrackedObjectInfo, this));
     update_tracked_object_info_thread->detach();
 
-    interactive_marker_sub = nh->subscribe("/interactive_markers/feedback", 1,
-                                           &RoboyDarkRoom::interactiveMarkersFeedback, this);
+    interactive_marker_sub = nh->create_subscription<visualization_msgs::msg::InteractiveMarkerFeedback>("/interactive_markers/feedback", 1,
+                                           bind(&RoboyDarkRoom::interactiveMarkersFeedback, this, placeholders::_1));
 
-    make6DofMarker(false, visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D, lighthouse1.getOrigin(),
+    make6DofMarker(false, visualization_msgs::msg::InteractiveMarkerControl::MOVE_ROTATE_3D, lighthouse1.getOrigin(),
                    true, 0.1, "world", "lighthouse1", "");
-    make6DofMarker(false, visualization_msgs::InteractiveMarkerControl::MOVE_ROTATE_3D, lighthouse2.getOrigin(),
+    make6DofMarker(false, visualization_msgs::msg::InteractiveMarkerControl::MOVE_ROTATE_3D, lighthouse2.getOrigin(),
                    true, 0.1, "world", "lighthouse2", "");
 
     ui.horizontal_angle_lighthouse_1->addGraph();
@@ -341,7 +347,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     ui.update_frequencies_vertical_lighthouse_2->yAxis->setRange(0, 100);
 
     model = new QFileSystemModel;
-    string package_path = ros::package::getPath("robots");
+    string package_path = "";//rclcpp::package::getPath("robots"); //TODO Package path
     model->setRootPath(QString(package_path.c_str()));
     ui.tracked_object_browser->setModel(model);
     ui.tracked_object_browser->setRootIndex(model->index(QString(package_path.c_str())));
@@ -361,7 +367,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
 }
 
 void RoboyDarkRoom::shutdownPlugin() {
-    ros::shutdown();
+    rclcpp::shutdown();
 }
 
 void RoboyDarkRoom::saveSettings(qt_gui_cpp::Settings &plugin_settings,
@@ -416,8 +422,8 @@ void RoboyDarkRoom::compareToSteamVR(){
 }
 
 void RoboyDarkRoom::connectRoboy() {
-    ROS_DEBUG("connect roboy clicked");
-    string package_path = ros::package::getPath("robots");
+    RCLCPP_DEBUG(nh->get_logger(),"connect roboy clicked");
+    string package_path = "";// TODO rclcpp::package::getPath("robots");
     // vector<fs::path> roboy_parts = {
     //         package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/xylophone.yaml",
     //         package_path+"/Roboy2.0_Upper_Body_Xylophone_simplified/lighthouseSensors/head.yaml",
@@ -434,27 +440,27 @@ void RoboyDarkRoom::connectRoboy() {
     };
     for (auto &part:roboy_parts) {
         if (!fileExists(part.c_str())) {
-            ROS_ERROR("could not connect Roboy, check the path %s", part.c_str());
+            RCLCPP_ERROR(nh->get_logger(),"could not connect Roboy, check the path %s", part.c_str());
             return;
         }
         if (!addTrackedObject(part.c_str()))
             continue;
     }
-    if (ui.simulate->isChecked()) {
-        pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
-
-        simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, roboy_parts));
-        simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, roboy_parts));
-//        simulation.first->startIMUPublisher();
-        simulation.first->startSensorPublisher();
-        simulation.second->startSensorPublisher();
-
-        lighthouse_simulation.push_back(simulation);
-    }
+//    TODO if (ui.simulate->isChecked()) {
+//        pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+//
+//        simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, roboy_parts));
+//        simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, roboy_parts));
+////        simulation.first->startIMUPublisher();
+//        simulation.first->startSensorPublisher();
+//        simulation.second->startSensorPublisher();
+//
+//        lighthouse_simulation.push_back(simulation);
+//    }
 }
 
 void RoboyDarkRoom::connectObject() {
-    ROS_DEBUG("connect object clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"connect object clicked");
     if (!addTrackedObject())
         return;
     bool ok;
@@ -463,32 +469,32 @@ void RoboyDarkRoom::connectObject() {
 }
 
 void RoboyDarkRoom::clearAll() {
-    ROS_DEBUG("clear all clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"clear all clicked");
     for (auto const &object:trackedObjects) {
         object->clearAll();
     }
 }
 
 void RoboyDarkRoom::resetLighthousePoses() {
-    ROS_DEBUG("reset lighthouse poses");
-    tf_world.setOrigin(tf::Vector3(0, 0, 0));
-    tf_map.setOrigin(tf::Vector3(0, 0, 0));
-    tf::Quaternion quat;
+    RCLCPP_DEBUG(nh->get_logger(),"reset lighthouse poses");
+    tf_world.setOrigin(tf2::Vector3(0, 0, 0));
+    tf_map.setOrigin(tf2::Vector3(0, 0, 0));
+    tf2::Quaternion quat;
     quat.setRPY(0, 0, 0);
     tf_world.setRotation(quat);
     tf_map.setRotation(quat);
     bool ok;
     quat.setRPY(0, 0, 0);
     lighthouse1.setRotation(quat);
-//    lighthouse1.setOrigin(tf::Vector3(1, -2, 0));
-    lighthouse1.setOrigin(tf::Vector3(0, -1, 0));
+//    lighthouse1.setOrigin(tf2::Vector3(1, -2, 0));
+    lighthouse1.setOrigin(tf2::Vector3(0, -1, 0));
     lighthouse2.setRotation(quat);
-//    lighthouse2.setOrigin(tf::Vector3(-1, -2, 0));
-    lighthouse2.setOrigin(tf::Vector3(-0.825, -1, 0));
+//    lighthouse2.setOrigin(tf2::Vector3(-1, -2, 0));
+    lighthouse2.setOrigin(tf2::Vector3(-0.825, -1, 0));
 }
 
 void RoboyDarkRoom::record() {
-    ROS_DEBUG("record clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"record clicked");
     if (trackedObjects.empty())
         button["record"]->setChecked(false);
     for (auto const &object:trackedObjects) {
@@ -496,19 +502,19 @@ void RoboyDarkRoom::record() {
         object->record(button["record"]->isChecked());
         object->mux.unlock();
     }
-    for (auto const &simulation:lighthouse_simulation) {
-        simulation.first->record(button["record"]->isChecked());
-        simulation.second->record(button["record"]->isChecked());
-    }
+//    TODO for (auto const &simulation:lighthouse_simulation) {
+//        simulation.first->record(button["record"]->isChecked());
+//        simulation.second->record(button["record"]->isChecked());
+//    }
 }
 
 void RoboyDarkRoom::showRays() {
-    ROS_DEBUG("show rays clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"show rays clicked");
 
     for (uint i = 0; i < trackedObjects.size(); i++) {
         trackedObjects[i]->mux.lock();
         if (button["show_rays"]->isChecked()) {
-            ROS_INFO("starting rays thread");
+            RCLCPP_INFO(nh->get_logger(),"starting rays thread");
             trackedObjects[i]->rays = true;
             trackedObjects[i]->rays_thread = boost::shared_ptr<boost::thread>(
                     new boost::thread(
@@ -517,10 +523,10 @@ void RoboyDarkRoom::showRays() {
             trackedObjects[i]->rays_thread->detach();
         } else {
             if (trackedObjects[i]->rays_thread != nullptr) {
-                ROS_INFO("stopping rays thread");
+                RCLCPP_INFO(nh->get_logger(),"stopping rays thread");
                 trackedObjects[i]->rays = false;
                 if (trackedObjects[i]->rays_thread->joinable()) {
-                    ROS_INFO_THROTTLE(1, "Waiting for rays thread to terminate");
+                    auto clock = *nh->get_clock();RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1, "Waiting for rays thread to terminate");
                     trackedObjects[i]->rays_thread->join();
                 }
             }
@@ -530,7 +536,7 @@ void RoboyDarkRoom::showRays() {
 }
 
 void RoboyDarkRoom::showDistances() {
-    ROS_DEBUG("show distances clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"show distances clicked");
     for (auto const &object:trackedObjects) {
         object->mux.lock();
         object->distances = object->rays = button["show_distances"]->isChecked();
@@ -539,7 +545,7 @@ void RoboyDarkRoom::showDistances() {
 }
 
 void RoboyDarkRoom::switchLighthouses() {
-    ROS_DEBUG("switch lighthouses clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"switch lighthouses clicked");
     for (auto const &object:trackedObjects) {
         object->mux.lock();
         object->switchLighthouses(button["switch_lighthouses"]->isChecked());
@@ -548,11 +554,11 @@ void RoboyDarkRoom::switchLighthouses() {
 }
 
 void RoboyDarkRoom::startCalibrateRelativeSensorDistances() {
-    ROS_DEBUG("calibrate_relative_distances clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"calibrate_relative_distances clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
         trackedObjects[i]->mux.lock();
         if (button["calibrate_relative_distances"]->isChecked()) {
-            ROS_INFO("starting calibration thread");
+            RCLCPP_INFO(nh->get_logger(),"starting calibration thread");
             trackedObjects[i]->calibrating = true;
             trackedObjects[i]->calibrate_thread = boost::shared_ptr<boost::thread>(
                     new boost::thread(
@@ -563,7 +569,7 @@ void RoboyDarkRoom::startCalibrateRelativeSensorDistances() {
             if (trackedObjects[i]->calibrate_thread != nullptr) {
                 trackedObjects[i]->calibrating = false;
                 if (trackedObjects[i]->calibrate_thread->joinable()) {
-                    ROS_INFO("Waiting for calibration thread to terminate");
+                    RCLCPP_INFO(nh->get_logger(),"Waiting for calibration thread to terminate");
                     trackedObjects[i]->calibrate_thread->join();
                 }
             }
@@ -573,11 +579,11 @@ void RoboyDarkRoom::startCalibrateRelativeSensorDistances() {
 }
 
 void RoboyDarkRoom::startTriangulation() {
-    ROS_DEBUG("triangulate clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"triangulate clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
         trackedObjects[i]->mux.lock();
         if (button["triangulate"]->isChecked()) {
-            ROS_INFO("starting tracking thread");
+            RCLCPP_INFO(nh->get_logger(),"starting tracking thread");
             trackedObjects[i]->tracking = true;
             trackedObjects[i]->tracking_thread = boost::shared_ptr<boost::thread>(
                     new boost::thread(
@@ -586,10 +592,10 @@ void RoboyDarkRoom::startTriangulation() {
             trackedObjects[i]->tracking_thread->detach();
         } else {
             if (trackedObjects[i]->tracking_thread != nullptr) {
-                ROS_INFO("stopping tracking thread");
+                RCLCPP_INFO(nh->get_logger(),"stopping tracking thread");
                 trackedObjects[i]->tracking = false;
                 if (trackedObjects[i]->tracking_thread->joinable()) {
-                    ROS_INFO_THROTTLE(1, "Waiting for tracking thread to terminate");
+                    auto clock = *nh->get_clock(); RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1, "Waiting for tracking thread to terminate");
                     trackedObjects[i]->tracking_thread->join();
                 }
             }
@@ -599,10 +605,10 @@ void RoboyDarkRoom::startTriangulation() {
 }
 
 void RoboyDarkRoom::startPoseEstimationSensorCloud() {
-    ROS_DEBUG("pose_correction_sensor_cloud clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"pose_correction_sensor_cloud clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
         trackedObjects[i]->mux.lock();
-        ROS_INFO("starting pose estimation thread");
+        RCLCPP_INFO(nh->get_logger(),"starting pose estimation thread");
         trackedObjects[i]->poseestimating = true;
         trackedObjects[i]->poseestimation_thread = boost::shared_ptr<boost::thread>(
                 new boost::thread([this, i]() {
@@ -614,13 +620,13 @@ void RoboyDarkRoom::startPoseEstimationSensorCloud() {
 }
 
 void RoboyDarkRoom::startObjectPoseEstimationSensorCloud() {
-    ROS_DEBUG("object pose estimation clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"object pose estimation clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
         trackedObjects[i]->mux.lock();
         if (button["object_pose_estimation_least_squares"]->isChecked()) {
-            ROS_INFO("starting pose estimation thread");
+            RCLCPP_INFO(nh->get_logger(),"starting pose estimation thread");
             if(!button["triangulate"]->isChecked()){
-                ROS_INFO("starting tracking thread");
+                RCLCPP_INFO(nh->get_logger(),"starting tracking thread");
                 trackedObjects[i]->tracking = true;
                 trackedObjects[i]->tracking_thread = boost::shared_ptr<boost::thread>(
                         new boost::thread(
@@ -637,10 +643,10 @@ void RoboyDarkRoom::startObjectPoseEstimationSensorCloud() {
             trackedObjects[i]->objectposeestimation_thread->detach();
         } else {
             if (trackedObjects[i]->objectposeestimation_thread != nullptr) {
-                ROS_INFO("stopping pose estimation thread");
+                RCLCPP_INFO(nh->get_logger(),"stopping pose estimation thread");
                 trackedObjects[i]->objectposeestimating = false;
                 if (trackedObjects[i]->objectposeestimation_thread->joinable()) {
-                    ROS_INFO_THROTTLE(1, "Waiting for pose estimation thread to terminate");
+                    auto clock = *nh->get_clock(); RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1, "Waiting for pose estimation thread to terminate");
                     trackedObjects[i]->objectposeestimation_thread->join();
                 }
             }
@@ -650,16 +656,16 @@ void RoboyDarkRoom::startObjectPoseEstimationSensorCloud() {
 }
 
 void RoboyDarkRoom::startEstimateSensorPositionsUsingRelativeDistances() {
-    ROS_DEBUG("position_estimation_relativ_sensor_distances clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"position_estimation_relativ_sensor_distances clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
         trackedObjects[i]->mux.lock();
-        ROS_INFO("starting relativ distance thread for lighthouse 1");
+        RCLCPP_INFO(nh->get_logger(),"starting relativ distance thread for lighthouse 1");
         trackedObjects[i]->distance_thread_1 = boost::shared_ptr<boost::thread>(
                 new boost::thread([this, i]() {
                     this->trackedObjects[i]->estimateSensorPositionsUsingRelativeDistances(LIGHTHOUSE_A);
                 }));
         trackedObjects[i]->distance_thread_1->detach();
-        ROS_INFO("starting relativ distance thread for lighthouse 2");
+        RCLCPP_INFO(nh->get_logger(),"starting relativ distance thread for lighthouse 2");
         trackedObjects[i]->distance_thread_2 = boost::shared_ptr<boost::thread>(
                 new boost::thread([this, i]() {
                     this->trackedObjects[i]->estimateSensorPositionsUsingRelativeDistances(LIGHTHOUSE_B);
@@ -670,10 +676,10 @@ void RoboyDarkRoom::startEstimateSensorPositionsUsingRelativeDistances() {
 }
 
 void RoboyDarkRoom::startEstimateObjectPoseUsingRelativeDistances() {
-    ROS_DEBUG("pose_estimation_relativ_sensor_distances clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"pose_estimation_relativ_sensor_distances clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
         trackedObjects[i]->mux.lock();
-        ROS_INFO("starting relativ pose thread");
+        RCLCPP_INFO(nh->get_logger(),"starting relativ pose thread");
         trackedObjects[i]->relative_pose_thread = boost::shared_ptr<boost::thread>(
                 new boost::thread([this, i]() {
                     this->trackedObjects[i]->estimateObjectPoseUsingRelativeDistances();
@@ -684,11 +690,11 @@ void RoboyDarkRoom::startEstimateObjectPoseUsingRelativeDistances() {
 }
 
 void RoboyDarkRoom::startEstimateObjectPoseEPNP() {
-    ROS_DEBUG("pose_estimation_epnp clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"pose_estimation_epnp clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
         trackedObjects[i]->mux.lock();
         if(button["pose_estimation_epnp"]->isChecked()) {
-            ROS_INFO("starting relativ pose epnp thread");
+            RCLCPP_INFO(nh->get_logger(),"starting relativ pose epnp thread");
             trackedObjects[i]->poseestimating_epnp = true;
             trackedObjects[i]->relative_pose_epnp_thread = boost::shared_ptr<boost::thread>(
                     new boost::thread([this, i]() {
@@ -703,11 +709,11 @@ void RoboyDarkRoom::startEstimateObjectPoseEPNP() {
 }
 
 void RoboyDarkRoom::startEstimateObjectPoseMultiLighthouse() {
-    ROS_DEBUG("pose_estimation_multi_lighthouse clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"pose_estimation_multi_lighthouse clicked");
     for (uint i = 0; i < trackedObjects.size(); i++) {
         trackedObjects[i]->mux.lock();
         if(button["pose_estimation_multi_lighthouse"]->isChecked()) {
-            ROS_INFO("starting multi lighthouse pose estimation thread");
+            RCLCPP_INFO(nh->get_logger(),"starting multi lighthouse pose estimation thread");
             trackedObjects[i]->poseestimating_multiLighthouse = true;
             trackedObjects[i]->object_pose_estimation_multi_lighthouse_thread = boost::shared_ptr<boost::thread>(
                     new boost::thread([this, i]() {
@@ -722,17 +728,23 @@ void RoboyDarkRoom::startEstimateObjectPoseMultiLighthouse() {
 }
 
 void RoboyDarkRoom::transformPublisher() {
-    ros::Rate rate(30);
+    rclcpp::Rate rate(30);
     Vector3d pos(0,0,0), vel(0.3,0.3,0.3);
     double boundary = 0.5;
     while (publish_transform) {
         mux.lock();
         if(!button["use_steamVR_lighthouse_poses"]->isChecked()){
-            tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse1, ros::Time::now(), "world", "lighthouse1"));
-            tf_broadcaster.sendTransform(tf::StampedTransform(lighthouse2, ros::Time::now(), "world", "lighthouse2"));
+            geometry_msgs::msg::TransformStamped tmp_tf_stamped;
+            tmp_tf_stamped.header.frame_id = "world";
+            tmp_tf_stamped.child_frame_id = "lighthouse1";
+            tmp_tf_stamped.transform = tf2::toMsg(lighthouse1);
+            tf_broadcaster->sendTransform(tmp_tf_stamped);
+            tmp_tf_stamped.child_frame_id = "lighthouse2";
+            tmp_tf_stamped.transform = tf2::toMsg(lighthouse2);
+            tf_broadcaster->sendTransform(tmp_tf_stamped);
         }
 //        for (auto &simulated:lighthouse_simulation) {
-//            tf_broadcaster.sendTransform(tf::StampedTransform(simulated.second->relative_object_pose, ros::Time::now(),
+//            tf_broadcaster.sendTransform(tf2::StampedTransform(simulated.second->relative_object_pose, rclcpp::Time::now(),
 //                                                              (simulated.second->id == 0 ? "lighthouse1"
 //                                                                                         : "lighthouse2"),
 //                                                              simulated.second->name.c_str()));
@@ -741,8 +753,8 @@ void RoboyDarkRoom::transformPublisher() {
             if (ui.random_pose->isChecked()) {
                 // randomly moves all objects
                 for (auto &object:trackedObjects) {
-                    object->pose.setOrigin( tf::Vector3(pos(0),pos(1),pos(2)));
-                    tf::Quaternion q(0, 0, 0, 1);
+                    object->pose.setOrigin( tf2::Vector3(pos(0),pos(1),pos(2)));
+                    tf2::Quaternion q(0, 0, 0, 1);
                     q.setRPY(random_pose_roll, random_pose_pitch, random_pose_yaw);
                     object->pose.setRotation(q);
                     if(ui.random_pose_x->isChecked())
@@ -764,8 +776,8 @@ void RoboyDarkRoom::transformPublisher() {
                         vel(1) = -(vel(1)+(rand()/(double)RAND_MAX-0.5));
                     if(pos(2)>boundary || pos(2)<-boundary)
                         vel(2) = -(vel(2)+(rand()/(double)RAND_MAX-0.5));
-//                    object->pose.setOrigin( tf::Vector3(random_pose_x,random_pose_y,random_pose_z));
-//                    tf::Quaternion q(0, 0, 0, 1);
+//                    object->pose.setOrigin( tf2::Vector3(random_pose_x,random_pose_y,random_pose_z));
+//                    tf2::Quaternion q(0, 0, 0, 1);
 //                    q.setRPY(random_pose_roll, random_pose_pitch, random_pose_yaw);
 //                    object->pose.setRotation(q);
 //                    if(ui.random_pose_x->isChecked())
@@ -783,8 +795,13 @@ void RoboyDarkRoom::transformPublisher() {
                 }
             }
             for (auto &object:trackedObjects) {
-                tf_broadcaster.sendTransform(tf::StampedTransform(object->pose, ros::Time::now(),
-                                                                  "world", object->name.c_str()));
+                geometry_msgs::msg::TransformStamped tmp_tf_stamped;
+                tmp_tf_stamped.header.frame_id = "world";
+                tmp_tf_stamped.header.stamp = nh->now();
+                tmp_tf_stamped.child_frame_id = object->name.c_str();
+                tmp_tf_stamped.transform = tf2::toMsg(object->pose);
+                tf_broadcaster->sendTransform(tmp_tf_stamped);
+
             }
 //        }
         mux.unlock();
@@ -792,17 +809,18 @@ void RoboyDarkRoom::transformPublisher() {
     }
 }
 
-void RoboyDarkRoom::correctPose(const roboy_middleware_msgs::LighthousePoseCorrection &msg) {
+void RoboyDarkRoom::correctPose(const roboy_middleware_msgs::msg::LighthousePoseCorrection::SharedPtr msg) {
     mux.lock();
-    tf::Transform tf;
-    tf::transformMsgToTF(msg.tf, tf);
-    if (msg.id == LIGHTHOUSE_A) {
-        if (msg.type == 0) // relativ
+    tf2::Transform tf;
+    tf2::fromMsg(msg->tf,tf);
+//    tf2::transformMsgToTF(msg.tf, tf);
+    if (msg->id == LIGHTHOUSE_A) {
+        if (msg->type == 0) // relativ
             lighthouse1 = tf * lighthouse1;
         else    // absolut
             lighthouse1 = tf;
     } else {
-        if (msg.type == 0) // relativ
+        if (msg->type == 0) // relativ
             lighthouse2 = tf * lighthouse2;
         else    // absolut
             lighthouse2 = tf;
@@ -810,18 +828,18 @@ void RoboyDarkRoom::correctPose(const roboy_middleware_msgs::LighthousePoseCorre
     mux.unlock();
 }
 
-void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::InteractiveMarkerFeedback &msg) {
+void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::msg::InteractiveMarkerFeedback::SharedPtr msg) {
     mux.lock();
-    tf::Vector3 position(msg.pose.position.x, msg.pose.position.y, msg.pose.position.z);
-    tf::Quaternion orientation(msg.pose.orientation.x, msg.pose.orientation.y,
-                               msg.pose.orientation.z, msg.pose.orientation.w);
-    if (strcmp(msg.marker_name.c_str(), "lighthouse1") == 0) {
+    tf2::Vector3 position(msg->pose.position.x, msg->pose.position.y, msg->pose.position.z);
+    tf2::Quaternion orientation(msg->pose.orientation.x, msg->pose.orientation.y,
+                               msg->pose.orientation.z, msg->pose.orientation.w);
+    if (strcmp(msg->marker_name.c_str(), "lighthouse1") == 0) {
         lighthouse1.setOrigin(position);
         lighthouse1.setRotation(orientation);
-    } else if (strcmp(msg.marker_name.c_str(), "lighthouse2") == 0) {
+    } else if (strcmp(msg->marker_name.c_str(), "lighthouse2") == 0) {
         lighthouse2.setOrigin(position);
         lighthouse2.setRotation(orientation);
-    } else if (strcmp(msg.marker_name.c_str(), "trackedObject") == 0) {
+    } else if (strcmp(msg->marker_name.c_str(), "trackedObject") == 0) {
         for (auto &object:trackedObjects) {
             object->pose.setOrigin(position);
             object->pose.setRotation(orientation);
@@ -830,8 +848,9 @@ void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::Interac
     mux.unlock();
 }
 
-void RoboyDarkRoom::receiveSensorData(const roboy_middleware_msgs::DarkRoom::ConstPtr &msg) {
-    ROS_DEBUG_THROTTLE(10, "receiving sensor data");
+void RoboyDarkRoom::receiveSensorData(const roboy_middleware_msgs::msg::DarkRoom::SharedPtr msg) {
+    auto clock = *nh->get_clock();
+    RCLCPP_DEBUG_THROTTLE(nh->get_logger(), clock, 10, "receiving sensor data");
     uint id = 0;
     uint lighthouse, rotor, sweepDuration;
     for (uint32_t const &data:msg->sensor_value) {
@@ -864,7 +883,7 @@ void RoboyDarkRoom::receiveSensorData(const roboy_middleware_msgs::DarkRoom::Con
             emit newData();
 }
 
-void RoboyDarkRoom::receiveSensorStatus(const roboy_middleware_msgs::DarkRoomStatus::ConstPtr &msg){
+void RoboyDarkRoom::receiveSensorStatus(const roboy_middleware_msgs::msg::DarkRoomStatus::SharedPtr msg){
     int active_sensors = 0;
     for(auto status:msg->sensor_state){
         if(status == 1)
@@ -875,8 +894,9 @@ void RoboyDarkRoom::receiveSensorStatus(const roboy_middleware_msgs::DarkRoomSta
         trackedObjects[pos]->active_sensors = active_sensors;
 }
 
-void RoboyDarkRoom::receiveStatistics(const roboy_middleware_msgs::DarkRoomStatistics::ConstPtr &msg) {
-    ROS_DEBUG_THROTTLE(10, "receiving statistics data");
+void RoboyDarkRoom::receiveStatistics(const roboy_middleware_msgs::msg::DarkRoomStatistics::SharedPtr msg) {
+    auto clock = *nh->get_clock();
+    RCLCPP_DEBUG_THROTTLE(nh->get_logger(), clock,10, "receiving statistics data");
     for (uint i = 0; i < msg->update_frequency_horizontal.size(); i++) {
         updateFrequencies[msg->lighthouse][i][0].push_back(msg->update_frequency_horizontal[i]);
         updateFrequencies[msg->lighthouse][i][1].push_back(msg->update_frequency_vertical[i]);
@@ -893,7 +913,7 @@ void RoboyDarkRoom::receiveStatistics(const roboy_middleware_msgs::DarkRoomStati
             emit newStatisticsData();
 }
 
-void RoboyDarkRoom::receiveOOTXData(const roboy_middleware_msgs::DarkRoomOOTX::ConstPtr &msg) {
+void RoboyDarkRoom::receiveOOTXData(const roboy_middleware_msgs::msg::DarkRoomOOTX::SharedPtr msg) {
     if (msg->lighthouse == (ui.switch_lighthouse_calibration_values->isChecked()?1:0)) {
         text["lighthouse_firmware_version_1"]->setText(QString::number(msg->fw_version >> 6 & 0x3FF, 16));
         text["lighthouse_protocol_version_1"]->setText(QString::number(msg->fw_version & 0x1F, 10));
@@ -974,7 +994,7 @@ bool RoboyDarkRoom::fileExists(const string &filepath) {
 }
 
 void RoboyDarkRoom::updateTrackedObjectInfo() {
-    ros::Rate rate(1);
+    rclcpp::Rate rate(1);
     while (update_tracked_object_info) {
         mux.lock();
         for (int i = 0; i < trackedObjects.size(); i++) {
@@ -987,38 +1007,38 @@ void RoboyDarkRoom::updateTrackedObjectInfo() {
     }
 }
 
-void RoboyDarkRoom::receiveArucoPose(const roboy_middleware_msgs::ArucoPose::ConstPtr &msg){
-    int i=0;
-    // running mean and variance (cf https://www.johndcook.com/blog/standard_deviation/ )
-    stringstream str;
-    for(int id:msg->id){
-        if(receive_counter.find(id)==receive_counter.end()){
-            receive_counter[id] = 1;
-            aruco_position_mean[id].setZero();
-            aruco_position_variance[id].setZero();
-        }
-
-        Vector3d pos(msg->pose[i].position.x,
-                     msg->pose[i].position.y,
-                     msg->pose[i].position.z);
-        // using lazy average at this point
-        Vector3d new_mean = aruco_position_mean[id]*0.9 + pos * 0.1;
-        aruco_position_variance[id](0) += (pos(0)-aruco_position_mean[id](0))*(pos(0)-new_mean(0));
-        aruco_position_variance[id](1) += (pos(1)-aruco_position_mean[id](1))*(pos(1)-new_mean(1));
-        aruco_position_variance[id](2) += (pos(2)-aruco_position_mean[id](2))*(pos(2)-new_mean(2));
-        aruco_position_mean[id] = new_mean;
-        str << "\naruco id " << id << " \nmean " << aruco_position_mean[id].transpose() << " \nvariance " << aruco_position_variance[id].transpose() << endl;
-        i++;
-        receive_counter[id]++;
-    }
-    if(!ui.random_pose->isChecked()){
-        for(auto &object:trackedObjects){
-            object->pose.setOrigin(tf::Vector3(aruco_position_mean[282](0),aruco_position_mean[282](1),aruco_position_mean[282](2)));
-        }
-    }
-
-    ROS_INFO_STREAM_THROTTLE(1,str.str());
-}
+//void RoboyDarkRoom::receiveArucoPose(const roboy_middleware_msgs::msg::ArucoPose::SharedPtr msg){
+//    int i=0;
+//    // running mean and variance (cf https://www.johndcook.com/blog/standard_deviation/ )
+//    stringstream str;
+//    for(int id:msg->id){
+//        if(receive_counter.find(id)==receive_counter.end()){
+//            receive_counter[id] = 1;
+//            aruco_position_mean[id].setZero();
+//            aruco_position_variance[id].setZero();
+//        }
+//
+//        Vector3d pos(msg->pose[i].position.x,
+//                     msg->pose[i].position.y,
+//                     msg->pose[i].position.z);
+//        // using lazy average at this point
+//        Vector3d new_mean = aruco_position_mean[id]*0.9 + pos * 0.1;
+//        aruco_position_variance[id](0) += (pos(0)-aruco_position_mean[id](0))*(pos(0)-new_mean(0));
+//        aruco_position_variance[id](1) += (pos(1)-aruco_position_mean[id](1))*(pos(1)-new_mean(1));
+//        aruco_position_variance[id](2) += (pos(2)-aruco_position_mean[id](2))*(pos(2)-new_mean(2));
+//        aruco_position_mean[id] = new_mean;
+//        str << "\naruco id " << id << " \nmean " << aruco_position_mean[id].transpose() << " \nvariance " << aruco_position_variance[id].transpose() << endl;
+//        i++;
+//        receive_counter[id]++;
+//    }
+//    if(!ui.random_pose->isChecked()){
+//        for(auto &object:trackedObjects){
+//            object->pose.setOrigin(tf2::Vector3(aruco_position_mean[282](0),aruco_position_mean[282](1),aruco_position_mean[282](2)));
+//        }
+//    }
+//
+//    ROS_INFO_STREAM_THROTTLE(1,str.str());
+//}
 
 void RoboyDarkRoom::plotData() {
     ui.horizontal_angle_lighthouse_1->graph(0)->setData(time[0], horizontal_angle[0]);
@@ -1065,34 +1085,34 @@ bool RoboyDarkRoom::addTrackedObject(const char *config_file_path) {
             return false;
         if (!newObject->init(model->filePath(indexList[0]).toStdString().c_str()))
             return false;
-        if (ui.simulate->isChecked()) {
-            pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
-
-            vector<fs::path> parts = {model->filePath(indexList[0]).toStdString().c_str()};
-
-            simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
-            simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
-            simulation.first->startSensorPublisher();
-            simulation.second->startSensorPublisher();
-            lighthouse_simulation.push_back(simulation);
-        }
+//        TODO if (ui.simulate->isChecked()) {
+//            pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+//
+//            vector<fs::path> parts = {model->filePath(indexList[0]).toStdString().c_str()};
+//
+//            simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
+//            simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
+//            simulation.first->startSensorPublisher();
+//            simulation.second->startSensorPublisher();
+//            lighthouse_simulation.push_back(simulation);
+//        }
     } else {
         if (!newObject->init(config_file_path))
             return false;
-        if (ui.simulate->isChecked()) {
-            pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
-
-            vector<fs::path> parts = {config_file_path};
-
-            simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
-            simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
-            simulation.first->startSensorPublisher();
-            simulation.second->startSensorPublisher();
-            lighthouse_simulation.push_back(simulation);
-        }
+//        TODO if (ui.simulate->isChecked()) {
+//            pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+//
+//            vector<fs::path> parts = {config_file_path};
+//
+//            simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
+//            simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
+//            simulation.first->startSensorPublisher();
+//            simulation.second->startSensorPublisher();
+//            lighthouse_simulation.push_back(simulation);
+//        }
     }
 
-    ROS_DEBUG_STREAM("adding tracked object " << config_file_path);
+    RCLCPP_DEBUG_STREAM(nh->get_logger(), "adding tracked object " << config_file_path);
     trackedObjects.push_back(newObject);
     trackedObjectsIDs.push_back(newObject->objectID);
     object_counter++;
@@ -1139,12 +1159,12 @@ void RoboyDarkRoom::removeTrackedObject() {
     mux.lock();
     publish_transform = false;
     if (transform_thread->joinable()) {
-        ROS_INFO("waiting for transform thread to shut down");
+        RCLCPP_INFO(nh->get_logger(),"waiting for transform thread to shut down");
         transform_thread->join();
     }
     update_tracked_object_info = false;
     if (update_tracked_object_info_thread->joinable()) {
-        ROS_INFO("waiting for update_tracked_object_info_thread to shut down");
+        RCLCPP_INFO(nh->get_logger(),"waiting for update_tracked_object_info_thread to shut down");
         update_tracked_object_info_thread->join();
     }
     int i = 0;
@@ -1157,10 +1177,10 @@ void RoboyDarkRoom::removeTrackedObject() {
             delete trackedObjectsInfo[i].widget;
             trackedObjectsInfo.erase(trackedObjectsInfo.begin() + i);
             // if we are simulating, shutdown lighthouse simulators
-            if (ui.simulate->isChecked()) {
-                if(!lighthouse_simulation.empty())
-                    lighthouse_simulation.erase(lighthouse_simulation.begin() + i);
-            }
+//            TODO if (ui.simulate->isChecked()) {
+//                if(!lighthouse_simulation.empty())
+//                    lighthouse_simulation.erase(lighthouse_simulation.begin() + i);
+//            }
             // erase the trackedObject
             it = trackedObjects.erase(it);
         } else {
@@ -1202,7 +1222,7 @@ void RoboyDarkRoom::updateCalibrationValues(){
     text["lighthouse_gibmag_vertical_2"]->setText(QString::number((slider["lighthouse_gibmag_vertical_2"]->value()-50)/50.0/3.0));
 
     // if there is no simulation we update the trackedObjects calibration values
-    if(lighthouse_simulation.empty()){
+//    TODO if(lighthouse_simulation.empty()){
         for(auto &object:trackedObjects){
             object->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
             object->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
@@ -1226,31 +1246,31 @@ void RoboyDarkRoom::updateCalibrationValues(){
             object->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
             object->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
         }
-    }else{ // we want to estimate the simulated calibration values
-        for(auto &lighthouse:lighthouse_simulation){
-            lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
-            lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
-            lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
-            lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
-            lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
-            lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
-            lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
-            lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
-            lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
-            lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
-
-            lighthouse.second->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
-            lighthouse.second->calibration[LIGHTHOUSE_B][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
-            lighthouse.second->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
-            lighthouse.second->calibration[LIGHTHOUSE_B][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
-            lighthouse.second->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
-            lighthouse.second->calibration[LIGHTHOUSE_B][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
-            lighthouse.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
-            lighthouse.second->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
-            lighthouse.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
-            lighthouse.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
-        }
-    }
+//    }else{ // we want to estimate the simulated calibration values
+//        for(auto &lighthouse:lighthouse_simulation){
+//            lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
+//            lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
+//            lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
+//            lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
+//            lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
+//            lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
+//            lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
+//            lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
+//            lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
+//            lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
+//
+//            lighthouse.second->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
+//            lighthouse.second->calibration[LIGHTHOUSE_B][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
+//            lighthouse.second->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
+//            lighthouse.second->calibration[LIGHTHOUSE_B][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
+//            lighthouse.second->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
+//            lighthouse.second->calibration[LIGHTHOUSE_B][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
+//            lighthouse.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
+//            lighthouse.second->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
+//            lighthouse.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
+//            lighthouse.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
+//        }
+//    }
 }
 
 void RoboyDarkRoom::useViveCalibrationValues(){
@@ -1326,59 +1346,59 @@ void RoboyDarkRoom::useViveCalibrationValues(){
 }
 
 void RoboyDarkRoom::estimateFactoryCalibration(){
-    ROS_DEBUG("estimate_factory_calibration clicked");
-    string package_path = ros::package::getPath("darkroom");
+    RCLCPP_DEBUG(nh->get_logger(),"estimate_factory_calibration clicked");
+    string package_path = ""; //TODO rclcpp::package::getPath("darkroom");
     string calibration_object_path = package_path + "/calibrated_objects/calibration.yaml";
     if (!fileExists(calibration_object_path.c_str())) {
-        ROS_ERROR("could not load calibration object, check the path %s", calibration_object_path.c_str());
+        RCLCPP_ERROR(nh->get_logger(),"could not load calibration object, check the path %s", calibration_object_path.c_str());
         return;
     }
 
-    if (ui.simulate->isChecked()) {
-        pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
-
-        vector<fs::path> parts = {calibration_object_path};
-
-        simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
-        simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
-
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
-
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
-
-        lighthouse_simulation.push_back(simulation);
-    }
+//    TODO if (ui.simulate->isChecked()) {
+//        pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+//
+//        vector<fs::path> parts = {calibration_object_path};
+//
+//        simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
+//        simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
+//
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
+//
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
+//
+//        lighthouse_simulation.push_back(simulation);
+//    }
 
     addTrackedObject(calibration_object_path.c_str());
 
     TrackedObjectPtr calibration_object = trackedObjects.back();
 
-    calibration_object->pose.setOrigin(tf::Vector3(0,0,0));
-    tf::Quaternion q;
+    calibration_object->pose.setOrigin(tf2::Vector3(0,0,0));
+    tf2::Quaternion q;
     q.setRPY(0,0,0);
     calibration_object->pose.setRotation(q);
 
-    ros::Duration d(2);
+    rclcpp::sleep_for(std::chrono::nanoseconds(2000000000));
     // wait a bit to be sure there is sensor data available
-    d.sleep();
+//    d.sleep();
 
     if(ui.estimate_lighthouse_1->isChecked()){
         calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].reset();
@@ -1417,51 +1437,51 @@ void RoboyDarkRoom::estimateFactoryCalibration(){
 }
 
 void RoboyDarkRoom::estimateFactoryCalibration2(){
-    ROS_DEBUG("estimate_factory_calibration_2 clicked");
-    string package_path = ros::package::getPath("darkroom");
+    RCLCPP_DEBUG(nh->get_logger(),"estimate_factory_calibration_2 clicked");
+    string package_path = ""; //TODO rclcpp::package::getPath("darkroom");
     string calibration_object_path = package_path + "/calibrated_objects/calibration.yaml";
     if (!fileExists(calibration_object_path.c_str())) {
-        ROS_ERROR("could not load calibration object, check the path %s", calibration_object_path.c_str());
+        RCLCPP_ERROR(nh->get_logger(),"could not load calibration object, check the path %s", calibration_object_path.c_str());
         return;
     }
 
-    if (ui.simulate->isChecked()) {
-        pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+//    TODO if (ui.simulate->isChecked()) {
+//        pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+//
+//        vector<fs::path> parts = {calibration_object_path};
+//
+//        simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
+//        simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
+//
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
+//
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
+//
+//        simulation.first->startSensorPublisher();
+//        simulation.second->startSensorPublisher();
+//
+//        lighthouse_simulation.push_back(simulation);
+//    }
 
-        vector<fs::path> parts = {calibration_object_path};
-
-        simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
-        simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
-
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
-
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
-
-        simulation.first->startSensorPublisher();
-        simulation.second->startSensorPublisher();
-
-        lighthouse_simulation.push_back(simulation);
-    }
-
-    ROS_DEBUG_STREAM("adding tracked object " << calibration_object_path);
+    RCLCPP_DEBUG_STREAM(nh->get_logger(), "adding tracked object " << calibration_object_path);
     TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject(nh));
     newObject->init(calibration_object_path.c_str());
     trackedObjects.push_back(newObject);
@@ -1507,14 +1527,15 @@ void RoboyDarkRoom::estimateFactoryCalibration2(){
             ));
     calibration_object->rays_thread->detach();
 
-    calibration_object->pose.setOrigin(tf::Vector3(0,0,0));
-    tf::Quaternion q;
+    calibration_object->pose.setOrigin(tf2::Vector3(0,0,0));
+    tf2::Quaternion q;
     q.setRPY(0,0,0);
     calibration_object->pose.setRotation(q);
 
-    ros::Duration d(2);
+//    rclcpp::Duration d(2);
     // wait a bit to be sure there is sensor data available
-    d.sleep();
+
+    rclcpp::sleep_for(std::chrono::nanoseconds(2000000000));
 
     if(ui.estimate_lighthouse_1->isChecked()){
         calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].reset();
@@ -1553,51 +1574,51 @@ void RoboyDarkRoom::estimateFactoryCalibration2(){
 }
 
 void RoboyDarkRoom::estimateFactoryCalibrationEPNP(){
-    ROS_DEBUG("estimate_factory_calibration_epnp clicked");
-    string package_path = ros::package::getPath("darkroom");
+    RCLCPP_DEBUG(nh->get_logger(),"estimate_factory_calibration_epnp clicked");
+    string package_path = ""; //TODO rclcpp::package::getPath("darkroom");
     string calibration_object_path = package_path + "/calibrated_objects/sphereTracker18cm.yaml";
     if (!fileExists(calibration_object_path.c_str())) {
-        ROS_ERROR("could not load calibration object, check the path %s", calibration_object_path.c_str());
+        RCLCPP_ERROR(nh->get_logger(),"could not load calibration object, check the path %s", calibration_object_path.c_str());
         return;
     }
 
-    if (ui.simulate->isChecked()) {
-        pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+//    TODO if (ui.simulate->isChecked()) {
+//        pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+//
+//        vector<fs::path> parts = {calibration_object_path};
+//
+//        simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
+//        simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
+//
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
+//
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
+//
+//        simulation.first->startSensorPublisher();
+//        simulation.second->startSensorPublisher();
+//
+//        lighthouse_simulation.push_back(simulation);
+//    }
 
-        vector<fs::path> parts = {calibration_object_path};
-
-        simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
-        simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
-
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
-
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
-
-        simulation.first->startSensorPublisher();
-        simulation.second->startSensorPublisher();
-
-        lighthouse_simulation.push_back(simulation);
-    }
-
-    ROS_DEBUG_STREAM("adding tracked object " << calibration_object_path);
+    RCLCPP_DEBUG_STREAM(nh->get_logger(), "adding tracked object " << calibration_object_path);
     TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject(nh));
     newObject->init(calibration_object_path.c_str());
     trackedObjects.push_back(newObject);
@@ -1643,14 +1664,14 @@ void RoboyDarkRoom::estimateFactoryCalibrationEPNP(){
             ));
     calibration_object->rays_thread->detach();
 
-    calibration_object->pose.setOrigin(tf::Vector3(0,0,0));
-    tf::Quaternion q;
+    calibration_object->pose.setOrigin(tf2::Vector3(0,0,0));
+    tf2::Quaternion q;
     q.setRPY(0,0,0);
     calibration_object->pose.setRotation(q);
 
-    ros::Duration d(2);
+    rclcpp::sleep_for(std::chrono::nanoseconds(2000000000));
     // wait a bit to be sure there is sensor data available
-    d.sleep();
+//    d.sleep();
 
     if(ui.estimate_lighthouse_1->isChecked()){
         calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].reset();
@@ -1689,51 +1710,51 @@ void RoboyDarkRoom::estimateFactoryCalibrationEPNP(){
 }
 
 void RoboyDarkRoom::estimateFactoryCalibrationMulti(){
-    ROS_DEBUG("estimate_factory_calibration_multi clicked");
-    string package_path = ros::package::getPath("darkroom");
+    RCLCPP_DEBUG(nh->get_logger(),"estimate_factory_calibration_multi clicked");
+    string package_path = "";// TODO rclcpp::package::getPath("darkroom");
     string calibration_object_path = package_path + "/calibrated_objects/sphereTracker18cm.yaml";
     if (!fileExists(calibration_object_path.c_str())) {
-        ROS_ERROR("could not load calibration object, check the path %s", calibration_object_path.c_str());
+        RCLCPP_ERROR(nh->get_logger(),"could not load calibration object, check the path %s", calibration_object_path.c_str());
         return;
     }
 
-    if (ui.simulate->isChecked()) {
-        pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+//    TODO if (ui.simulate->isChecked()) {
+//        pair<LighthouseSimulatorPtr, LighthouseSimulatorPtr> simulation;
+//
+//        vector<fs::path> parts = {calibration_object_path};
+//
+//        simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
+//        simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
+//
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
+//        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
+//
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
+//        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
+//
+//        simulation.first->startSensorPublisher();
+//        simulation.second->startSensorPublisher();
+//
+//        lighthouse_simulation.push_back(simulation);
+//    }
 
-        vector<fs::path> parts = {calibration_object_path};
-
-        simulation.first.reset(new LighthouseSimulator(LIGHTHOUSE_A, parts));
-        simulation.second.reset(new LighthouseSimulator(LIGHTHOUSE_B, parts));
-
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].phase = text["lighthouse_phase_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].phase = text["lighthouse_phase_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].tilt = text["lighthouse_tilt_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].curve = text["lighthouse_curve_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].curve = text["lighthouse_curve_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_1"]->text().toDouble();
-        simulation.first->calibration[LIGHTHOUSE_A][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_1"]->text().toDouble();
-
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].phase = text["lighthouse_phase_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].phase = text["lighthouse_phase_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].tilt = text["lighthouse_tilt_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].tilt = text["lighthouse_tilt_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].curve = text["lighthouse_curve_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].curve = text["lighthouse_curve_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibphase = text["lighthouse_gibphase_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibphase = text["lighthouse_gibphase_vertical_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][HORIZONTAL].gibmag = text["lighthouse_gibmag_horizontal_2"]->text().toDouble();
-        simulation.second->calibration[LIGHTHOUSE_B][VERTICAL].gibmag = text["lighthouse_gibmag_vertical_2"]->text().toDouble();
-
-        simulation.first->startSensorPublisher();
-        simulation.second->startSensorPublisher();
-
-        lighthouse_simulation.push_back(simulation);
-    }
-
-    ROS_DEBUG_STREAM("adding tracked object " << calibration_object_path);
+    RCLCPP_DEBUG_STREAM(nh->get_logger(), "adding tracked object " << calibration_object_path);
     TrackedObjectPtr newObject = TrackedObjectPtr(new TrackedObject(nh));
     newObject->init(calibration_object_path.c_str());
     trackedObjects.push_back(newObject);
@@ -1779,14 +1800,14 @@ void RoboyDarkRoom::estimateFactoryCalibrationMulti(){
 //            ));
 //    calibration_object->rays_thread->detach();
 
-    calibration_object->pose.setOrigin(tf::Vector3(0,0,0));
-    tf::Quaternion q;
+    calibration_object->pose.setOrigin(tf2::Vector3(0,0,0));
+    tf2::Quaternion q;
     q.setRPY(0,0,0);
     calibration_object->pose.setRotation(q);
 
-    ros::Duration d(2);
+    rclcpp::sleep_for(std::chrono::nanoseconds(2000000000));
     // wait a bit to be sure there is sensor data available
-    d.sleep();
+//    d.sleep();
 
     if(ui.estimate_lighthouse_1->isChecked()){
         calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].reset();
@@ -1825,7 +1846,7 @@ void RoboyDarkRoom::estimateFactoryCalibrationMulti(){
 }
 
 void RoboyDarkRoom::resetFactoryCalibration(){
-    ROS_DEBUG("reset_factory_calibration_values clicked");
+    RCLCPP_DEBUG(nh->get_logger(),"reset_factory_calibration_values clicked");
     text["lighthouse_phase_horizontal_1"]->setText(QString::number(0));
     text["lighthouse_phase_vertical_1"]->setText(QString::number(0));
     text["lighthouse_tilt_horizontal_1"]->setText(QString::number(0));
@@ -1855,20 +1876,20 @@ void RoboyDarkRoom::resetFactoryCalibration(){
         object->calibration[LIGHTHOUSE_B][VERTICAL].reset();
         object->mux.unlock();
     }
-    if(!lighthouse_simulation.empty()){
-        for(auto &lighthouse:lighthouse_simulation){
-            lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].reset();
-            lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].reset();
-            lighthouse.second->calibration[LIGHTHOUSE_B][HORIZONTAL].reset();
-            lighthouse.second->calibration[LIGHTHOUSE_B][VERTICAL].reset();
-        }
-    }
+//    TODO if(!lighthouse_simulation.empty()){
+//        for(auto &lighthouse:lighthouse_simulation){
+//            lighthouse.first->calibration[LIGHTHOUSE_A][HORIZONTAL].reset();
+//            lighthouse.first->calibration[LIGHTHOUSE_A][VERTICAL].reset();
+//            lighthouse.second->calibration[LIGHTHOUSE_B][HORIZONTAL].reset();
+//            lighthouse.second->calibration[LIGHTHOUSE_B][VERTICAL].reset();
+//        }
+//    }
 }
 
 void RoboyDarkRoom::resetPose(){
     for(auto &object:trackedObjects){
-        object->pose.setOrigin(tf::Vector3(0,0,0));
-        tf::Quaternion q(0, 0, 0, 1);
+        object->pose.setOrigin(tf2::Vector3(0,0,0));
+        tf2::Quaternion q(0, 0, 0, 1);
         q.setRPY(0, 0, 0);
         object->pose.setRotation(q);
         random_pose_x = 0;
@@ -1880,10 +1901,10 @@ void RoboyDarkRoom::resetPose(){
     }
 }
 
-#if ROS_VERSION_MINOR == 14 // ros melodic
-    PLUGINLIB_EXPORT_CLASS(RoboyDarkRoom, rqt_gui_cpp::Plugin)
-#else // earlier
-    PLUGINLIB_DECLARE_CLASS(roboy_darkroom, RoboyDarkRoom, RoboyDarkRoom, rqt_gui_cpp::Plugin)
-#endif
+//#if ROS_VERSION_MINOR == 14 // ros melodic
+    PLUGINLIB_EXPORT_CLASS(RoboyDarkRoom, qt_gui_cpp::Plugin)
+//#else // earlier
+//    PLUGINLIB_DECLARE_CLASS(roboy_darkroom, RoboyDarkRoom, RoboyDarkRoom, rqt_gui_cpp::Plugin)
+//#endif
 
 

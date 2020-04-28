@@ -21,14 +21,14 @@
     <depend>robot_localization</depend>
     <depend>xmlrpcpp</depend>
     <!--<depend>gazebo</depend>-->
-    <depend>pcl_ros</depend>
+    <!--<depend>pcl_ros</depend>-->
     <depend>epnp</depend>
     <exec_depend>rosidl_default_runtime</exec_depend>
 
     <export>
         <build_type>ament_cmake</build_type>
         <!--<rviz plugin="${prefix}/darkroom.xml"/>-->
-        <!--<darkroom plugin="${prefix}/LighthouseVisualPlugin.xml"/>-->
+        <!--<darkroom plufgin="${prefix}/LighthouseVisualPlugin.xml"/>-->
         <!--<darkroom plugin="${prefix}/ImuModelPlugin.xml"/>-->
     </export>
 </package>

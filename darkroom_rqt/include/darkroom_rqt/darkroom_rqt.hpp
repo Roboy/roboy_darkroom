@@ -37,28 +37,29 @@
 
 #ifndef Q_MOC_RUN
 
-#include <ros/ros.h>
-#include <ros/package.h>
+#include <rclcpp/rclcpp.hpp>
+//#include <ros/package.h>
 #include <rqt_gui_cpp/plugin.h>
 #include <darkroom_rqt/ui_darkroom_rqt.h>
 #include <QWidget>
 #include <pluginlib/class_list_macros.h>
 #include <QStringList>
-#include <darkroom/LighthouseSimulator.hpp>
+//#include <darkroom/LighthouseSimulator.hpp>
 #include <darkroom/TrackedObject.hpp>
 #include <darkroom/Transform.hpp>
-#include <roboy_middleware_msgs/LighthousePoseCorrection.h>
-#include <roboy_middleware_msgs/ArucoPose.h>
-#include <roboy_middleware_msgs/DarkRoom.h>
-#include <roboy_middleware_msgs/DarkRoomStatistics.h>
-#include <roboy_middleware_msgs/DarkRoomStatus.h>
-#include <roboy_middleware_msgs/DarkRoomOOTX.h>
+#include <roboy_middleware_msgs/msg/lighthouse_pose_correction.hpp>
+//#include <roboy_middleware_msgs/msg/ArucoPose.h>
+#include <roboy_middleware_msgs/msg/dark_room.hpp>
+#include <roboy_middleware_msgs/msg/dark_room_statistics.hpp>
+#include <roboy_middleware_msgs/msg/dark_room_status.hpp>
+#include <roboy_middleware_msgs/msg/dark_room_ootx.hpp>
 #include <map>
 #include <QLineEdit>
 #include <QSlider>
 #include <QPushButton>
 #include <common_utilities/rviz_visualization.hpp>
-#include <visualization_msgs/InteractiveMarkerFeedback.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <visualization_msgs/msg/interactive_marker_feedback.hpp>
 #include <QFileSystemModel>
 #include <QScrollArea>
 #include <QPushButton>
@@ -235,32 +236,32 @@ private:
      * Callback for pose correction message
      * @param msg
      */
-    void correctPose(const roboy_middleware_msgs::LighthousePoseCorrection &msg);
+    void correctPose(const roboy_middleware_msgs::msg::LighthousePoseCorrection::SharedPtr msg);
 
     /**
      * Callback for interactive markers
      * @param msg
      */
-    void interactiveMarkersFeedback(const visualization_msgs::InteractiveMarkerFeedback &msg);
+    void interactiveMarkersFeedback(const visualization_msgs::msg::InteractiveMarkerFeedback::SharedPtr msg);
 
     /**
      * Callback for DarkRoom data
      */
-    void receiveSensorData(const roboy_middleware_msgs::DarkRoom::ConstPtr &msg);
+    void receiveSensorData(const roboy_middleware_msgs::msg::DarkRoom::SharedPtr msg);
     /**
      * Callback for DarkRoom sensor status
      */
-    void receiveSensorStatus(const roboy_middleware_msgs::DarkRoomStatus::ConstPtr &msg);
+    void receiveSensorStatus(const roboy_middleware_msgs::msg::DarkRoomStatus::SharedPtr msg);
     /**
      * Callback for DarkRoom statistics
      * @param msg
      */
-    void receiveStatistics(const roboy_middleware_msgs::DarkRoomStatistics::ConstPtr &msg);
+    void receiveStatistics(const roboy_middleware_msgs::msg::DarkRoomStatistics::SharedPtr msg);
     /**
      * Callback for DarkRoom ootx
      * @param msg
      */
-    void receiveOOTXData(const roboy_middleware_msgs::DarkRoomOOTX::ConstPtr &msg);
+    void receiveOOTXData(const roboy_middleware_msgs::msg::DarkRoomOOTX::SharedPtr msg);
     /**
      * Checks if a file exists
      * @param filepath
@@ -270,7 +271,7 @@ private:
 
     void updateTrackedObjectInfo();
 
-    void receiveArucoPose(const roboy_middleware_msgs::ArucoPose::ConstPtr &msg);
+    //void receiveArucoPose(const roboy_middleware_msgs::msg::ArucoPose::SharedPtr msg);
 Q_SIGNALS:
     void newData();
     void newStatisticsData();
@@ -283,25 +284,31 @@ private:
     int counter = 0;
     QColor color_pallette[14] = {Qt::blue, Qt::red, Qt::green, Qt::cyan, Qt::magenta, Qt::darkGray, Qt::darkRed, Qt::darkGreen,
                                  Qt::darkBlue, Qt::darkCyan, Qt::darkMagenta, Qt::darkYellow, Qt::black, Qt::gray};
-    ros::NodeHandlePtr nh;
-    boost::shared_ptr<ros::AsyncSpinner> spinner;
+    rclcpp::Node::SharedPtr nh;
+//    boost::shared_ptr<ros::AsyncSpinner> spinner;
     boost::shared_ptr<std::thread> transform_thread = nullptr, update_tracked_object_info_thread = nullptr;
-    ros::Subscriber pose_correction_sub, interactive_marker_sub, sensor_sub, sensor_status_sub, statistics_sub, ootx_sub, aruco_pose_sub;
-    tf::TransformListener tf_listener;
-    tf::TransformBroadcaster tf_broadcaster;
-    static tf::Transform lighthouse1, lighthouse2, tf_world, tf_map,
+    rclcpp::Subscription<roboy_middleware_msgs::msg::LighthousePoseCorrection>::SharedPtr pose_correction_sub;
+    rclcpp::Subscription<visualization_msgs::msg::InteractiveMarkerFeedback>::SharedPtr interactive_marker_sub;
+    rclcpp::Subscription<roboy_middleware_msgs::msg::DarkRoom>::SharedPtr sensor_sub;
+    rclcpp::Subscription<roboy_middleware_msgs::msg::DarkRoomStatus >::SharedPtr sensor_status_sub;
+    rclcpp::Subscription<roboy_middleware_msgs::msg::DarkRoomStatistics>::SharedPtr statistics_sub;
+    rclcpp::Subscription<roboy_middleware_msgs::msg::DarkRoomOOTX >::SharedPtr ootx_sub;
+//    rclcpp::Subscription<roboy_middleware_msgs::msg::LighthousePoseCorrection>::SharedPtr aruco_pose_sub;
+//    tf2_ros::TransformListener tf_listener;
+    std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
+    static tf2::Transform lighthouse1, lighthouse2, tf_world, tf_map,
             simulated_object_lighthouse1, simulated_object_lighthouse2;
     atomic<bool> publish_transform, update_tracked_object_info;
     int object_counter = 0, values_in_plot = 300, message_counter[4] = {0}, message_counter_statistics[2] = {0};
     vector<TrackedObjectPtr> trackedObjects;
     vector<string> trackedObjectsIDs;
-    SharedMutex mux;
+    boost::shared_mutex mux;
     static map<string, QLineEdit*> text;
     static map<string, QSlider*> slider;
     static map<string, QPushButton*> button;
     bool simulate = false;
     float random_pose_x = 0, random_pose_y = 0, random_pose_z = 0, random_pose_roll = 0, random_pose_pitch = 0, random_pose_yaw = 0;
-    vector<pair<LighthouseSimulatorPtr,LighthouseSimulatorPtr>> lighthouse_simulation;
+    //vector<pair<LighthouseSimulatorPtr,LighthouseSimulatorPtr>> lighthouse_simulation; //TODO refactor lighthouse simulation
 
     QFileSystemModel *model;
     struct TrackedObjectInfo{

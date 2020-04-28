@@ -1,0 +1,2 @@
+/usr/bin/ar qc libTrackedObject.a  CMakeFiles/TrackedObject.dir/src/TrackedObject.cpp.o
+/usr/bin/ranlib libTrackedObject.a

@@ -1,0 +1,19 @@
+/opt/clion-2018.3.4/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/roboy/workspace/tracking_ws/src/roboy_darkroom/darkroom
+-- Found ament_cmake: 0.8.2 (/opt/ros/eloquent/share/ament_cmake/cmake)
+-- Using PYTHON_EXECUTABLE: /usr/bin/python3
+-- Found rclcpp: 0.8.4 (/opt/ros/eloquent/share/rclcpp/cmake)
+-- Found rosidl_adapter: 0.8.2 (/opt/ros/eloquent/share/rosidl_adapter/cmake)
+-- Found rmw_implementation_cmake: 0.8.1 (/opt/ros/eloquent/share/rmw_implementation_cmake/cmake)
+-- Using RMW implementation 'rmw_fastrtps_cpp' as default
+-- Found std_msgs: 0.8.1 (/opt/ros/eloquent/share/std_msgs/cmake)
+-- Found tf2: 0.12.5 (/opt/ros/eloquent/share/tf2/cmake)
+-- Found visualization_msgs: 0.8.1 (/opt/ros/eloquent/share/visualization_msgs/cmake)
+-- Found roboy_middleware_msgs: 3.0.0 (/home/roboy/workspace/tracking_ws/install/roboy_middleware_msgs/share/roboy_middleware_msgs/cmake)
+-- Found common_utilities: 0.0.0 (/home/roboy/workspace/tracking_ws/install/common_utilities/share/common_utilities/cmake)
+-- Found robot_localization: 3.0.0 (/home/roboy/workspace/tracking_ws/install/robot_localization/share/robot_localization/cmake)
+-- Found xmlrpcpp: 0.1.0 (/home/roboy/workspace/tracking_ws/install/xmlrpcpp/share/xmlrpcpp/cmake)
+-- Found epnp: 1.0.1 (/home/roboy/workspace/tracking_ws/install/epnp/share/epnp/cmake)
+-- Found eigen3_cmake_module: 0.1.1 (/opt/ros/eloquent/share/eigen3_cmake_module/cmake)
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/roboy/workspace/tracking_ws/src/roboy_darkroom/darkroom/cmake-build-debug

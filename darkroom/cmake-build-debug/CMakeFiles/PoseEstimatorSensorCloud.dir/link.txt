@@ -1,0 +1,2 @@
+/usr/bin/ar qc libPoseEstimatorSensorCloud.a  CMakeFiles/PoseEstimatorSensorCloud.dir/src/PoseEstimatorSensorCloud.cpp.o
+/usr/bin/ranlib libPoseEstimatorSensorCloud.a

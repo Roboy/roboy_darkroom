@@ -1,0 +1,7 @@
+-I/usr/include/eigen3
+-I/usr/include/libalglib
+-I/home/roboy/workspace/tracking_ws/src/roboy_darkroom/darkroom_rqt/include
+-I/home/roboy/workspace/tracking_ws/src/roboy_darkroom/darkroom_rqt/qcustomplot
+-o
+/home/roboy/workspace/tracking_ws/src/roboy_darkroom/darkroom_rqt/cmake-build-debug/include/darkroom_rqt/moc_darkroom_rqt.cpp
+/home/roboy/workspace/tracking_ws/src/roboy_darkroom/darkroom_rqt/include/darkroom_rqt/darkroom_rqt.hpp

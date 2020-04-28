@@ -1,0 +1,3 @@
+source;share/darkroom_rqt/environment/ament_prefix_path.sh
+source;share/darkroom_rqt/environment/library_path.sh
+source;share/darkroom_rqt/environment/path.sh
