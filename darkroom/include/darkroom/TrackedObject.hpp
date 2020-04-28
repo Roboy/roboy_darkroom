@@ -35,10 +35,10 @@
 
 #pragma once
 
-#include <ros/ros.h>
-#include <ros/package.h>
-#include <roboy_middleware_msgs/DarkRoom.h>
-#include <roboy_middleware_msgs/DarkRoomStatistics.h>
+#include <rclcpp/rclcpp.hpp>
+//#include <ros/package.h>
+#include <roboy_middleware_msgs/msg/dark_room.hpp>
+#include <roboy_middleware_msgs/msg/dark_room_statistics.hpp>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -50,7 +50,10 @@
 #include <common_utilities/rviz_visualization.hpp>
 #include <common_utilities/UDPSocket.hpp>
 #include "darkroom/LighthouseEstimator.hpp"
-#include <robot_localization/ros_filter_types.h>
+#include <robot_localization/ros_filter_types.hpp>
+#include <tf2/LinearMath/Transform.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <boost/thread.hpp>
 
 #define uSecsToRadians(ticks) (degreesToRadians(ticks * 0.021600864))
 #define ticksToRadians(ticks) (degreesToRadians(ticks * 0.021600864 / 50.0))
@@ -58,9 +61,9 @@
 
 using namespace std;
 
-class TrackedObject : public LighthouseEstimator, public RobotLocalization::RosEkf {
+class TrackedObject : public LighthouseEstimator, public robot_localization::RosEkf {
 public:
-    TrackedObject(ros::NodeHandlePtr nh);
+    TrackedObject(rclcpp::Node::SharedPtr nh);
 
     ~TrackedObject();
 
@@ -99,7 +102,7 @@ private:
     /**
      * Continuously receiving, decoding and updating the sensor data from ROS message
      */
-    void receiveSensorDataRoboy(const roboy_middleware_msgs::DarkRoom::ConstPtr &msg);
+    void receiveSensorDataRoboy(const roboy_middleware_msgs::msg::DarkRoom::SharedPtr msg);
 
     /**
      * Listen for sensor data via UDP
@@ -123,18 +126,20 @@ public:
     string objectID;
     SharedMutex mux;
 private:
-    ros::NodeHandlePtr nh;
-    ros::Publisher darkroom_statistics_pub;
-    boost::shared_ptr<ros::AsyncSpinner> spinner;
-    ros::Subscriber sensor_sub;
+    rclcpp::Node::SharedPtr nh;
+    std::shared_ptr<rclcpp::Publisher<roboy_middleware_msgs::msg::DarkRoomStatistics>> darkroom_statistics_pub;
+    //boost::shared_ptr<ros::AsyncSpinner> spinner;
+    std::shared_ptr<rclcpp::Subscription<roboy_middleware_msgs::msg::DarkRoom>> sensor_sub;
     vector<Eigen::Vector3f> object;
     Vector3d origin;
     static bool m_switch;
     ofstream file;
     boost::shared_ptr<UDPSocket> socket;
     boost::shared_ptr<boost::thread> kalman_filter_thread, publish_imu_transform;
-    tf::Transform imu;
-    tf::TransformBroadcaster tf_broadcaster;
+    tf2::Transform imu;
+    std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
+    rclcpp::Clock::SharedPtr clock;
+    std::shared_ptr<rclcpp::SyncParametersClient> parameters_client;
 };
 
 typedef boost::shared_ptr<TrackedObject> TrackedObjectPtr;

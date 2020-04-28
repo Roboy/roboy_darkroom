@@ -6,8 +6,10 @@
     <maintainer email="simon.trendel@tum.de">Simon Trendel</maintainer>
     <license>BSD</license>
 
-    <buildtool_depend>catkin</buildtool_depend>
-    <depend>roscpp</depend>
+    <buildtool_depend>rosidl_default_generators</buildtool_depend>
+    <buildtool_depend>ament_cmake</buildtool_depend>
+    <depend>rclcpp</depend>
+
     <depend>std_msgs</depend>
     <depend>rviz</depend>
     <depend>visualization_msgs</depend>
@@ -18,13 +20,15 @@
     <depend>message_runtime</depend>
     <depend>robot_localization</depend>
     <depend>xmlrpcpp</depend>
-    <depend>gazebo</depend>
+    <!--<depend>gazebo</depend>-->
     <depend>pcl_ros</depend>
     <depend>epnp</depend>
+    <exec_depend>rosidl_default_runtime</exec_depend>
 
     <export>
-        <rviz plugin="${prefix}/darkroom.xml"/>
-        <darkroom plugin="${prefix}/LighthouseVisualPlugin.xml"/>
-        <darkroom plugin="${prefix}/ImuModelPlugin.xml"/>
+        <build_type>ament_cmake</build_type>
+        <!--<rviz plugin="${prefix}/darkroom.xml"/>-->
+        <!--<darkroom plugin="${prefix}/LighthouseVisualPlugin.xml"/>-->
+        <!--<darkroom plugin="${prefix}/ImuModelPlugin.xml"/>-->
     </export>
 </package>

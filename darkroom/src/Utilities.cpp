@@ -14,15 +14,15 @@ bool Utilities::readModelDirectory(string modelDirectory, ModelInformation &info
             try {
                 if (fs::is_regular_file(dir_itr->status())) {
                     info.meshes.push_back(dir_itr->path());
-                    ROS_DEBUG_STREAM(dir_itr->path());
+                    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rclcpp"), dir_itr->path());
                 }
             }
             catch (const std::exception &ex) {
-                ROS_ERROR_STREAM(dir_itr->path().filename() << " " << ex.what());
+                RCLCPP_ERROR_STREAM(rclcpp::get_logger("rclcpp"), dir_itr->path().filename() << " " << ex.what());
             }
         }
     }else{
-        ROS_ERROR("mesh directory %s does not exist", info.meshDirectory.c_str());
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "mesh directory %s does not exist", info.meshDirectory.c_str());
         return false;
     }
     info.lighthouseDirectory = fs::path(modelDirectory+"/lighthouseSensors");
@@ -32,15 +32,15 @@ bool Utilities::readModelDirectory(string modelDirectory, ModelInformation &info
             try {
                 if (fs::is_regular_file(dir_itr->status())) {
                     info.lighthouseConfigFiles.push_back(dir_itr->path());
-                    ROS_DEBUG_STREAM(dir_itr->path());
+                    RCLCPP_DEBUG_STREAM(rclcpp::get_logger("rclcpp"), dir_itr->path());
                 }
             }
             catch (const std::exception &ex) {
-                ROS_ERROR_STREAM(dir_itr->path().filename() << " " << ex.what());
+                RCLCPP_ERROR_STREAM(rclcpp::get_logger("rclcpp"), dir_itr->path().filename() << " " << ex.what());
             }
         }
     }else{
-        ROS_ERROR("lighthouse directory %s does not exist", info.lighthouseDirectory.c_str());
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "lighthouse directory %s does not exist", info.lighthouseDirectory.c_str());
         return false;
     }
 }
@@ -50,14 +50,14 @@ bool Utilities::readConfig(fs::path filepath, string &objectID, string &name, fs
     if(!file_exists(filepath.c_str()))
         return false;
     try {
-        ROS_INFO_STREAM("reading config " << filepath.filename());
+        RCLCPP_INFO_STREAM(rclcpp::get_logger("rclcpp"), "reading config " << filepath.filename());
         YAML::Node config = YAML::LoadFile(filepath.c_str());
         objectID = config["ObjectID"].as<string>();
         name = config["name"].as<string>();
         mesh = filepath.remove_filename().c_str();
         mesh += "/" + config["mesh"].as<string>();
         if(!file_exists(mesh.c_str())){
-            ROS_WARN("mesh %s does not exist", mesh.c_str());
+            RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "mesh %s does not exist", mesh.c_str());
             mesh.clear();
         }
         vector<vector<float>> relative_locations =
@@ -73,16 +73,16 @@ bool Utilities::readConfig(fs::path filepath, string &objectID, string &name, fs
         }
         cout << endl;
         if(config["calibration_angles"]){
-            ROS_INFO("found calibration angles");
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "found calibration angles");
             vector<vector<float>> calAngles = config["calibration_angles"].as<vector<vector<float >>>();
             for(int i=0;i<calAngles.size();i++){
                 calibrationAngles[calAngles[i][0]].push_back(calAngles[i][2]);
                 calibrationAngles[calAngles[i][0]].push_back(calAngles[i][1]);
-                ROS_INFO_STREAM(calibrationAngles[calAngles[i][0]][VERTICAL]<<" "<<calibrationAngles[calAngles[i][0]][HORIZONTAL]);
+                RCLCPP_INFO_STREAM(rclcpp::get_logger("rclcpp"), calibrationAngles[calAngles[i][0]][VERTICAL]<<" "<<calibrationAngles[calAngles[i][0]][HORIZONTAL]);
             }
         }
     } catch (YAML::Exception &e) {
-        ROS_ERROR_STREAM(e.what());
+        RCLCPP_ERROR_STREAM(rclcpp::get_logger("rclcpp"), e.what());
         return false;
     }
     return true;
@@ -92,7 +92,7 @@ bool Utilities::writeConfig(fs::path filepath, string &objectID, string &name, f
                             vector<int> &calibrated_sensors, map<int, Sensor> &sensors) {
     std::ofstream fout(filepath.root_path().c_str());
     if (!fout.is_open()) {
-        ROS_WARN_STREAM("Could not write config " << filepath);
+        RCLCPP_WARN_STREAM(rclcpp::get_logger("rclcpp"), "Could not write config " << filepath);
         return false;
     }
 
@@ -123,7 +123,7 @@ bool Utilities::writeCalibrationConfig(string filepath, int lighthouse, Lighthou
     fstream fout;
     fout.open(filepath);
     if (!fout.is_open()) {
-        ROS_WARN_STREAM("Could not write config " << filepath);
+        RCLCPP_WARN_STREAM(rclcpp::get_logger("rclcpp"), "Could not write config " << filepath);
         return false;
     }
 
@@ -183,10 +183,10 @@ bool Utilities::readCalibrationConfig(fs::path filepath, int lighthouse, Lightho
         strstream << "gibmag_horizontal:   " <<  calib[HORIZONTAL].gibmag << endl;
         strstream << "gibmag_vertical:     " <<  calib[VERTICAL].gibmag << endl;
 
-        ROS_INFO_STREAM(strstream.str());
+        RCLCPP_INFO_STREAM(rclcpp::get_logger("rclcpp"), strstream.str());
 
     } catch (YAML::Exception &e) {
-        ROS_ERROR_STREAM(e.what());
+        RCLCPP_ERROR_STREAM(rclcpp::get_logger("rclcpp"), e.what());
         return false;
     }
     return true;
@@ -194,11 +194,11 @@ bool Utilities::readCalibrationConfig(fs::path filepath, int lighthouse, Lightho
 
 bool Utilities::directory_exists(string directory_path){
     if (!fs::exists(directory_path)) {
-        ROS_ERROR("%s does not exist", directory_path.c_str());
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "%s does not exist", directory_path.c_str());
         return false;
     }
     if (!fs::is_directory(directory_path)) {
-        ROS_ERROR("%s id not a directory", directory_path.c_str());
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "%s id not a directory", directory_path.c_str());
         return false;
     }
     return true;
@@ -206,12 +206,62 @@ bool Utilities::directory_exists(string directory_path){
 
 bool Utilities::file_exists(string file_path){
     if (!fs::exists(file_path)) {
-        ROS_ERROR("%s does not exist", file_path.c_str());
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "%s does not exist", file_path.c_str());
         return false;
     }
     if (!fs::is_regular_file(file_path)) {
-        ROS_ERROR("%s id not a file", file_path.c_str());
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "%s id not a file", file_path.c_str());
         return false;
+    }
+    return true;
+}
+
+bool Utilities::setParametersFromYaml(rclcpp::Node::SharedPtr nh, string yaml_path) {
+    const std::string node_name = nh->get_name();
+    const std::string node_namespace = nh->get_namespace();
+    if (0u == node_namespace.size() || 0u == node_name.size()) {
+        // Should never happen
+        throw std::runtime_error("Node name and namespace were not set");
+    }
+    std::string combined_name;
+    if ('/' == node_namespace.at(node_namespace.size() - 1)) {
+        combined_name = node_namespace + node_name;
+    } else {
+        combined_name = node_namespace + '/' + node_name;
+    }
+    auto node = nh->get_node_base_interface()->get_rcl_node_handle();
+    const rcl_node_options_t * options = rcl_node_get_options(node);
+
+    std::map<std::string, rclcpp::Parameter> parameters;
+
+    rcl_params_t * yaml_params = rcl_yaml_node_struct_init(options->allocator);
+    if (nullptr == yaml_params) {
+        throw std::bad_alloc();
+    }
+    if (!rcl_parse_yaml_file(yaml_path.c_str(), yaml_params)) {
+        throw std::runtime_error("Failed to parse parameters " + yaml_path);
+    }
+
+    rclcpp::ParameterMap initial_map = rclcpp::parameter_map_from(yaml_params);
+    rcl_yaml_node_struct_fini(yaml_params);
+    auto iter = initial_map.find(combined_name);
+    if (initial_map.end() == iter) {
+        return false;
+    }
+    // Combine parameter yaml files, overwriting values in older ones
+    for (auto & param : iter->second) {
+        parameters[param.get_name()] = param;
+    }
+    std::vector<rclcpp::Parameter> combined_values;
+    combined_values.reserve(parameters.size());
+    for (auto & kv : parameters) {
+        combined_values.emplace_back(kv.second);
+    }
+    if (!combined_values.empty()) {
+        rcl_interfaces::msg::SetParametersResult result = nh->set_parameters_atomically(combined_values);
+        if (!result.successful) {
+            throw std::runtime_error("Failed to set initial parameters");
+        }
     }
     return true;
 }

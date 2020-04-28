@@ -40,12 +40,12 @@
 #include "darkroom/Sensor.hpp"
 #include <common_utilities/rviz_visualization.hpp>
 #include <common_utilities/CommonDefinitions.h>
-#include <roboy_middleware_msgs/LighthousePoseCorrection.h>
-#include <roboy_middleware_msgs/DarkRoomSensor.h>
-#include <roboy_middleware_msgs/DarkRoomOOTX.h>
-#include <roboy_middleware_msgs/ArucoPose.h>
+#include <roboy_middleware_msgs/msg/lighthouse_pose_correction.hpp>
+#include <roboy_middleware_msgs/msg/dark_room_sensor.hpp>
+#include <roboy_middleware_msgs/msg/dark_room_ootx.hpp>
+//#include <roboy_middleware_msgs/msg/aruco_pose.hpp>
 #include <common_utilities/CommonDefinitions.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <boost/filesystem.hpp>
 #include <atomic>
 #include <mutex>
@@ -53,7 +53,7 @@
 #include "darkroom/InYourGibbousPhase2.hpp"
 #include "darkroom/InYourGibbousPhase3.hpp"
 #include "darkroom/InYourGibbousPhase4.hpp"
-#include <ros/package.h>
+//#include <ros/package.h>
 #include "darkroom/Utilities.hpp"
 #include <stdlib.h>
 #include <stdio.h>
@@ -215,12 +215,12 @@ public:
     bool has_mesh = false;
     string name = "bastiisdoff";
     string imu_topic_name, pose_topic_name;
-    ros::Publisher pose_pub;
-    tf::Transform pose;
+    std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>> pose_pub;
+    tf2::Transform pose;
     ofstream steamVRrecord[2];
     static int trackedObjectInstance; //! a unique object instance (helps with unique rviz marker ids)
 private:
-    void receiveOOTXData(const roboy_middleware_msgs::DarkRoomOOTX::ConstPtr &msg);
+    void receiveOOTXData(const roboy_middleware_msgs::msg::DarkRoomOOTX::SharedPtr msg);
 
     void applyCalibrationData(Vector2d &lighthouse0_angles, Vector2d &lighthouse1_angles);
 
@@ -230,10 +230,13 @@ private:
 
     MatrixXd Pinv(MatrixXd A);
 private:
-    ros::NodeHandlePtr nh;
-    boost::shared_ptr<ros::AsyncSpinner> spinner;
-    ros::Publisher sensor_location_pub, lighthouse_pose_correction;
-    ros::Subscriber ootx_sub;
+    rclcpp::Node::SharedPtr nh;
+//    boost::shared_ptr<ros::AsyncSpinner> spinner;
+    std::shared_ptr<rclcpp::Publisher<roboy_middleware_msgs::msg::DarkRoomSensor>> sensor_location_pub;
+    std::shared_ptr< rclcpp::Publisher<roboy_middleware_msgs::msg::LighthousePoseCorrection>>  lighthouse_pose_correction;
+    rclcpp::Subscription<roboy_middleware_msgs::msg::DarkRoomOOTX>::SharedPtr ootx_sub;
+    std::shared_ptr<rclcpp::SyncParametersClient> parameters_client;
+//    rclcpp::Clock clock;
     VectorXd object_pose;
     OOTXframe ootx[2];
 };

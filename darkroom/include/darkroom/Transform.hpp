@@ -37,10 +37,11 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
-#include <tf/tf.h>
-#include <tf_conversions/tf_eigen.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
+#include <tf2/LinearMath/Transform.h>
+#include <tf2_eigen/tf2_eigen.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 using namespace Eigen;
 
@@ -63,20 +64,20 @@ namespace DarkRoom {
          */
         void getPose(Quaterniond &q, Vector3d &origin, VectorXd &pose);
 
-        void getTFtransform(VectorXd &x, tf::Transform &tf);
+        void getTFtransform(VectorXd &x, tf2::Transform &tf);
 
         /**
          * Sets a tf transform using a 4x4 matrix
          * @param RT using this matrix
          * @param tf setting this transform
          */
-        void getTFtransform(Matrix4d &RT, tf::Transform &tf);
+        void getTFtransform(Matrix4d &RT, tf2::Transform &tf);
 
-        void publishTF(tf::Transform &tf, const char *frame, const char *name);
+        void publishTF(tf2::Transform &tf, const char *frame, const char *name);
 
     private:
-        tf::TransformListener tf_listener;
-        tf::TransformBroadcaster tf_broadcaster;
+        std::shared_ptr<tf2_ros::TransformListener> tf_listener;
+        std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
     };
 
 }

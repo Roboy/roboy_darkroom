@@ -1,5 +1,6 @@
 #include <common_utilities/CommonDefinitions.h>
 #include "darkroom/LighthouseEstimator.hpp"
+#include <memory>
 
 vector<vector<Vector3d>> relative_positions_trajectory;
 vector<vector<Vector2d>> angles_measured_trajectory;
@@ -72,20 +73,35 @@ void inYourGibbousPhase(const real_1d_array &x, real_1d_array &fi, void *ptr) {
 //}
 
 LighthouseEstimator::LighthouseEstimator() {
-    if (!ros::isInitialized()) {
+    if (!rclcpp::is_initialized()) {
         int argc = 0;
         char **argv = NULL;
-        ros::init(argc, argv, "LighthouseEstimator",
-                  ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
+        rclcpp::init(argc, argv); //, node_name, ros::init_options::NoSigintHandler);
     }
-    nh = ros::NodeHandlePtr(new ros::NodeHandle);
-    sensor_location_pub = nh->advertise<roboy_middleware_msgs::DarkRoomSensor>(
+
+    nh = rclcpp::Node::make_shared("LighthouseEstimator");
+
+    parameters_client = std::make_shared<rclcpp::SyncParametersClient>(nh);
+
+    while (!parameters_client->wait_for_service(1s)) {
+        if (!rclcpp::ok()) {
+            RCLCPP_ERROR(nh->get_logger(), "Interrupted while waiting for the service. Exiting.");
+            rclcpp::shutdown();
+        }
+        RCLCPP_INFO(nh->get_logger(), "parameter sync service not available, waiting again...");
+    }
+    
+    sensor_location_pub = nh->create_publisher<roboy_middleware_msgs::msg::DarkRoomSensor>(
             "/roboy/middleware/DarkRoom/sensor_location", 1);
-    lighthouse_pose_correction = nh->advertise<roboy_middleware_msgs::LighthousePoseCorrection>(
+    lighthouse_pose_correction = nh->create_publisher<roboy_middleware_msgs::msg::LighthousePoseCorrection>(
             "/roboy/middleware/DarkRoom/LighthousePoseCorrection", 1);
-    ootx_sub = nh->subscribe("/roboy/middleware/DarkRoom/ootx", 1, &LighthouseEstimator::receiveOOTXData, this);
-    spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
-    spinner->start();
+    
+    ootx_sub = nh->create_subscription<roboy_middleware_msgs::msg::DarkRoomOOTX>("/roboy/middleware/DarkRoom/ootx", 1, bind(&LighthouseEstimator::receiveOOTXData, this,  placeholders::_1));
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(nh);
+    executor.spin();
+//    spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
+//    spinner->start();
 
     tracking = false;
     calibrating = false;
@@ -114,29 +130,31 @@ void LighthouseEstimator::getVisibleCalibratedSensors(bool lighthouse, vector<in
 }
 
 bool LighthouseEstimator::lighthousePoseEstimationLeastSquares() {
-    ros::Time start_time = ros::Time::now();
+    auto start_time = nh->now();
+
     vector<int> visible_sensors;
     getVisibleCalibratedSensors(visible_sensors);
 
     if (visible_sensors.size() < 4) {
-        ROS_ERROR("we need at least four visible sensors for this to work, aborting...");
+        RCLCPP_ERROR(nh->get_logger(),"we need at least four visible sensors for this to work, aborting...");
         return false;
     }
 
     while (!estimateSensorPositionsUsingRelativeDistances(LIGHTHOUSE_A, visible_sensors)) {
-        ROS_INFO_THROTTLE(1,
-                          "could not estimate relative distance to lighthouse 0, are the sensors visible to lighthouse 0?!");
-        if (ros::Duration(ros::Time::now() - start_time).toSec() > 3) {
-            ROS_WARN("time out");
+//        RCLCPP_INFO_THROTTLE(nh->get_logger(), std::chrono::steady_clock, 1,
+//                          "could not estimate relative distance to lighthouse 0, are the sensors visible to lighthouse 0?!");
+        if (rclcpp::Duration(nh->now() - start_time).seconds() > 3) {
+            RCLCPP_WARN(nh->get_logger(),"time out");
             return false;
         }
     }
-    start_time = ros::Time::now();
+    start_time = nh->now();
     while (!estimateSensorPositionsUsingRelativeDistances(LIGHTHOUSE_B, visible_sensors)) {
-        ROS_INFO_THROTTLE(1,
-                          "could not estimate relative distance to lighthouse 1, are the sensors visible to lighthouse 1?!");
-        if (ros::Duration(ros::Time::now() - start_time).toSec() > 3) {
-            ROS_WARN("time out");
+
+        auto clock = *nh->get_clock();
+        RCLCPP_INFO_THROTTLE(nh->get_logger(), clock, 1,"could not estimate relative distance to lighthouse 1, are the sensors visible to lighthouse 1?!");
+        if (rclcpp::Duration(nh->now() - start_time).seconds() > 3) {
+            RCLCPP_WARN(nh->get_logger(),"time out");
             return false;
         }
     }
@@ -169,35 +187,37 @@ bool LighthouseEstimator::lighthousePoseEstimationLeastSquares() {
     lm->parameters.maxfev = MAX_ITERATIONS;
     lm->parameters.xtol = 1.0e-10;
     int ret = lm->minimize(pose);
-    ROS_INFO("PoseEstimationSensorCloud finished after %ld iterations, with an error of %f", lm->iter, lm->fnorm);
+    RCLCPP_INFO(nh->get_logger(),"PoseEstimationSensorCloud finished after %ld iterations, with an error of %f", lm->iter, lm->fnorm);
 
-    tf::Transform tf;
+    tf2::Transform tf;
     getTFtransform(pose, tf);
 
-    roboy_middleware_msgs::LighthousePoseCorrection msg;
+    roboy_middleware_msgs::msg::LighthousePoseCorrection msg;
     msg.id = LIGHTHOUSE_B;
     msg.type = RELATIV;
-    tf::transformTFToMsg(tf, msg.tf);
-    lighthouse_pose_correction.publish(msg);
+    msg.tf = tf2::toMsg(tf);
+    //tf2::TransformTFToMsg(tf, msg.tf);
+    lighthouse_pose_correction->publish(msg);
 
 }
 
 void LighthouseEstimator::objectPoseEstimationLeastSquares() {
-    ros::Rate rate(200);
-    ros::Time t0 = ros::Time::now(), t1;
+    rclcpp::Rate rate(200);
+    rclcpp::Time t0 = nh->now(), t1;
 
-    pose_pub = nh->advertise<geometry_msgs::PoseWithCovarianceStamped>(pose_topic_name.c_str(), 1);
+    pose_pub = nh->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(pose_topic_name.c_str(), 1);
 
     object_pose << 0.001, 0.001, 0.001, 0.001, 0.001, 0.001;
 
     while (objectposeestimating) {
-        t1 = ros::Time::now();
+        t1 = nh->now();
 
         vector<int> visible_sensors;
         getVisibleCalibratedSensors(visible_sensors);
 
         if (visible_sensors.size() < 4) {
-            ROS_INFO_THROTTLE(1, "object pose estimation aborted because only %ld sensors are visible (need minimum 4)",
+            auto clock = *nh->get_clock();
+        RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1, "object pose estimation aborted because only %ld sensors are visible (need minimum 4)",
                               visible_sensors.size());
             continue;
         }
@@ -229,7 +249,8 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
         lm->parameters.maxfev = MAX_ITERATIONS;
         lm->parameters.xtol = 1e-10;
         int ret = lm->minimize(object_pose);
-        ROS_INFO_THROTTLE(1,
+        auto clock = *nh->get_clock();
+        RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1,
                           "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
                           visible_sensors.size(), lm->iter, lm->fnorm);
 
@@ -239,13 +260,13 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
             getRTmatrix(RT_correct, object_pose);
             RT_object = RT_correct * RT_0;
 
-            tf::Transform tf;
+            tf2::Transform tf;
             getTFtransform(RT_object, tf);
             string tf_name = name + "_VO";
             publishTF(tf, "world", tf_name.c_str());
 
-            geometry_msgs::PoseWithCovarianceStamped msg;
-            msg.header.stamp = ros::Time::now();
+            geometry_msgs::msg::PoseWithCovarianceStamped msg;
+            msg.header.stamp = nh->now();
             msg.header.frame_id = "world";
             Quaterniond q;
             Vector3d origin;
@@ -265,7 +286,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
                     0, 0, 0, 0, 0.1, 0,
                     0, 0, 0, 0, 0, 0.1
             };
-            pose_pub.publish(msg);
+            pose_pub->publish(msg);
 
             if (has_mesh) // TODO mesh path not properly implemented yet
                 publishMesh("roboy_models", "Roboy2.0_Upper_Body_Xylophone_simplified/meshes/CAD", "xylophone.stl",
@@ -287,19 +308,19 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
                 getRTmatrix(RT_correct, object_pose);
                 RT_object = RT_correct * RT_0;
 
-                tf::Transform tf;
+                tf2::Transform tf;
                 getTFtransform(RT_object, tf);
                 string tf_name = name + "_VO_uncalibrated";
                 publishTF(tf, "world", tf_name.c_str());
 
                 static high_resolution_clock::time_point t[2];
-                static tf::Vector3 origin_current[3], origin_previous[3];
+                static tf2::Vector3 origin_current[3], origin_previous[3];
                 t[1] = high_resolution_clock::now();
-                tf::Transform frame[3];
+                tf2::Transform frame[3];
                 if (getTransform("vive_controller1", "lighthouse1", frame[VIVE]) &&
                     getTransform((name + "_VO").c_str(), "lighthouse1", frame[VO]) &&
                     getTransform((name + "_VO_uncalibrated").c_str(), "lighthouse1", frame[VO_uncalibrated])) {
-                    tf::Quaternion q[3];
+                    tf2::Quaternion q[3];
 
                     origin_current[VO] = frame[VO].getOrigin();
                     q[VO] = frame[VO].getRotation();
@@ -310,7 +331,7 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
                     milliseconds dtms = duration_cast<milliseconds>(t[1] - t[0]);
                     double dts = dtms.count() / 1000.0;
                     if(steamVRrecord[0].is_open()) {
-                        steamVRrecord[0] << ros::Time::now().toNSec() << ",\t"
+                        steamVRrecord[0] << nh->now().nanoseconds() << ",\t"
                                          << origin_current[VO].x() << ",\t" << origin_current[VO].y() << ",\t"
                                          << origin_current[VO].z() << ",\t"
                                          << (origin_current[VO].x() - origin_previous[0].x()) / dts << ",\t"
@@ -350,11 +371,12 @@ void LighthouseEstimator::objectPoseEstimationLeastSquares() {
         rate.sleep();
     }
 
-    pose_pub.shutdown();
+    
+    //pose_pub->shutdown(); //TODO publisher shutdown
 }
 
 bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lighthouse, vector<int> &specificIds) {
-    ROS_INFO_STREAM("estimating distance of sensors to lighthouse " << lighthouse + 1);
+    RCLCPP_INFO_STREAM(nh->get_logger(),"estimating distance of sensors to lighthouse " << lighthouse + 1);
     vector<Vector3d> relPos;
     vector<double> elevations, azimuths;
     vector<double> distanceToLighthouse;
@@ -384,11 +406,12 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
             if (sensors[specificIds.at(i)].isActive(lighthouse)) {
                 sensor_counter++;
             } else {
-                ROS_WARN_THROTTLE(1, "sensor%d inactive", specificIds.at(i));
+                auto clock = *nh->get_clock();
+        RCLCPP_WARN_THROTTLE(nh->get_logger(), clock,1, "sensor%d inactive", specificIds.at(i));
             }
         }
         if (sensor_counter < specificIds.size()) {
-            ROS_WARN("time out waiting for specific sensors");
+            RCLCPP_WARN(nh->get_logger(),"time out waiting for specific sensors");
             return false;
         }
         // get the values now that all requested sensors are active
@@ -464,9 +487,9 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
             d_old(i) = distanceToLighthouse[i];
         }
 //        if (iterations % 100 == 0) {
-//            ROS_INFO_STREAM("J\n" << J);
-//            ROS_INFO_STREAM("v\n" << v);
-//            ROS_INFO_STREAM("d_old\n" << d_old);
+//            RCLCPP_INFO_STREAM(nh->get_logger(),"J\n" << J);
+//            RCLCPP_INFO_STREAM(nh->get_logger(),"v\n" << v);
+//            RCLCPP_INFO_STREAM(nh->get_logger(),"d_old\n" << d_old);
 //        }
 
         error = v.norm() / (double) ids.size();
@@ -474,7 +497,8 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
             break;
         }
         error_prev = error;
-        ROS_INFO_THROTTLE(5, "iteration %d error %lf", iterations, error);
+        auto clock = *nh->get_clock();
+        RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,5, "iteration %d error %lf", iterations, error);
         // construct distance new vector, sharing data with the stl container
         Map<VectorXd> d_new(distanceToLighthouse.data(), distanceToLighthouse.size());
         MatrixXd J_pinv = Pinv(J);
@@ -484,7 +508,7 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
 
     uint i = 0;
     for (auto id:ids) {
-        ROS_DEBUG_STREAM("sensor:" << id << " distance to lighthouse " << lighthouse << ": " << d_old(i));
+        RCLCPP_DEBUG_STREAM(nh->get_logger(), "sensor:" << id << " distance to lighthouse " << lighthouse << ": " << d_old(i));
 
         Vector2d angles(azimuths[i], elevations[i]);
         Eigen::Vector3d u0;
@@ -534,16 +558,16 @@ bool LighthouseEstimator::estimateSensorPositionsUsingRelativeDistances(bool lig
 
     if (iterations < MAX_ITERATIONS)
         if (error < ERROR_THRESHOLD) {
-            ROS_WARN_STREAM(
+            RCLCPP_WARN_STREAM(nh->get_logger(),
                     "mean squared error " << error << " below threshold " << ERROR_THRESHOLD << " in " << iterations
                                           << " iterations for lighthouse " << lighthouse + 1);
         } else if ((error - error_prev) < 0.00000001) {
-            ROS_WARN_STREAM(
+            RCLCPP_WARN_STREAM(nh->get_logger(),
                     "mean squared error " << error << " previous " << error_prev << " doesn't get lower after "
                                           << iterations << " iterations for lighthouse " << lighthouse + 1
             );
         } else
-            ROS_WARN_STREAM(
+            RCLCPP_WARN_STREAM(nh->get_logger(),
                     "maximal number of iterations reached, mean squared error " << error << " in " << iterations
                                                                                 << " iterations for lighthouse "
                                                                                 << lighthouse + 1
@@ -579,18 +603,19 @@ bool LighthouseEstimator::estimateObjectPoseUsingRelativeDistances() {
             lm->parameters.maxfev = MAX_ITERATIONS;
             lm->parameters.xtol = 1e-10;
             int ret = lm->minimize(pose[LIGHTHOUSE_A]);
-            ROS_INFO_THROTTLE(1,
+            auto clock = *nh->get_clock();
+        RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1,
                               "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
                               visible_sensors[LIGHTHOUSE_A].size(), lm->iter, lm->fnorm);
 
             getRTmatrix(RT_object[LIGHTHOUSE_A], pose[LIGHTHOUSE_A]);
 
-            tf::Transform tf;
+            tf2::Transform tf;
             getTFtransform(RT_object[LIGHTHOUSE_A], tf);
             publishTF(tf, (LIGHTHOUSE_A ? "lighthouse2" : "lighthouse1"), "object_lighthouse_1");
         }
     } else {
-        ROS_ERROR("we need at least four sensors for to be visble for lighthouse 1 for this to work, "
+        RCLCPP_ERROR(nh->get_logger(),"we need at least four sensors for to be visble for lighthouse 1 for this to work, "
                           "but there are only %ld sensors visible aborting", visible_sensors[LIGHTHOUSE_A].size());
         return false;
     }
@@ -620,41 +645,43 @@ bool LighthouseEstimator::estimateObjectPoseUsingRelativeDistances() {
             lm->parameters.maxfev = MAX_ITERATIONS;
             lm->parameters.xtol = 1e-10;
             int ret = lm->minimize(pose[LIGHTHOUSE_B]);
-            ROS_INFO_THROTTLE(1,
+            auto clock = *nh->get_clock();
+        RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1,
                               "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
                               visible_sensors[LIGHTHOUSE_B].size(), lm->iter, lm->fnorm);
 
             getRTmatrix(RT_object[LIGHTHOUSE_B], pose[LIGHTHOUSE_B]);
 
-            tf::Transform tf;
+            tf2::Transform tf;
             getTFtransform(RT_object[LIGHTHOUSE_B], tf);
             publishTF(tf, (LIGHTHOUSE_B ? "lighthouse2" : "lighthouse1"), "object_lighthouse_2");
         }
     } else {
-        ROS_ERROR("we need at least four sensors for to be visble for lighthouse 2 for this to work, "
+        RCLCPP_ERROR(nh->get_logger(),"we need at least four sensors for to be visble for lighthouse 2 for this to work, "
                           "but there are only %ld sensors visible aborting", visible_sensors[LIGHTHOUSE_B].size());
         return false;
     }
 
     Matrix4d RT_correct = RT_object[LIGHTHOUSE_A] * RT_object[LIGHTHOUSE_B].inverse();
 
-    tf::Transform tf;
-    tf.setOrigin(tf::Vector3(RT_correct(0, 3), RT_correct(1, 3), RT_correct(2, 3)));
-    tf::Matrix3x3 rot_matrix(RT_correct(0, 0), RT_correct(0, 1), RT_correct(0, 2),
+    tf2::Transform tf;
+    tf.setOrigin(tf2::Vector3(RT_correct(0, 3), RT_correct(1, 3), RT_correct(2, 3)));
+    tf2::Matrix3x3 rot_matrix(RT_correct(0, 0), RT_correct(0, 1), RT_correct(0, 2),
                              RT_correct(1, 0), RT_correct(1, 1), RT_correct(1, 2),
                              RT_correct(2, 0), RT_correct(2, 1), RT_correct(2, 2));
 
     tf.setBasis(rot_matrix);
 
-    roboy_middleware_msgs::LighthousePoseCorrection msg;
+    roboy_middleware_msgs::msg::LighthousePoseCorrection msg;
     msg.id = LIGHTHOUSE_B;
     msg.type = RELATIV;
-    tf::transformTFToMsg(tf, msg.tf);
-    lighthouse_pose_correction.publish(msg);
+    msg.tf = toMsg(tf);
+    //tf2::TransformTFToMsg(tf, msg.tf);
+    lighthouse_pose_correction->publish(msg);
 }
 
 void LighthouseEstimator::estimateObjectPoseEPNP() {
-    ros::Rate rate(60);
+    rclcpp::Rate rate(60);
     Eigen::IOFormat fmt(4, 0, " ", ";\n", "", "", "[", "]");
     while (poseestimating_epnp) {
         vector<int> visible_sensors[2];
@@ -709,16 +736,18 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
 //            RT_object2lighthouse_est.block(0, 3, 3, 1) << RT_object2lighthouse_est_backup(0, 3),
 //                    RT_object2lighthouse_est_backup(2, 3),
 //                    -RT_object2lighthouse_est_backup(1, 3);
-//            ROS_INFO_STREAM_THROTTLE(1, endl << RT_object2lighthouse_est.format(fmt) );
+            auto clock = *nh->get_clock();
+            RCLCPP_INFO_STREAM_THROTTLE(nh->get_logger(), clock,1, endl << RT_object2lighthouse_est.format(fmt) );
 //            // swap x and z
 //            Matrix3d swapXZ;
 //            swapXZ.setZero();
 //            swapXZ(1,1) = -1; swapXZ(0,2) = -1; swapXZ(2,0) = -1;
 //            RT_object2lighthouse_est.block(0,0,3,3) = RT_object2lighthouse_est.block(0,0,3,3)*swapXZ;
 
-            ROS_INFO_STREAM_THROTTLE(1, endl << RT_object2lighthouse_est.format(fmt));
+            //auto clock = *nh->get_clock();
+            RCLCPP_INFO_STREAM_THROTTLE(nh->get_logger(), clock,1, endl << RT_object2lighthouse_est.format(fmt));
 
-            tf::Transform tf;
+            tf2::Transform tf;
             getTFtransform(RT_object2lighthouse_est, tf);
             string tf_name = name + "_epnp_1";
             publishTF(tf, "lighthouse1", tf_name.c_str());
@@ -735,10 +764,12 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
                 str << endl;
                 str << "'True reprojection error':"
                     << PnP.reprojection_error(R_true, t_true) << endl;
-                ROS_INFO_STREAM_THROTTLE(5, str.str());
+                auto clock = *nh->get_clock();
+        RCLCPP_INFO_STREAM_THROTTLE(nh->get_logger(), clock,5, str.str());
             }
         } else {
-            ROS_ERROR_THROTTLE(5, "we need at least four sensors for to be visible for lighthouse 1 for this to work, "
+            auto clock = *nh->get_clock();
+            RCLCPP_ERROR_THROTTLE(nh->get_logger(), clock,5, "we need at least four sensors for to be visible for lighthouse 1 for this to work, "
                     "but there are only %ld sensors visible aborting", visible_sensors[LIGHTHOUSE_A].size());
         }
 
@@ -792,16 +823,18 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
 //            RT_object2lighthouse_est.block(0, 3, 3, 1) << RT_object2lighthouse_est_backup(0, 3),
 //                    RT_object2lighthouse_est_backup(2, 3),
 //                    -RT_object2lighthouse_est_backup(1, 3);
-//            ROS_INFO_STREAM_THROTTLE(1, endl << RT_object2lighthouse_est.format(fmt) );
+//            auto clock = *nh->get_clock();
+        //RCLCPP_INFO_STREAM_THROTTLE(nh->get_logger(), clock,1, endl << RT_object2lighthouse_est.format(fmt) );
 //            // swap x and z
 //            Matrix3d swapXZ;
 //            swapXZ.setZero();
 //            swapXZ(1,1) = -1; swapXZ(0,2) = -1; swapXZ(2,0) = -1;
 //            RT_object2lighthouse_est.block(0,0,3,3) = RT_object2lighthouse_est.block(0,0,3,3)*swapXZ;
 
-            ROS_INFO_STREAM_THROTTLE(1, endl << RT_object2lighthouse_est.format(fmt));
+            auto clock = *nh->get_clock();
+        RCLCPP_INFO_STREAM_THROTTLE(nh->get_logger(), clock,1, endl << RT_object2lighthouse_est.format(fmt));
 
-            tf::Transform tf;
+            tf2::Transform tf;
             getTFtransform(RT_object2lighthouse_est, tf);
             string tf_name = name + "_epnp_2";
             publishTF(tf, "lighthouse2", tf_name.c_str());
@@ -818,10 +851,12 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
                 str << endl;
                 str << "'True reprojection error':"
                     << PnP.reprojection_error(R_true, t_true) << endl;
-                ROS_INFO_STREAM_THROTTLE(5, str.str());
+                auto clock = *nh->get_clock();
+        RCLCPP_INFO_STREAM_THROTTLE(nh->get_logger(), clock,5, str.str());
             }
         } else {
-            ROS_ERROR_THROTTLE(5, "we need at least four sensors for to be visible for lighthouse 2 for this to work, "
+            auto clock = *nh->get_clock();
+        RCLCPP_ERROR_THROTTLE(nh->get_logger(), clock,5, "we need at least four sensors for to be visible for lighthouse 2 for this to work, "
                     "but there are only %ld sensors visible aborting", visible_sensors[LIGHTHOUSE_B].size());
         }
 
@@ -830,7 +865,7 @@ void LighthouseEstimator::estimateObjectPoseEPNP() {
 }
 
 void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
-    ros::Rate rate(60);
+    rclcpp::Rate rate(60);
     Eigen::IOFormat fmt(4, 0, " ", ";\n", "", "", "[", "]");
     while (poseestimating_multiLighthouse) {
         vector<int> visible_sensors[2];
@@ -838,7 +873,8 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
         getVisibleCalibratedSensors(LIGHTHOUSE_B, visible_sensors[LIGHTHOUSE_B]);
 
         if (visible_sensors[LIGHTHOUSE_A].size() + visible_sensors[LIGHTHOUSE_B].size() < 6) {
-            ROS_ERROR_THROTTLE(1, "we need at least six visible sensors for this to work, "
+            auto clock = *nh->get_clock();
+        RCLCPP_ERROR_THROTTLE(nh->get_logger(), clock,1, "we need at least six visible sensors for this to work, "
                     "but there are only %ld sensors visible aborting",
                                visible_sensors[LIGHTHOUSE_A].size() + visible_sensors[LIGHTHOUSE_B].size());
             continue;
@@ -890,7 +926,8 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
         estimator.elevations = elevations;
         estimator.lighthouse_id = lighthouse_id;
 
-        ROS_INFO_STREAM_THROTTLE(1, estimator.lighthousePose[LIGHTHOUSE_A].format(fmt) << endl
+        auto clock = *nh->get_clock();
+        RCLCPP_INFO_STREAM_THROTTLE(nh->get_logger(), clock,1, estimator.lighthousePose[LIGHTHOUSE_A].format(fmt) << endl
                                                                                        << estimator.lighthousePose[LIGHTHOUSE_B].format(
                                                                                                fmt));
 
@@ -903,7 +940,8 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
         lm->parameters.maxfev = MAX_ITERATIONS;
         lm->parameters.xtol = 1e-10;
         int ret = lm->minimize(pose);
-        ROS_INFO_THROTTLE(1,
+        //auto clock = *nh->get_clock();
+        RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1,
                           "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
                           visible_sensors[LIGHTHOUSE_A].size() + visible_sensors[LIGHTHOUSE_B].size(), lm->iter,
                           lm->fnorm);
@@ -932,7 +970,8 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
                 lm->parameters.xtol = 1e-10;
                 pose << 0, 0, 0, 0, 0, 0.0001;
                 int ret = lm->minimize(pose);
-                ROS_INFO_THROTTLE(1,
+                auto clock = *nh->get_clock();
+        RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1,
                                   "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
                                   visible_sensors[LIGHTHOUSE_A].size() + visible_sensors[LIGHTHOUSE_B].size(), lm->iter,
                                   lm->fnorm);
@@ -940,19 +979,19 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
                 Matrix4d RT_object;
                 getRTmatrix(RT_object, pose);
 
-                tf::Transform tf;
+                tf2::Transform tf;
                 getTFtransform(RT_object, tf);
                 publishTF(tf, "world", (name + "_ML_uncalibrated").c_str());
             }
 
             static high_resolution_clock::time_point t[2];
-            static tf::Vector3 origin_current[3], origin_previous[3];
+            static tf2::Vector3 origin_current[3], origin_previous[3];
             t[1] = high_resolution_clock::now();
-            tf::Transform frame[3];
+            tf2::Transform frame[3];
             if (getTransform("vive_controller1", "lighthouse1", frame[VIVE]) &&
                 getTransform((name + "_ML").c_str(), "lighthouse1", frame[VO]) &&
                 getTransform((name + "_ML_uncalibrated").c_str(), "lighthouse1", frame[VO_uncalibrated])) {
-                tf::Quaternion q[3];
+                tf2::Quaternion q[3];
 
                 origin_current[VO] = frame[VO].getOrigin();
                 q[VO] = frame[VO].getRotation();
@@ -963,7 +1002,7 @@ void LighthouseEstimator::estimateObjectPoseMultiLighthouse() {
                 milliseconds dtms = duration_cast<milliseconds>(t[1] - t[0]);
                 double dts = dtms.count() / 1000.0;
                 if(steamVRrecord[1].is_open()) {
-                    steamVRrecord[1] << ros::Time::now().toNSec() << ",\t"
+                    steamVRrecord[1] << nh->now().nanoseconds() << ",\t"
                                      << origin_current[VO].x() << ",\t" << origin_current[VO].y() << ",\t"
                                      << origin_current[VO].z() << ",\t"
                                      << (origin_current[VO].x() - origin_previous[0].x()) / dts << ",\t"
@@ -1005,10 +1044,10 @@ void LighthouseEstimator::triangulateSensors() {
     high_resolution_clock::time_point timestamp_new[4];
     map<int, high_resolution_clock::time_point[4]> timestamps_old;
 
-    ros::Rate rate(30);
+    rclcpp::Rate rate(30);
     bool lighthouse_active[2];
     while (tracking) {
-        roboy_middleware_msgs::DarkRoomSensor msg;
+        roboy_middleware_msgs::msg::DarkRoomSensor msg;
 
         Matrix4d RT_0, RT_1;
         if (!getLighthouseTransform(LIGHTHOUSE_A, "world", RT_0)) {
@@ -1065,7 +1104,7 @@ void LighthouseEstimator::triangulateSensors() {
                         publishText(triangulated_position, str2, "world", str, getMessageID(SENSOR_NAME, sensor.first),
                                     COLOR(1, 1, 1, 0.7), 0.1, 0.04f);
                         msg.ids.push_back(sensor.first);
-                        geometry_msgs::Vector3 v;
+                        geometry_msgs::msg::Vector3 v;
                         v.x = triangulated_position[0];
                         v.y = triangulated_position[1];
                         v.z = triangulated_position[2];
@@ -1108,7 +1147,7 @@ void LighthouseEstimator::triangulateSensors() {
         }
         active_sensors = active_sensors_counter;
         if (msg.ids.size() > 0)
-            sensor_location_pub.publish(msg);
+            sensor_location_pub->publish(msg);
     }
 }
 
@@ -1116,7 +1155,7 @@ void LighthouseEstimator::publishRays() {
     high_resolution_clock::time_point timestamp_new[4];
     map<int, high_resolution_clock::time_point[4]> timestamps_old;
 
-    ros::Rate rate(60);
+    rclcpp::Rate rate(60);
     bool lighthouse_active[2];
 
     while (rays) {
@@ -1160,14 +1199,14 @@ void LighthouseEstimator::calibrateRelativeSensorDistances() {
     map<int, int> number_of_samples;
 
     // measure the sensor location for a couple of seconds
-    ros::Time start_time = ros::Time::now();
+    rclcpp::Time start_time = nh->now();
     clearAll();
 
     high_resolution_clock::time_point timestamp0_new[2], timestamp1_new[2];
     map<int, high_resolution_clock::time_point[2]> timestamps0_old, timestamps1_old;
 
     clearAll();
-    ROS_INFO("measuring mean sensor positions for 10 seconds");
+    RCLCPP_INFO(nh->get_logger(),"measuring mean sensor positions for 10 seconds");
     int message_counter = 0;
 
     // get the lighthouse poses
@@ -1177,7 +1216,7 @@ void LighthouseEstimator::calibrateRelativeSensorDistances() {
     if (!getLighthouseTransform("world", LIGHTHOUSE_B, RT_1))
         return;
 
-    while ((ros::Time::now() - start_time) < ros::Duration(10) && calibrating) {
+    while ((nh->now() - start_time) < rclcpp::Duration(10) && calibrating) {
         for (auto &sensor : sensors) {
             // if the sensor is visible for both lighthouses and it is active
             if (sensor.second.isActive(0) && sensor.second.isActive(1)) {
@@ -1243,7 +1282,7 @@ void LighthouseEstimator::calibrateRelativeSensorDistances() {
                 variance[sensor.first](2) += pow(pos.z() - mean[sensor.first].z(), 2.0);
             }
             variance[sensor.first] /= number_of_samples[sensor.first];
-            ROS_INFO_STREAM("sensor " << sensor.first << " mean("
+            RCLCPP_INFO_STREAM(nh->get_logger(),"sensor " << sensor.first << " mean("
                                       << mean[sensor.first][0] << ", " << mean[sensor.first][1] << ", "
                                       << mean[sensor.first][2] << ") variance("
                                       << variance[sensor.first][0] << ", " << variance[sensor.first][1] << ", "
@@ -1257,17 +1296,17 @@ void LighthouseEstimator::calibrateRelativeSensorDistances() {
                 sensor_accepted[sensor.first] = false;
             }
         } else {
-            ROS_INFO("rejecting sensor %d, because it does not have enough samples (%d)", sensor.first,
+            RCLCPP_INFO(nh->get_logger(),"rejecting sensor %d, because it does not have enough samples (%d)", sensor.first,
                      number_of_samples[sensor.first]);
         }
     }
     if (active_sensors == 0) {
-        ROS_WARN("no active sensors, aborting");
+        RCLCPP_WARN(nh->get_logger(),"no active sensors, aborting");
         return;
     }
     origin /= (double) active_sensors;
     if (origin.hasNaN()) {
-        ROS_WARN("origin not finite, aborting");
+        RCLCPP_WARN(nh->get_logger(),"origin not finite, aborting");
         return;
     }
     publishSphere(origin, "world", "origin", message_counter++, COLOR(0, 0, 1, 1.0), 0.01f);
@@ -1276,7 +1315,7 @@ void LighthouseEstimator::calibrateRelativeSensorDistances() {
             Vector3d rel;
             rel = mean[sensor.first] - origin;
             sensor.second.setRelativeLocation(rel);
-            ROS_INFO_STREAM("origin(" << origin[0] << ", " << origin[1] << ", " << origin[2] << ")");
+            RCLCPP_INFO_STREAM(nh->get_logger(),"origin(" << origin[0] << ", " << origin[1] << ", " << origin[2] << ")");
             publishSphere(mean[sensor.first], "world", "mean", message_counter++, COLOR(0, 0, 1, 1.0), 0.01f);
             publishRay(origin, rel, "world", "relative", message_counter++, COLOR(1, 1, 0, 1.0));
         }
@@ -1287,28 +1326,29 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
     stringstream str;
     // get the transform from object to lighthouse
     Matrix4d RT_object2lighthouse;
-    ros::Time t0 = ros::Time::now();
+    rclcpp::Time t0 = nh->now();
     while (!getTransform(name.c_str(), (lighthouse ? "lighthouse2" : "lighthouse1"), RT_object2lighthouse)) {
-        ROS_ERROR_THROTTLE(1, "could not get transform between %s and %s", name.c_str(),
+        auto clock = *nh->get_clock();
+        RCLCPP_ERROR_THROTTLE(nh->get_logger(), clock,1, "could not get transform between %s and %s", name.c_str(),
                            (lighthouse ? "lighthouse2" : "lighthouse1"));
-        if ((ros::Duration(ros::Time::now() - t0).toSec() > 5)) {
-            ROS_ERROR("giving up");
+        if ((rclcpp::Duration(nh->now() - t0).seconds() > 5)) {
+            RCLCPP_ERROR(nh->get_logger(),"giving up");
             return false;
         }
     }
-    ROS_INFO("got the transform, let's see who is active");
+    RCLCPP_INFO(nh->get_logger(),"got the transform, let's see who is active");
 
     // lets see who is active
     vector<int> active_sensors;
-    t0 = ros::Time::now();
+    t0 = nh->now();
     while (active_sensors.size() < 20) {
         getVisibleCalibratedSensors(lighthouse, active_sensors);
-        if (active_sensors.size() < 20 && (ros::Duration(ros::Time::now() - t0).toSec() > 10)) {
-            ROS_ERROR("not enough active sensors (%ld), giving up", active_sensors.size());
+        if (active_sensors.size() < 20 && (rclcpp::Duration(nh->now() - t0).seconds() > 10)) {
+            RCLCPP_ERROR(nh->get_logger(),"not enough active sensors (%ld), giving up", active_sensors.size());
             return false;
         }
     }
-    ROS_INFO("%ld active sensors", active_sensors.size());
+    RCLCPP_INFO(nh->get_logger(),"%ld active sensors", active_sensors.size());
 
     elevation_measured.clear();
     azimuth_measured.clear();
@@ -1342,7 +1382,7 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
         str << "\t true " << elevation_truth.back() << "\t" << azimuth_truth.back() << endl
             << "\t measured " << elevation_measured.back() << "\t" << azimuth_measured.back() << endl;
     }
-    ROS_INFO_STREAM(str.str());
+    RCLCPP_INFO_STREAM(nh->get_logger(),str.str());
     numberOfSensors = elevation_measured.size();
 
     InYourGibbousPhase::InYourGibbousPhase estimator(elevation_measured.size());
@@ -1382,8 +1422,8 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
 //    }
 //    error = sqrt(error)/elevation_measured.size(); // mse
 
-    ROS_INFO_STREAM(
-            "calibration value estimation for lighthouse " << lighthouse + 1 << " terminated with error " << error
+    RCLCPP_INFO_STREAM(nh->get_logger(),
+            "calibration value estimation for lighthouse " << std::to_string(lighthouse + 1) << " terminated with error " << error
                                                            << endl
                                                            << "phase horizontal    "
                                                            << x[phase_horizontal]
@@ -1427,16 +1467,16 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
     calibration[lighthouse][VERTICAL].gibmag = x[gibmag_vertical];
     calibration[lighthouse][HORIZONTAL].gibmag = x[gibmag_horizontal];
 
-    string package_path = ros::package::getPath("darkroom");
+    string package_path = "";//ros::package::getPath("darkroom"); //TODO package path
     string calibration_result_path = package_path + "/params/lighthouse_calibration.yaml";
 
     return writeCalibrationConfig(calibration_result_path, lighthouse, calibration[lighthouse]);
 }
 
 bool LighthouseEstimator::estimateFactoryCalibrationEPNP(int lighthouse) {
-    ros::Rate rate(30);
+    rclcpp::Rate rate(30);
     Eigen::IOFormat fmt(4, 0, " ", ";\n", "", "", "[", "]");
-    ros::Time t0 = ros::Time::now();
+    rclcpp::Time t0 = nh->now();
     vector<double> elevations_measured, azimuths_measured, elevations_model, azimuths_model;
     double error;
     do {
@@ -1477,10 +1517,11 @@ bool LighthouseEstimator::estimateFactoryCalibrationEPNP(int lighthouse) {
                     RT_object2lighthouse_est_backup(2, 3),
                     -RT_object2lighthouse_est_backup(1, 3);
 
-            ROS_INFO_STREAM_THROTTLE(5, RT_object2lighthouse_est.format(fmt) << endl
+            auto clock = *nh->get_clock();
+        RCLCPP_INFO_STREAM_THROTTLE(nh->get_logger(), clock,5, RT_object2lighthouse_est.format(fmt) << endl
                                                                              << RT_object2lighthouse_true.format(fmt));
 
-            tf::Transform tf;
+            tf2::Transform tf;
             getTFtransform(RT_object2lighthouse_est, tf);
             string tf_name = name + "_" + (lighthouse ? "epnp2" : "epnp1");
             publishTF(tf, (lighthouse ? "lighthouse2" : "lighthouse1"), tf_name.c_str());
@@ -1498,7 +1539,8 @@ bool LighthouseEstimator::estimateFactoryCalibrationEPNP(int lighthouse) {
                 str << endl;
                 str << "'True reprojection error':"
                     << PnP.reprojection_error(R_true, t_true) << endl;
-                ROS_INFO_STREAM_THROTTLE(5, str.str());
+                auto clock = *nh->get_clock();
+        RCLCPP_INFO_STREAM_THROTTLE(nh->get_logger(), clock,5, str.str());
             }
 
             // using the pose from epnp we calculate the new lighthouse angles
@@ -1514,7 +1556,8 @@ bool LighthouseEstimator::estimateFactoryCalibrationEPNP(int lighthouse) {
                 double elevation = M_PI - atan2(sensor_pos_motor_vertical(1), sensor_pos_motor_vertical(2));
                 double azimuth = atan2(sensor_pos_motor_horizontal[1], sensor_pos_motor_horizontal[0]);
 
-                ROS_DEBUG_STREAM_THROTTLE(1, "measured sensor pos: " << sensor_pos.transpose() << "\t elevation "
+                auto clock = *nh->get_clock();
+                RCLCPP_DEBUG_STREAM_THROTTLE(nh->get_logger(), clock,1, "measured sensor pos: " << sensor_pos.transpose() << "\t elevation "
                                                                      << elevation << "\t azimuth " << azimuth);
 
 //                // apply our calibration model to get the lighthouse angles we expect
@@ -1555,7 +1598,7 @@ bool LighthouseEstimator::estimateFactoryCalibrationEPNP(int lighthouse) {
 //            int ret = lm->minimize(x);
 //            error = lm->fnorm;
 //
-//            ROS_INFO_STREAM(
+//            RCLCPP_INFO_STREAM(nh->get_logger(),
 //                    "calibration value estimation for lighthouse " << lighthouse + 1 << " terminated with error " << error
 //                                                                   << endl
 //                                                                   << "phase horizontal    "
@@ -1600,43 +1643,50 @@ bool LighthouseEstimator::estimateFactoryCalibrationEPNP(int lighthouse) {
 //            calibration[lighthouse][VERTICAL].gibmag = x[gibmag_vertical];
 
         } else {
-            ROS_ERROR_THROTTLE(5, "we need at least four sensors to be visible for this to work, "
+            auto clock = *nh->get_clock();
+        RCLCPP_ERROR_THROTTLE(nh->get_logger(), clock,5, "we need at least four sensors to be visible for this to work, "
                     "but there are only %ld sensors visible aborting", visible_sensors.size());
             error = 1;
         }
 
         rate.sleep();
-    } while (ros::Duration(ros::Time::now() - t0).toSec() < 100 && error > 0.00001);
+    } while (rclcpp::Duration(nh->now() - t0).seconds() < 100 && error > 0.00001);
 
-    ROS_INFO("calibration terminated with error %lf", error);
+    RCLCPP_INFO(nh->get_logger(),"calibration terminated with error %lf", error);
 }
 
 bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthouse) {
-    ros::Rate rate(1);
+
+    rclcpp::Rate rate(1);
     Eigen::IOFormat fmt(4, 0, " ", ";\n", "", "", "[", "]");
     vector<vector<double>> elevations_measured, azimuths_measured;
     vector<Matrix4d> object_pose_truth;
     Matrix4d lighthousePose[2], world2lighthouse;
-
+    auto clock = *nh->get_clock();
     while (!getLighthouseTransform("world", lighthouse, world2lighthouse))
-        ROS_INFO_THROTTLE(1, "waiting for transform to lighthouse");
-    while (!getLighthouseTransform("world", LIGHTHOUSE_A, lighthousePose[LIGHTHOUSE_A]))
-        ROS_INFO_THROTTLE(1, "waiting for transform to lighthouse 1");
-    while (!getLighthouseTransform("world", LIGHTHOUSE_B, lighthousePose[LIGHTHOUSE_B]))
-        ROS_INFO_THROTTLE(1, "waiting for transform to lighthouse 2");
 
-    ROS_INFO_STREAM_THROTTLE(1, "lighthouse poses: " << endl << lighthousePose[LIGHTHOUSE_A].format(fmt) << endl
+        RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1, "waiting for transform to lighthouse");
+    while (!getLighthouseTransform("world", LIGHTHOUSE_A, lighthousePose[LIGHTHOUSE_A]))
+
+        RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1, "waiting for transform to lighthouse 1");
+    while (!getLighthouseTransform("world", LIGHTHOUSE_B, lighthousePose[LIGHTHOUSE_B]))
+
+        RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1, "waiting for transform to lighthouse 2");
+
+    
+        RCLCPP_INFO_STREAM_THROTTLE(nh->get_logger(), clock,1, "lighthouse poses: " << endl << lighthousePose[LIGHTHOUSE_A].format(fmt) << endl
                                                      << lighthousePose[LIGHTHOUSE_B].format(fmt) << endl <<
                                                      "world to lighthouse: " << endl << world2lighthouse);
     vector<vector<Vector4d>> rel_positions;
     vector<vector<int>> lighthouse_ids;
 
-    int measurement_time = 5;
-    if (nh->hasParam("measurement_time"))
-        nh->getParam("measurement_time", measurement_time);
+//    int measurement_time = 5;
+    
+//    if (parameters_client->has_parameter("measurement_time"))
+        auto measurement_time = parameters_client->get_parameter("measurement_time", 5);
 
-    ROS_INFO("recording lighthouse angles for %d seconds", measurement_time);
-    ros::Time t0 = ros::Time::now();
+    RCLCPP_INFO(nh->get_logger(),"recording lighthouse angles for %d seconds", measurement_time);
+    rclcpp::Time t0 = nh->now();
     int iter = 0;
     do {
         Matrix4d object_pose;
@@ -1650,7 +1700,8 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
         getVisibleCalibratedSensors(lighthouse, visible_sensors);
 
         if (visible_sensors.size() < 6) {
-            ROS_ERROR_THROTTLE(1, "we need at least six visible sensors for this to work, "
+            auto clock = *nh->get_clock();
+        RCLCPP_ERROR_THROTTLE(nh->get_logger(), clock,1, "we need at least six visible sensors for this to work, "
                     "but there are only %ld sensors visible aborting",
                                visible_sensors.size());
             continue;
@@ -1674,9 +1725,9 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
         lighthouse_ids.push_back(lighthouse_id);
 
         rate.sleep();
-    } while (ros::Duration(ros::Time::now() - t0).toSec() < measurement_time);
+    } while (rclcpp::Duration(nh->now() - t0).seconds() < measurement_time);
 
-    ROS_INFO("recorded %ld frames, starting estimation of calibration values", azimuths_measured.size());
+    RCLCPP_INFO(nh->get_logger(),"recorded %ld frames, starting estimation of calibration values", azimuths_measured.size());
     double error;
 
     int iteration = 0, max_iterations = 10;
@@ -1711,7 +1762,8 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
 //            lm->parameters.maxfev = MAX_ITERATIONS;
 //            lm->parameters.xtol = 1e-10;
 //            int ret = lm->minimize(x);
-//            ROS_INFO_THROTTLE(1,
+//            auto clock = *nh->get_clock();
+//        RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1,
 //                              "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
 //                              elevations_measured[frame].size(), lm->iter, lm->fnorm);
 //            error += lm->fnorm;
@@ -1724,7 +1776,7 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
 //            Vector3d pos = RT_object.block(0,3,3,1);
 //            publishSphere(pos,"world","estimated trajectory",frame+77777,COLOR(1,0,0,0.2));
 //
-//            tf::Transform tf;
+//            tf2::Transform tf;
 //            getTFtransform(RT_object, tf);
 //            publishTF(tf, "world", "object_multi_lighthouse");
 //            getTFtransform(object_pose_truth[frame], tf);
@@ -1765,7 +1817,8 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
             lm->parameters.maxfev = MAX_ITERATIONS;
             lm->parameters.xtol = 1e-10;
             int ret = lm->minimize(pose);
-//            ROS_INFO_THROTTLE(1,
+//            auto clock = *nh->get_clock();
+//        RCLCPP_INFO_THROTTLE(nh->get_logger(), clock,1,
 //                              "object pose estimation using %ld sensors, finished after %ld iterations, with an error of %f",
 //                              elevations_measured[frame].size(), lm->iter, lm->fnorm);
 
@@ -1775,7 +1828,7 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
             Vector3d pos = RT_object.block(0, 3, 3, 1);
             publishSphere(pos, "world", "estimated trajectory", frame + 77777, COLOR(1, 0, 0, 0.2));
 
-            tf::Transform tf;
+            tf2::Transform tf;
             getTFtransform(RT_object, tf);
             publishTF(tf, "world", "object_multi_lighthouse");
             getTFtransform(object_pose_truth[frame], tf);
@@ -1799,7 +1852,8 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
 //                rayFromLighthouseAngles(elevation,azimuth,ray);
 //                publishRay(pos,ray,(lighthouse?"ligthhouse2":"lighthouse1"),"rays",ray_counter++,COLOR(0,0,1,1));
 
-//                ROS_INFO_STREAM_THROTTLE(1, "measured sensor pos: " << sensor_pos.transpose() << "\t elevation "
+//                auto clock = *nh->get_clock();
+//        RCLCPP_INFO_STREAM_THROTTLE(nh->get_logger(), clock,1, "measured sensor pos: " << sensor_pos.transpose() << "\t elevation "
 //                                                                     << elevation << "\t azimuth " << azimuth);
 
 //                applyCalibrationData(lighthouse,elevation,azimuth);
@@ -1809,7 +1863,7 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
             }
             elevations_model.push_back(elevation_model);
             azimuths_model.push_back(azimuth_model);
-//            ros::Duration d(1);
+//            rclcpp::Duration d(1);
 //            d.sleep();
         }
 
@@ -1840,7 +1894,7 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
         int ret2 = lm2->minimize(x);
         error = lm2->fnorm;
 
-        ROS_INFO_STREAM(
+        RCLCPP_INFO_STREAM(nh->get_logger(),
                 "calibration value estimation for lighthouse " << lighthouse + 1 << " terminated with error " << error
                                                                << endl
                                                                << "phase horizontal    "
@@ -1885,26 +1939,27 @@ bool LighthouseEstimator::estimateFactoryCalibrationMultiLighthouse(int lighthou
         calibration[lighthouse][VERTICAL].gibmag = x[gibmag_vertical];
 
         iteration++;
-        if (nh->hasParam("max_iterations"))
-            nh->getParam("max_iterations", max_iterations);
+        
+        if (parameters_client->has_parameter("max_iterations"))
+            max_iterations = parameters_client->get_parameter("max_iterations", 10);
     } while (error > 0.00001 && iteration < max_iterations);
-    ROS_INFO("calibration terminated with error %lf", error);
+    RCLCPP_INFO(nh->get_logger(),"calibration terminated with error %lf", error);
 }
 
 bool LighthouseEstimator::estimateFactoryCalibration2(int lighthouse) {
     stringstream str;
     // get the transform from object to lighthouse
     Matrix4d RT_object2lighthouse;
-    ros::Time t0 = ros::Time::now();
-    ros::Rate rate(1);
+    rclcpp::Time t0 = nh->now();
+    rclcpp::Rate rate(1);
     int trajectory_points = 0;
     relative_positions_trajectory.clear();
     angles_measured_trajectory.clear();
     vector<Vector3d> absolute_position;
     double measurement_time = 5;
-    if (nh->hasParam("measurement_time"))
-        nh->getParam("measurement_time", measurement_time);
-    while ((ros::Duration(ros::Time::now() - t0).toSec() < measurement_time)) {
+    if (parameters_client->has_parameter("measurement_time"))
+        parameters_client->get_parameter("measurement_time", measurement_time);
+    while ((rclcpp::Duration(nh->now() - t0).seconds() < measurement_time)) {
         // lets see who is active
         vector<int> active_sensors;
         vector<Vector2d> angles_measured;
@@ -1941,7 +1996,7 @@ bool LighthouseEstimator::estimateFactoryCalibration2(int lighthouse) {
         }
     }
 
-    ROS_INFO_STREAM(s.str());
+    RCLCPP_INFO_STREAM(nh->get_logger(),s.str());
 
     real_1d_array x;
     x.setlength(trajectory_points * 2);
@@ -1981,28 +2036,28 @@ bool LighthouseEstimator::estimateFactoryCalibration2(int lighthouse) {
 
     switch (rep.terminationtype) {
         case -7 :
-            ROS_WARN("derivative correctness check failed");
+            RCLCPP_WARN(nh->get_logger(),"derivative correctness check failed");
             break;
         case -3 :
-            ROS_WARN("constraints are inconsistent");
+            RCLCPP_WARN(nh->get_logger(),"constraints are inconsistent");
             break;
         case 1:
-            ROS_WARN("relative function improvement is no more than EpsF.");
+            RCLCPP_WARN(nh->get_logger(),"relative function improvement is no more than EpsF.");
             break;
         case 2:
-            ROS_WARN("relative step is no more than EpsX.");
+            RCLCPP_WARN(nh->get_logger(),"relative step is no more than EpsX.");
             break;
         case 4:
-            ROS_WARN("gradient is no more than EpsG.");
+            RCLCPP_WARN(nh->get_logger(),"gradient is no more than EpsG.");
             break;
         case 5:
-            ROS_WARN("MaxIts steps was taken ");
+            RCLCPP_WARN(nh->get_logger(),"MaxIts steps was taken ");
             break;
         case 7:
-            ROS_WARN("stopping conditions are too stringent, further improvement is impossible");
+            RCLCPP_WARN(nh->get_logger(),"stopping conditions are too stringent, further improvement is impossible");
             break;
         case 8:
-            ROS_WARN("terminated by user who called minlmrequesttermination().");
+            RCLCPP_WARN(nh->get_logger(),"terminated by user who called minlmrequesttermination().");
             break;
     }
 
@@ -2019,10 +2074,10 @@ bool LighthouseEstimator::estimateFactoryCalibration2(int lighthouse) {
         s << "estimate: " << pos.format(fmt) << "  true: " << absolute_position[i].format(fmt) << endl;
         error += (absolute_position[i] - pos).norm();
     }
-    ROS_INFO_STREAM(s.str());
-    ROS_INFO("done with error %lf after %d iterations", error, (int) rep.iterationscount);
+    RCLCPP_INFO_STREAM(nh->get_logger(),s.str());
+    RCLCPP_INFO(nh->get_logger(),"done with error %lf after %d iterations", error, (int) rep.iterationscount);
 //
-//    ROS_INFO_STREAM("calibration value estimation for lighthouse " << lighthouse + 1 << " terminated with error "
+//    RCLCPP_INFO_STREAM(nh->get_logger(),"calibration value estimation for lighthouse " << lighthouse + 1 << " terminated with error "
 //                                                                   << lm->fnorm << " after " << lm->iter << " iterations "
 //                                                                   << endl
 //                                                                   << "phase horizontal    "
@@ -2107,7 +2162,7 @@ int LighthouseEstimator::getMessageID(int type, int sensor, bool lighthouse) {
     }
 }
 
-void LighthouseEstimator::receiveOOTXData(const roboy_middleware_msgs::DarkRoomOOTX::ConstPtr &msg) {
+void LighthouseEstimator::receiveOOTXData(const roboy_middleware_msgs::msg::DarkRoomOOTX::SharedPtr msg) {
     ootx[msg->lighthouse].fw_version = msg->fw_version;
     ootx[msg->lighthouse].ID = msg->id;
     ootx[msg->lighthouse].fcal_0_phase = msg->fcal_0_phase;

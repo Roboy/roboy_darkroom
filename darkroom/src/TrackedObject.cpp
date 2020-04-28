@@ -3,30 +3,52 @@
 int LighthouseEstimator::trackedObjectInstance = 0;
 bool TrackedObject::m_switch = false;
 
-TrackedObject::TrackedObject(ros::NodeHandlePtr nh):RobotLocalization::RosEkf(*nh,*nh), nh(nh) {
-    darkroom_statistics_pub = nh->advertise<roboy_middleware_msgs::DarkRoomStatistics>(
+TrackedObject::TrackedObject(rclcpp::Node::SharedPtr nh):robot_localization::RosEkf(nh->get_node_options()), nh(nh) {
+
+    clock = nh->get_clock();
+    tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(nh);
+    parameters_client = std::make_shared<rclcpp::SyncParametersClient>(nh);
+
+    while (!parameters_client->wait_for_service(1s)) {
+        if (!rclcpp::ok()) {
+            RCLCPP_ERROR(nh->get_logger(), "Interrupted while waiting for the service. Exiting.");
+            rclcpp::shutdown();
+        }
+        RCLCPP_INFO(nh->get_logger(), "parameter sync service not available, waiting again...");
+    }
+
+    darkroom_statistics_pub = nh->create_publisher<roboy_middleware_msgs::msg::DarkRoomStatistics>(
             "/roboy/middleware/DarkRoom/Statistics", 1);
 
     receiveData = true;
-    sensor_sub = nh->subscribe("/roboy/middleware/DarkRoom/sensors", 2, &TrackedObject::receiveSensorDataRoboy, this);
+    sensor_sub = nh->create_subscription<roboy_middleware_msgs::msg::DarkRoomSensor>("/roboy/middleware/DarkRoom/sensors",1,bind(&TrackedObject::receiveSensorDataRoboy, this, placeholders::_1));
+//    sensor_sub =
 
-    spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(2));
-    spinner->start();
+//    nh->create_subscription("/roboy/middleware/DarkRoom/sensors", 1, bind(&TrackedObject::receiveSensorDataRoboy, this, placeholders::_1));
 
-    string package_path = ros::package::getPath("darkroom");
+    rclcpp::executors::MultiThreadedExecutor executor;
+    executor.add_node(nh);
+    executor.spin();
+//    spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(2));
+//    spinner->start();
 
+    string package_path = "";//ros::package::getPath("darkroom");
+    //TODO relocate lighthouse_calibration.yaml
     string calibration_path = package_path + "/params/lighthouse_calibration.yaml";
     readCalibrationConfig(calibration_path,LIGHTHOUSE_A,calibration[LIGHTHOUSE_A]);
     readCalibrationConfig(calibration_path,LIGHTHOUSE_B,calibration[LIGHTHOUSE_B]);
 
+
     path = package_path+"/calibrated_objects";
 
-    pose.setOrigin(tf::Vector3(0,0,0));
-    pose.setRotation(tf::Quaternion(0,0,0,1));
+    pose.setOrigin(tf2::Vector3(0,0,0));
+    pose.setRotation(tf2::Quaternion(0,0,0,1));
 
-    string load_yaml_command = "rosparam load "+package_path+"/params/ekf_parameters.yaml " + nh->getNamespace();
-    ROS_DEBUG_STREAM("loading yaml file using this command: " << load_yaml_command);
-    system(load_yaml_command.c_str());
+    setParametersFromYaml(nh, "ekf_parameters.yaml");
+    //TODO fix path
+//    string load_yaml_command = "rosparam load "+package_path+"/params/ekf_parameters.yaml " + nh->getNamespace();
+//    ROS_DEBUG_STREAM("loading yaml file using this command: " << load_yaml_command);
+//    system(load_yaml_command.c_str());
 
     trackedObjectInstance++;
 }
@@ -38,7 +60,7 @@ TrackedObject::~TrackedObject() {
 }
 
 bool TrackedObject::init(const char* configFile){
-    ROS_INFO_STREAM("reading config of  " << configFile);
+    RCLCPP_INFO_STREAM(nh->get_logger(),"reading config of  " << configFile);
     if(!readConfig(configFile, objectID, name, mesh, calibrated_sensors, sensors, calibration_angles))
         return false;
 
@@ -48,22 +70,44 @@ bool TrackedObject::init(const char* configFile){
         publishSphere(rel_pos,"world","relative_locations",rand(),COLOR(0,1,0,1),0.01,10);
     }
 
-    imu.setOrigin(tf::Vector3(0,0,0));
-    imu.setRotation(tf::Quaternion(0,0,0,1));
+    imu.setOrigin(tf2::Vector3(0,0,0));
+    imu.setRotation(tf2::Quaternion(0,0,0,1));
 
+    vector<float> initial_state = { 0.0,  0.0,  0.0,
+                                    0.0,  0.0,  0.0,
+                                    0.0,  0.0,  0.0,
+                                    0.0,  0.0,  0.0,
+                                    0.0,  0.0,  0.0
+    };
+
+    auto set_parameters_results = parameters_client->set_parameters(
+            {
+                rclcpp::Parameter("base_link_frame", name),
+                rclcpp::Parameter("imu0", imu_topic_name),
+                rclcpp::Parameter("pose0", pose_topic_name),
+                rclcpp::Parameter("print_diagnostics", true),
+                rclcpp::Parameter("initial_state", initial_state)
+
+            }
+    );
+    for (auto & result : set_parameters_results) {
+        if (!result.successful) {
+            RCLCPP_ERROR(nh->get_logger(), "Failed to set parameter: %s", result.reason.c_str());
+        }
+    }
     // some object specific parameters are set here:
 //    nh->setParam("map_frame", "odom");
 //    nh->setParam("world_frame", "world");
-    nh->setParam("base_link_frame", name);
+    //nh->setParam("base_link_frame", name);
 //    nh->setParam("odom_frame", "odom");
 //    std::replace(name.begin(),name.end(),"-","_");
     imu_topic_name = "roboy/middleware/"+name+"/imu";
     pose_topic_name = "roboy/middleware/"+name+"/pose";
 
-    nh->setParam("imu0", imu_topic_name);
-    nh->setParam("pose0", pose_topic_name);
+    //nh->setParam("imu0", imu_topic_name);
+    //nh->setParam("pose0", pose_topic_name);
 //    nh->setParam("publish_tf", true);
-    nh->setParam("print_diagnostics", true);
+    //nh->setParam("print_diagnostics", true);
 
 //    vector<float> process_noise_covariance = {
 //            0.05, 0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
@@ -107,13 +151,7 @@ bool TrackedObject::init(const char* configFile){
 //    nh->setParam("pose0_differential", false);
 //    nh->setParam("pose0_relative", true);
 //
-    vector<float> initial_state = { 0.0,  0.0,  0.0,
-                                    0.0,  0.0,  0.0,
-                                    0.0,  0.0,  0.0,
-                                    0.0,  0.0,  0.0,
-                                    0.0,  0.0,  0.0
-    };
-    nh->setParam("initial_state", initial_state);
+
 //    nh->setParam("publish_tf", true);
 //    nh->setParam("print_diagnostics", true);
 //    // start extended kalman filter
@@ -134,49 +172,49 @@ void TrackedObject::shutDown(){
     rays = false;
     if (sensor_thread != nullptr) {
         if (sensor_thread->joinable()) {
-            ROS_INFO("Waiting for sensor thread to terminate");
+            RCLCPP_INFO(nh->get_logger(),"Waiting for sensor thread to terminate");
             sensor_thread->join();
         }
     }
     if (tracking_thread != nullptr) {
         if (tracking_thread->joinable()) {
-            ROS_INFO("Waiting for tracking thread to terminate");
+            RCLCPP_INFO(nh->get_logger(),"Waiting for tracking thread to terminate");
             tracking_thread->join();
         }
     }
     if (rays_thread != nullptr) {
         if (rays_thread->joinable()) {
-            ROS_INFO("Waiting for rays thread to terminate");
+            RCLCPP_INFO(nh->get_logger(),"Waiting for rays thread to terminate");
             rays_thread->join();
         }
     }
     if (calibrate_thread != nullptr) {
         if (calibrate_thread->joinable()) {
-            ROS_INFO("Waiting for calibration thread to terminate");
+            RCLCPP_INFO(nh->get_logger(),"Waiting for calibration thread to terminate");
             calibrate_thread->join();
         }
     }
     if (poseestimation_thread != nullptr) {
         if (poseestimation_thread->joinable()) {
-            ROS_INFO("Waiting for pose estimation thread to terminate");
+            RCLCPP_INFO(nh->get_logger(),"Waiting for pose estimation thread to terminate");
             poseestimation_thread->join();
         }
     }
     if (relative_pose_epnp_thread != nullptr) {
         if (relative_pose_epnp_thread->joinable()) {
-            ROS_INFO("Waiting for pose estimation epnp thread to terminate");
+            RCLCPP_INFO(nh->get_logger(),"Waiting for pose estimation epnp thread to terminate");
             relative_pose_epnp_thread->join();
         }
     }
     if (object_pose_estimation_multi_lighthouse_thread != nullptr) {
         if (object_pose_estimation_multi_lighthouse_thread->joinable()) {
-            ROS_INFO("Waiting for pose estimation multi lighthouse thread to terminate");
+            RCLCPP_INFO(nh->get_logger(),"Waiting for pose estimation multi lighthouse thread to terminate");
             object_pose_estimation_multi_lighthouse_thread->join();
         }
     }
     if (publish_imu_transform != nullptr) {
         if (publish_imu_transform->joinable()) {
-            ROS_INFO("Waiting for imu publish thread to terminate");
+            RCLCPP_INFO(nh->get_logger(),"Waiting for imu publish thread to terminate");
             publish_imu_transform->join();
         }
     }
@@ -195,7 +233,7 @@ void TrackedObject::connectObject(const char* broadcastIP, int port){
 }
 
 void TrackedObject::switchLighthouses(bool switchID) {
-    ROS_INFO_STREAM("switching lighthouses " << switchID);
+    RCLCPP_INFO_STREAM(nh->get_logger(),"switching lighthouses " << switchID);
     m_switch = switchID;
     for (auto &sensor : sensors) {
         sensor.second.switchLighthouses(switchID);
@@ -208,29 +246,31 @@ bool TrackedObject::record(bool start) {
         sprintf(str, "record_%s.log", name.c_str());
         file.open(str);
         if (file.is_open()) {
-            ROS_INFO("start recording");
+            RCLCPP_INFO(nh->get_logger(),"start recording");
             file << "timestamp, \tid, \tlighthouse, \trotor, \tsweepDuration[ticks], \tangle[rad]\n";
             recording = true;
             return true;
         } else {
-            ROS_ERROR("could not open file");
+            RCLCPP_ERROR(nh->get_logger(),"could not open file");
             return false;
         }
     } else {
-        ROS_INFO("saving to file recording");
+        RCLCPP_INFO(nh->get_logger(),"saving to file recording");
         recording = false;
         file.close();
         return true;
     }
 }
 
-void TrackedObject::receiveSensorDataRoboy(const roboy_middleware_msgs::DarkRoom::ConstPtr &msg) {
+void TrackedObject::receiveSensorDataRoboy(const roboy_middleware_msgs::msg::DarkRoom::SharedPtr msg) {
     if(msg->object_id != objectID){
         // only use messages for me
-        ROS_DEBUG_STREAM_THROTTLE(1,"receiving sensor data, but it's not for me " << objectID << " " << msg->object_id);
+        rclcpp::Clock steady_clock(RCL_STEADY_TIME);
+        RCLCPP_DEBUG_STREAM_THROTTLE(nh->get_logger(),steady_clock, 1,"receiving sensor data, but it's not for me " << objectID << " " << msg->object_id);
         return;
     }
-    ROS_WARN_THROTTLE(10, "receiving sensor data");
+    rclcpp::Clock steady_clock(RCL_STEADY_TIME);
+    RCLCPP_WARN_THROTTLE(nh->get_logger(), steady_clock,10, "receiving sensor data");
     uint id = 0;
 
     static int message_counter = 0;
@@ -266,7 +306,7 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_middleware_msgs::DarkRoom
 
     if(message_counter++%50==0){ // publish statistics from time to time
         {
-            roboy_middleware_msgs::DarkRoomStatistics statistics_msg;
+            roboy_middleware_msgs::msg::DarkRoomStatistics statistics_msg;
             statistics_msg.object_name = name;
             statistics_msg.lighthouse = LIGHTHOUSE_A;
             for (uint i = 0; i < msg->sensor_value.size(); i++) {
@@ -275,10 +315,10 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_middleware_msgs::DarkRoom
                 statistics_msg.update_frequency_horizontal.push_back(horizontal);
                 statistics_msg.update_frequency_vertical.push_back(vertical);
             }
-            darkroom_statistics_pub.publish(statistics_msg);
+            darkroom_statistics_pub->publish(statistics_msg);
         }
         {
-            roboy_middleware_msgs::DarkRoomStatistics statistics_msg;
+            roboy_middleware_msgs::msg::DarkRoomStatistics statistics_msg;
             statistics_msg.object_name = name;
             statistics_msg.lighthouse = LIGHTHOUSE_B;
             for (uint i = 0; i < msg->sensor_value.size(); i++) {
@@ -287,7 +327,7 @@ void TrackedObject::receiveSensorDataRoboy(const roboy_middleware_msgs::DarkRoom
                 statistics_msg.update_frequency_horizontal.push_back(horizontal);
                 statistics_msg.update_frequency_vertical.push_back(vertical);
             }
-            darkroom_statistics_pub.publish(statistics_msg);
+            darkroom_statistics_pub->publish(statistics_msg);
         }
     }
 
@@ -304,8 +344,9 @@ void TrackedObject::receiveSensorData(){
         if(socket->receiveSensorData(id,lighthouse,rotor,sweepDuration)){
             for(uint i=0; i<id.size(); i++) {
                 double angle = ticksToRadians(sweepDuration[i]);
-                ROS_INFO_THROTTLE(10, "id: %d lighthouse: %d rotor: %d sweepDuration: %d angle: %.3f", id[i], lighthouse[i],
-                          rotor[i], sweepDuration[i],ticksToDegrees(sweepDuration[i]));
+                //TODO deal with throttle and clock
+                //RCLCPP_INFO_THROTTLE(nh->get_logger(), clock, 10, "id: %d lighthouse: %d rotor: %d sweepDuration: %d angle: %.3f", id[i], lighthouse[i],
+                //          rotor[i], sweepDuration[i],ticksToDegrees(sweepDuration[i]));
                 sensors[id[i]].update(lighthouse[i], rotor[i], angle);
                 if (recording) {
                     chrono::high_resolution_clock::time_point t1 = chrono::high_resolution_clock::now();
@@ -319,7 +360,7 @@ void TrackedObject::receiveSensorData(){
 
             if(message_counter++%50==0){ // publish statistics from time to time
                 {
-                    roboy_middleware_msgs::DarkRoomStatistics statistics_msg;
+                    roboy_middleware_msgs::msg::DarkRoomStatistics statistics_msg;
                     statistics_msg.object_name = name;
                     statistics_msg.lighthouse = LIGHTHOUSE_A;
                     for (uint32_t i:id) {
@@ -328,10 +369,10 @@ void TrackedObject::receiveSensorData(){
                         statistics_msg.update_frequency_horizontal.push_back(horizontal);
                         statistics_msg.update_frequency_vertical.push_back(vertical);
                     }
-                    darkroom_statistics_pub.publish(statistics_msg);
+                    darkroom_statistics_pub->publish(statistics_msg);
                 }
                 {
-                    roboy_middleware_msgs::DarkRoomStatistics statistics_msg;
+                    roboy_middleware_msgs::msg::DarkRoomStatistics statistics_msg;
                     statistics_msg.object_name = name;
                     statistics_msg.lighthouse = LIGHTHOUSE_B;
                     for (uint32_t i:id) {
@@ -340,7 +381,7 @@ void TrackedObject::receiveSensorData(){
                         statistics_msg.update_frequency_horizontal.push_back(horizontal);
                         statistics_msg.update_frequency_vertical.push_back(vertical);
                     }
-                    darkroom_statistics_pub.publish(statistics_msg);
+                    darkroom_statistics_pub->publish(statistics_msg);
                 }
             }
         }
@@ -348,10 +389,15 @@ void TrackedObject::receiveSensorData(){
 }
 
 void TrackedObject::publishImuFrame(){
-    ros::Rate rate(30);
+    rclcpp::Rate rate(30);
     while (publish_transform) {
+        geometry_msgs::msg::TransformStamped tmp_tf_stamped;
+        tmp_tf_stamped.header.frame_id = "world";
+        tmp_tf_stamped.child_frame_id = "odom";
+        //TODO set correct timestamp
+        //tmp_tf_stamped.header.stamp = tf2::get_now(); 
 //        lock_guard<mutex> lock(mux);
-        tf_broadcaster.sendTransform(tf::StampedTransform(imu, ros::Time::now(), "world", "odom"));
+        tf_broadcaster->sendTransform(tmp_tf_stamped);
         rate.sleep();
     }
 }

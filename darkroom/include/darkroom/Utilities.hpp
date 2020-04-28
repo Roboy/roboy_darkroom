@@ -40,6 +40,10 @@
 #include "yaml-cpp/yaml.h"
 #include <sys/stat.h>
 #include <boost/filesystem.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include "rclcpp/parameter_map.hpp"
+#include "rclcpp/node_interfaces/node_parameters.hpp"
+#include <rcl_yaml_param_parser/parser.h>
 
 using namespace std;
 namespace fs = boost::filesystem;
@@ -68,7 +72,7 @@ public:
      * @param filepath to
      * @return success
      */
-    bool readConfig(fs::path filepath, string &objectID, string &name, fs::path &mesh,
+    static bool readConfig(fs::path filepath, string &objectID, string &name, fs::path &mesh,
                            vector<int> &calibrated_sensors, map<int, Sensor> &sensors,
                     map<int,vector<double>> &calibrationAngles);
 
@@ -96,7 +100,7 @@ public:
      * @param calib will be filled with the data
      * @return success
      */
-    bool readCalibrationConfig(fs::path filepath, int lighthouse, LighthouseCalibration *calib);
+    static bool readCalibrationConfig(fs::path filepath, int lighthouse, LighthouseCalibration *calib);
 
     /**
      * Checks if the provided directory exists and is actually a directory
@@ -109,5 +113,7 @@ public:
      * @param file_path
      * @return is file
      */
-    bool file_exists(string file_path);
+    static bool file_exists(string file_path);
+
+    static bool setParametersFromYaml(rclcpp::Node::SharedPtr, string yaml_path);
 };
