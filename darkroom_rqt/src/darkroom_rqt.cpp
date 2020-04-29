@@ -23,6 +23,7 @@ RoboyDarkRoom::RoboyDarkRoom()
     nh = rclcpp::Node::make_shared("darkroom_rqt");
 
     tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(nh);
+    RCLCPP_INFO(nh->get_logger(), "Darkroom constructor");
 }
 
 RoboyDarkRoom::~RoboyDarkRoom() {
@@ -281,12 +282,14 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     ootx_sub = nh->create_subscription<roboy_middleware_msgs::msg::DarkRoomOOTX>("/roboy/middleware/DarkRoom/ootx", 1, bind(&RoboyDarkRoom::receiveOOTXData, this, placeholders::_1));
 //    aruco_pose_sub = nh->subscribe("/roboy/middleware/ArucoPose", 1, &RoboyDarkRoom::receiveArucoPose, this);
 
+    RCLCPP_INFO(nh->get_logger(), "starting executor");
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(nh);
-    executor.spin();
+//    executor.spin();
 //    spinner = boost::shared_ptr<rclcpp::AsyncSpinner>(new rclcpp::AsyncSpinner(1));
 //    spinner->start();
 
+    RCLCPP_INFO(nh->get_logger(), "Moving on");
     resetLighthousePoses();
 
     publish_transform = true;
