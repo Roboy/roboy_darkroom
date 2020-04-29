@@ -14,6 +14,14 @@ map<string, QSlider *> RoboyDarkRoom::slider;
 RoboyDarkRoom::RoboyDarkRoom()
         : rqt_gui_cpp::Plugin(), widget_(0) {
     setObjectName("RoboyDarkRoom");
+    if (!rclcpp::is_initialized()) {
+        int argc = 0;
+        char **argv = NULL;
+        rclcpp::init(argc, argv); //, node_name, rclcpp::init_options::NoSigintHandler);
+    }
+
+    nh = rclcpp::Node::make_shared("darkroom_rqt");
+
     tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(nh);
 }
 
@@ -263,13 +271,6 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     QObject::connect(this, SIGNAL(newData()), this, SLOT(plotData()));
     QObject::connect(this, SIGNAL(newStatisticsData()), this, SLOT(plotStatisticsData()));
 
-    if (!rclcpp::is_initialized()) {
-        int argc = 0;
-        char **argv = NULL;
-        rclcpp::init(argc, argv); //, node_name, rclcpp::init_options::NoSigintHandler);
-    }
-
-    nh = rclcpp::Node::make_shared("darkroom_qt");
 
     pose_correction_sub = nh->create_subscription<roboy_middleware_msgs::msg::LighthousePoseCorrection>
             ("/roboy/middleware/DarkRoom/LighthousePoseCorrection", 1,
@@ -1902,7 +1903,8 @@ void RoboyDarkRoom::resetPose(){
 }
 
 //#if ROS_VERSION_MINOR == 14 // ros melodic
-    PLUGINLIB_EXPORT_CLASS(RoboyDarkRoom, qt_gui_cpp::Plugin)
+//PLUGINLIB_DECLARE_CLASS(roboy_darkroom, RoboyDarkRoom, RoboyDarkRoom, rqt_gui_cpp::Plugin)
+PLUGINLIB_EXPORT_CLASS(RoboyDarkRoom, rqt_gui_cpp::Plugin)
 //#else // earlier
 //    PLUGINLIB_DECLARE_CLASS(roboy_darkroom, RoboyDarkRoom, RoboyDarkRoom, rqt_gui_cpp::Plugin)
 //#endif

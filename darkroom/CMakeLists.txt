@@ -3,8 +3,8 @@ project(darkroom)
 
 set(CMAKE_CXX_STANDARD 14)
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
-
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -fpic")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")
 SET(CMAKE_BUILD_TYPE Debug)
 
 #==============================================================================
@@ -23,8 +23,9 @@ find_package(robot_localization REQUIRED COMPONENTS rl_lib)
 find_package(xmlrpcpp REQUIRED)
 #find_package(pcl_ros REQUIRED)
 find_package(epnp REQUIRED)
-
-#
+find_package(Boost REQUIRED COMPONENTS thread)
+find_package(rcl_yaml_param_parser REQUIRED)
+		#
 #find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation tf tf_conversions visualization_msgs
 #		roboy_middleware_msgs common_utilities robot_localization xmlrpcpp pcl_ros epnp)
 
@@ -35,6 +36,7 @@ find_package(Eigen3)
 include_directories("${Eigen3_INCLUDE_DIRS}")
 
 # yaml-cpp
+find_package(yaml_cpp_vendor REQUIRED)
 find_package( yaml-cpp REQUIRED yaml-cpp)
 include_directories(${yaml-cpp_INCLUDE_DIRS})
 
@@ -73,14 +75,15 @@ add_library( PoseEstimatorMultiLighthouse src/PoseEstimatorMultiLighthouse.cpp )
 
 
 
-add_library( Transform src/Transform.cpp )
+add_library( Transform SHARED src/Transform.cpp )
 ament_target_dependencies( Transform  rclcpp)
 
 add_library( Triangulate src/Triangulation.cpp )
 ament_target_dependencies( Triangulate rclcpp )
 
 add_library( Utilities src/Utilities.cpp )
-ament_target_dependencies( Utilities rclcpp)
+target_link_libraries(Utilities   ${rcl_yaml_param_parser_LIBRARIES})
+ament_target_dependencies( Utilities rclcpp yaml_cpp_vendor)
 
 #add_library( LighthouseSimulator src/LighthouseSimulator.cpp )
 ##add_dependencies(LighthouseSimulator roboy_middleware_msgs_gencpp )
@@ -89,20 +92,20 @@ ament_target_dependencies( Utilities rclcpp)
 #
 add_library( LighthouseEstimator src/LighthouseEstimator.cpp )
 #add_dependencies(LighthouseEstimator roboy_middleware_msgs_gencpp )
-target_link_libraries( LighthouseEstimator PoseEstimatorSensorCloud Transform Triangulate
-		InYourGibbousPhase InYourGibbousPhase3 InYourGibbousPhase4 PoseEstimatorMultiLighthouse ${ALGLIB_LIBRARIES} epnp rviz_vizualization)
-ament_target_dependencies( LighthouseEstimator rclcpp roboy_middleware_msgs epnp common_utilities)
+target_link_libraries( LighthouseEstimator  PoseEstimatorSensorCloud Transform Triangulate
+		InYourGibbousPhase InYourGibbousPhase3 InYourGibbousPhase4 PoseEstimatorMultiLighthouse ${ALGLIB_LIBRARIES} ${epnp_LIBRARIES} ${common_utilities_LIBRARIES})
+ament_target_dependencies( LighthouseEstimator rclcpp yaml_cpp_vendor roboy_middleware_msgs epnp common_utilities)
 
-add_library( TrackedObject src/TrackedObject.cpp )
+add_library( TrackedObject SHARED src/TrackedObject.cpp )
 #add_dependencies(TrackedObject rl_lib )
-target_link_libraries( TrackedObject ${yaml-cpp_LIBRARIES} ${OpenCV_LIBS} rviz_visualization rl_lib UDPSocket Sensor LighthouseEstimator Utilities ${robot_localization_LIBRARIES} )
-ament_target_dependencies( TrackedObject rclcpp  robot_localization common_utilities)
+target_link_libraries( TrackedObject ${Boost_LIBRARIES} ${OpenCV_LIBS} ${common_utilities_LIBRARIES} Sensor LighthouseEstimator Utilities ${robot_localization_LIBRARIES} ) #rl_lib rviz_visualization UDPSocket
+ament_target_dependencies( TrackedObject rclcpp yaml_cpp_vendor robot_localization common_utilities)
 
 #add_executable(publishOpenVRPoses src/publishOpenVRPoses.cpp)
 #target_link_libraries( publishOpenVRPoses  Transform -lrt)
 #ament_target_dependencies(publishOpenVRPoses rclcpp)
 
-ament_export_dependencies(roboy_middleware_msgs common_utilities robot_localization xmlrpcpp
+ament_export_dependencies(rclcpp yaml_cpp_vendor roboy_middleware_msgs common_utilities robot_localization xmlrpcpp
 		epnp)
 ament_export_include_directories(include)
 ament_export_libraries(PoseEstimatorSensorCloud Transform Triangulate LighthouseEstimator
@@ -122,6 +125,17 @@ install(TARGETS
 ##        ImuModelPlugin
 	    LIBRARY DESTINATION lib/${PROJECT_NAME}
         )
+
+install(TARGETS
+		Sensor
+		TrackedObject
+		PoseEstimatorSensorCloud
+		Transform
+		Triangulate
+		LighthouseEstimator
+		##        ImuModelPlugin
+		DESTINATION lib
+		)
 
 install(FILES
         package.xml

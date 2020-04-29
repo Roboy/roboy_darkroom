@@ -1,2 +1,0 @@
-/usr/bin/ar qc libdarkroom_rqt.a  CMakeFiles/darkroom_rqt.dir/src/darkroom_rqt.cpp.o CMakeFiles/darkroom_rqt.dir/include/darkroom_rqt/moc_darkroom_rqt.cpp.o CMakeFiles/darkroom_rqt.dir/qcustomplot/moc_qcustomplot.cpp.o CMakeFiles/darkroom_rqt.dir/qcustomplot/qcustomplot.cpp.o
-/usr/bin/ranlib libdarkroom_rqt.a

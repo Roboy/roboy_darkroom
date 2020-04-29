@@ -1,2 +1,0 @@
-/usr/bin/ar qc libLighthouseEstimator.a  CMakeFiles/LighthouseEstimator.dir/src/LighthouseEstimator.cpp.o
-/usr/bin/ranlib libLighthouseEstimator.a

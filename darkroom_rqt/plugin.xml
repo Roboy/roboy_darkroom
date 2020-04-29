@@ -1,4 +1,4 @@
-<library path="lib/libdarkroom_rqt">
+<library path="darkroom_rqt">
   <class name="RoboyDarkRoom" type="RoboyDarkRoom" base_class_type="rqt_gui_cpp::Plugin">
     <description>
       Motor status plugin
