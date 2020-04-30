@@ -23,6 +23,9 @@ cd $ROS2_WS
 colcon build
 source $ROS2_WS/install/setup.bash
 rqt
+# or for debug
+gdb python3
+> run /opt/ros/eloquent/bin/rqt
 ```
 
 ### darkroom_arduino
