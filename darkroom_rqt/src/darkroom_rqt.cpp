@@ -21,7 +21,6 @@ RoboyDarkRoom::RoboyDarkRoom()
     }
 
     nh = rclcpp::Node::make_shared("darkroom_rqt");
-
     tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(nh);
     RCLCPP_INFO(nh->get_logger(), "Darkroom constructor");
 }
@@ -282,14 +281,7 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     ootx_sub = nh->create_subscription<roboy_middleware_msgs::msg::DarkRoomOOTX>("/roboy/middleware/DarkRoom/ootx", 1, bind(&RoboyDarkRoom::receiveOOTXData, this, placeholders::_1));
 //    aruco_pose_sub = nh->subscribe("/roboy/middleware/ArucoPose", 1, &RoboyDarkRoom::receiveArucoPose, this);
 
-    RCLCPP_INFO(nh->get_logger(), "starting executor");
-    rclcpp::executors::MultiThreadedExecutor executor;
-    executor.add_node(nh);
-//    executor.spin();
-//    spinner = boost::shared_ptr<rclcpp::AsyncSpinner>(new rclcpp::AsyncSpinner(1));
-//    spinner->start();
 
-    RCLCPP_INFO(nh->get_logger(), "Moving on");
     resetLighthousePoses();
 
     publish_transform = true;
@@ -368,6 +360,26 @@ void RoboyDarkRoom::initPlugin(qt_gui_cpp::PluginContext &context) {
     trackedObjects_scrollarea->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     trackedObjects_scrollarea->setLayout(new QVBoxLayout(trackedObjects_scrollarea));
     scrollArea->setWidget(trackedObjects_scrollarea);
+
+    auto async_spin = [&]()
+    {
+        RCLCPP_INFO_STREAM(nh->get_logger(), "Starting spin");
+        rclcpp::WallRate loopRate(loop_rate);
+        while(rclcpp::ok())
+        {
+//            RCLCPP_INFO_THROTTLE(nh->get_logger(), clock, 2, "spinning");
+            mux.lock();
+            rclcpp::spin_some(nh);
+            mux.unlock();
+            loopRate.sleep();
+
+        }
+    };
+
+    spinThread = std::make_shared<std::thread>(async_spin);
+    spinThread->detach();
+
+
 }
 
 void RoboyDarkRoom::shutdownPlugin() {
@@ -853,8 +865,9 @@ void RoboyDarkRoom::interactiveMarkersFeedback(const visualization_msgs::msg::In
 }
 
 void RoboyDarkRoom::receiveSensorData(const roboy_middleware_msgs::msg::DarkRoom::SharedPtr msg) {
-    auto clock = *nh->get_clock();
-    RCLCPP_DEBUG_THROTTLE(nh->get_logger(), clock, 10, "receiving sensor data");
+//    mux.lock();
+//    auto clock = *nh->get_clock();
+//    RCLCPP_DEBUG_THROTTLE(nh->get_logger(), clock, 10, "receiving sensor data");
     uint id = 0;
     uint lighthouse, rotor, sweepDuration;
     for (uint32_t const &data:msg->sensor_value) {
@@ -885,6 +898,7 @@ void RoboyDarkRoom::receiveSensorData(const roboy_middleware_msgs::msg::DarkRoom
     }
     if ((message_counter[rotor + lighthouse * 2]++) % 10 == 0 && ui.tabWidget->currentIndex() == 2)
             emit newData();
+//    mux.unlock();
 }
 
 void RoboyDarkRoom::receiveSensorStatus(const roboy_middleware_msgs::msg::DarkRoomStatus::SharedPtr msg){
@@ -899,8 +913,8 @@ void RoboyDarkRoom::receiveSensorStatus(const roboy_middleware_msgs::msg::DarkRo
 }
 
 void RoboyDarkRoom::receiveStatistics(const roboy_middleware_msgs::msg::DarkRoomStatistics::SharedPtr msg) {
-    auto clock = *nh->get_clock();
-    RCLCPP_DEBUG_THROTTLE(nh->get_logger(), clock,10, "receiving statistics data");
+//    auto clock = *nh->get_clock();
+//    RCLCPP_INFO(nh->get_logger(), "receiving statistics data");
     for (uint i = 0; i < msg->update_frequency_horizontal.size(); i++) {
         updateFrequencies[msg->lighthouse][i][0].push_back(msg->update_frequency_horizontal[i]);
         updateFrequencies[msg->lighthouse][i][1].push_back(msg->update_frequency_vertical[i]);
@@ -1400,7 +1414,7 @@ void RoboyDarkRoom::estimateFactoryCalibration(){
     q.setRPY(0,0,0);
     calibration_object->pose.setRotation(q);
 
-    rclcpp::sleep_for(std::chrono::nanoseconds(2000000000));
+    rclcpp::sleep_for(std::chrono::nanoseconds(2));
     // wait a bit to be sure there is sensor data available
 //    d.sleep();
 
@@ -1442,7 +1456,7 @@ void RoboyDarkRoom::estimateFactoryCalibration(){
 
 void RoboyDarkRoom::estimateFactoryCalibration2(){
     RCLCPP_DEBUG(nh->get_logger(),"estimate_factory_calibration_2 clicked");
-    string package_path = ""; //TODO rclcpp::package::getPath("darkroom");
+    string package_path = "/home/roboy/workspace/tracking_ws/src/roboy_darkroom/darkroom"; //TODO rclcpp::package::getPath("darkroom");
     string calibration_object_path = package_path + "/calibrated_objects/calibration.yaml";
     if (!fileExists(calibration_object_path.c_str())) {
         RCLCPP_ERROR(nh->get_logger(),"could not load calibration object, check the path %s", calibration_object_path.c_str());
@@ -1539,7 +1553,7 @@ void RoboyDarkRoom::estimateFactoryCalibration2(){
 //    rclcpp::Duration d(2);
     // wait a bit to be sure there is sensor data available
 
-    rclcpp::sleep_for(std::chrono::nanoseconds(2000000000));
+    rclcpp::sleep_for(std::chrono::nanoseconds(2));
 
     if(ui.estimate_lighthouse_1->isChecked()){
         calibration_object->calibration[LIGHTHOUSE_A][VERTICAL].reset();
@@ -1579,7 +1593,7 @@ void RoboyDarkRoom::estimateFactoryCalibration2(){
 
 void RoboyDarkRoom::estimateFactoryCalibrationEPNP(){
     RCLCPP_DEBUG(nh->get_logger(),"estimate_factory_calibration_epnp clicked");
-    string package_path = ""; //TODO rclcpp::package::getPath("darkroom");
+    string package_path = "/home/roboy/workspace/tracking_ws/src/roboy_darkroom/darkroom"; //TODO rclcpp::package::getPath("darkroom");
     string calibration_object_path = package_path + "/calibrated_objects/sphereTracker18cm.yaml";
     if (!fileExists(calibration_object_path.c_str())) {
         RCLCPP_ERROR(nh->get_logger(),"could not load calibration object, check the path %s", calibration_object_path.c_str());
@@ -1673,7 +1687,7 @@ void RoboyDarkRoom::estimateFactoryCalibrationEPNP(){
     q.setRPY(0,0,0);
     calibration_object->pose.setRotation(q);
 
-    rclcpp::sleep_for(std::chrono::nanoseconds(2000000000));
+    rclcpp::sleep_for(std::chrono::nanoseconds(2));
     // wait a bit to be sure there is sensor data available
 //    d.sleep();
 
@@ -1715,7 +1729,7 @@ void RoboyDarkRoom::estimateFactoryCalibrationEPNP(){
 
 void RoboyDarkRoom::estimateFactoryCalibrationMulti(){
     RCLCPP_DEBUG(nh->get_logger(),"estimate_factory_calibration_multi clicked");
-    string package_path = "";// TODO rclcpp::package::getPath("darkroom");
+    string package_path = "/home/roboy/workspace/tracking_ws/src/roboy_darkroom/darkroom";// TODO rclcpp::package::getPath("darkroom");
     string calibration_object_path = package_path + "/calibrated_objects/sphereTracker18cm.yaml";
     if (!fileExists(calibration_object_path.c_str())) {
         RCLCPP_ERROR(nh->get_logger(),"could not load calibration object, check the path %s", calibration_object_path.c_str());
@@ -1809,7 +1823,7 @@ void RoboyDarkRoom::estimateFactoryCalibrationMulti(){
     q.setRPY(0,0,0);
     calibration_object->pose.setRotation(q);
 
-    rclcpp::sleep_for(std::chrono::nanoseconds(2000000000));
+    rclcpp::sleep_for(std::chrono::nanoseconds(2));
     // wait a bit to be sure there is sensor data available
 //    d.sleep();
 

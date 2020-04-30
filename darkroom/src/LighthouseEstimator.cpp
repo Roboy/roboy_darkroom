@@ -99,7 +99,7 @@ LighthouseEstimator::LighthouseEstimator() {
     ootx_sub = nh->create_subscription<roboy_middleware_msgs::msg::DarkRoomOOTX>("/roboy/middleware/DarkRoom/ootx", 1, bind(&LighthouseEstimator::receiveOOTXData, this,  placeholders::_1));
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(nh);
-    executor.spin();
+    //executor.spin();
 //    spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(1));
 //    spinner->start();
 
@@ -1467,7 +1467,7 @@ bool LighthouseEstimator::estimateFactoryCalibration(int lighthouse) {
     calibration[lighthouse][VERTICAL].gibmag = x[gibmag_vertical];
     calibration[lighthouse][HORIZONTAL].gibmag = x[gibmag_horizontal];
 
-    string package_path = "";//ros::package::getPath("darkroom"); //TODO package path
+    string package_path = "/home/roboy/workspace/tracking_ws/src/roboy_darkroom/darkroom";//ros::package::getPath("darkroom"); //TODO package path
     string calibration_result_path = package_path + "/params/lighthouse_calibration.yaml";
 
     return writeCalibrationConfig(calibration_result_path, lighthouse, calibration[lighthouse]);

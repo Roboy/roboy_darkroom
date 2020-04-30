@@ -3,7 +3,7 @@ project(darkroom)
 
 set(CMAKE_CXX_STANDARD 14)
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -fpic")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -fpic -lboost_filesystem")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")
 SET(CMAKE_BUILD_TYPE Debug)
 
@@ -23,7 +23,7 @@ find_package(robot_localization REQUIRED COMPONENTS rl_lib)
 find_package(xmlrpcpp REQUIRED)
 #find_package(pcl_ros REQUIRED)
 find_package(epnp REQUIRED)
-find_package(Boost REQUIRED COMPONENTS thread)
+find_package(Boost REQUIRED COMPONENTS thread system filesystem)
 find_package(rcl_yaml_param_parser REQUIRED)
 		#
 #find_package(catkin REQUIRED COMPONENTS roscpp std_msgs message_generation tf tf_conversions visualization_msgs
@@ -82,7 +82,7 @@ add_library( Triangulate src/Triangulation.cpp )
 ament_target_dependencies( Triangulate rclcpp )
 
 add_library( Utilities src/Utilities.cpp )
-target_link_libraries(Utilities   ${rcl_yaml_param_parser_LIBRARIES})
+target_link_libraries(Utilities ${Boost_LIBRARIES}  ${rcl_yaml_param_parser_LIBRARIES})
 ament_target_dependencies( Utilities rclcpp yaml_cpp_vendor)
 
 #add_library( LighthouseSimulator src/LighthouseSimulator.cpp )
@@ -98,6 +98,8 @@ ament_target_dependencies( LighthouseEstimator rclcpp yaml_cpp_vendor roboy_midd
 
 add_library( TrackedObject SHARED src/TrackedObject.cpp )
 #add_dependencies(TrackedObject rl_lib )
+message("boost libs:")
+message(${Boost_LIBRARIES})
 target_link_libraries( TrackedObject ${Boost_LIBRARIES} ${OpenCV_LIBS} ${common_utilities_LIBRARIES} Sensor LighthouseEstimator Utilities ${robot_localization_LIBRARIES} ) #rl_lib rviz_visualization UDPSocket
 ament_target_dependencies( TrackedObject rclcpp yaml_cpp_vendor robot_localization common_utilities)
 
@@ -123,6 +125,7 @@ install(TARGETS
         Triangulate
         LighthouseEstimator
 ##        ImuModelPlugin
+		ARCHIVE DESTINATION lib/${PROJECT_NAME}
 	    LIBRARY DESTINATION lib/${PROJECT_NAME}
         )
 

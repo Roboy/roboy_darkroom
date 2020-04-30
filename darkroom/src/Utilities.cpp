@@ -250,14 +250,19 @@ bool Utilities::setParametersFromYaml(rclcpp::Node::SharedPtr nh, string yaml_pa
     }
     // Combine parameter yaml files, overwriting values in older ones
     for (auto & param : iter->second) {
+
         parameters[param.get_name()] = param;
     }
     std::vector<rclcpp::Parameter> combined_values;
     combined_values.reserve(parameters.size());
     for (auto & kv : parameters) {
+        if (!nh->has_parameter(kv.first))
+            nh->declare_parameter(kv.first);
         combined_values.emplace_back(kv.second);
+
     }
     if (!combined_values.empty()) {
+
         rcl_interfaces::msg::SetParametersResult result = nh->set_parameters_atomically(combined_values);
         if (!result.successful) {
             throw std::runtime_error("Failed to set initial parameters");

@@ -3,11 +3,15 @@
 int LighthouseEstimator::trackedObjectInstance = 0;
 bool TrackedObject::m_switch = false;
 
-TrackedObject::TrackedObject(rclcpp::Node::SharedPtr nh):robot_localization::RosEkf(nh->get_node_options()), nh(nh) {
+TrackedObject::TrackedObject(rclcpp::Node::SharedPtr _nh): nh(_nh) {
+
 
     clock = nh->get_clock();
+
+
     tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(nh);
     parameters_client = std::make_shared<rclcpp::SyncParametersClient>(nh);
+
 
     while (!parameters_client->wait_for_service(1s)) {
         if (!rclcpp::ok()) {
@@ -17,6 +21,8 @@ TrackedObject::TrackedObject(rclcpp::Node::SharedPtr nh):robot_localization::Ros
         RCLCPP_INFO(nh->get_logger(), "parameter sync service not available, waiting again...");
     }
 
+//    robot_localization::RosEkf(_nh->get_node_options()
+//    ekf = new robot_localization::RosEkf(nh->get_node_options());
     darkroom_statistics_pub = nh->create_publisher<roboy_middleware_msgs::msg::DarkRoomStatistics>(
             "/roboy/middleware/DarkRoom/Statistics", 1);
 
@@ -28,11 +34,11 @@ TrackedObject::TrackedObject(rclcpp::Node::SharedPtr nh):robot_localization::Ros
 
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(nh);
-    executor.spin();
+    //executor.spin();
 //    spinner = boost::shared_ptr<ros::AsyncSpinner>(new ros::AsyncSpinner(2));
 //    spinner->start();
 
-    string package_path = "";//ros::package::getPath("darkroom");
+    string package_path = "/home/roboy/workspace/tracking_ws/src/roboy_darkroom/darkroom";//ros::package::getPath("darkroom");
     //TODO relocate lighthouse_calibration.yaml
     string calibration_path = package_path + "/params/lighthouse_calibration.yaml";
     readCalibrationConfig(calibration_path,LIGHTHOUSE_A,calibration[LIGHTHOUSE_A]);
@@ -44,7 +50,7 @@ TrackedObject::TrackedObject(rclcpp::Node::SharedPtr nh):robot_localization::Ros
     pose.setOrigin(tf2::Vector3(0,0,0));
     pose.setRotation(tf2::Quaternion(0,0,0,1));
 
-    setParametersFromYaml(nh, "ekf_parameters.yaml");
+    setParametersFromYaml(nh, package_path +"/params/ekf_parameters.yaml");
     //TODO fix path
 //    string load_yaml_command = "rosparam load "+package_path+"/params/ekf_parameters.yaml " + nh->getNamespace();
 //    ROS_DEBUG_STREAM("loading yaml file using this command: " << load_yaml_command);

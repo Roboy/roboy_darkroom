@@ -54,6 +54,7 @@
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <boost/thread.hpp>
+#include <boost/filesystem.hpp>
 
 #define uSecsToRadians(ticks) (degreesToRadians(ticks * 0.021600864))
 #define ticksToRadians(ticks) (degreesToRadians(ticks * 0.021600864 / 50.0))
@@ -61,7 +62,7 @@
 
 using namespace std;
 
-class TrackedObject : public LighthouseEstimator, public robot_localization::RosEkf {
+class TrackedObject : public LighthouseEstimator{//, public robot_localization::RosEkf {
 public:
     TrackedObject(rclcpp::Node::SharedPtr nh);
 
@@ -140,6 +141,7 @@ private:
     std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
     rclcpp::Clock::SharedPtr clock;
     std::shared_ptr<rclcpp::SyncParametersClient> parameters_client;
+//    robot_localization::RosEkf::SharedPtr ekf;
 };
 
 typedef boost::shared_ptr<TrackedObject> TrackedObjectPtr;

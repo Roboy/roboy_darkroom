@@ -322,4 +322,7 @@ private:
     map<int,Vector3d> aruco_position_variance;
     map<int,long> receive_counter;
     LighthouseCalibration calibration[2][2];
+//    rclcpp::executors::MultiThreadedExecutor::SharedPtr executor;
+    std::shared_ptr<std::thread> spinThread;
+    long loop_rate=100l;
 };
