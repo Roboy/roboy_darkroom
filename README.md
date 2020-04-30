@@ -7,6 +7,24 @@
 #### darkroom 
 This is a ROS package containing all the code necessary for triangulation and pose estimation of the sensors. It's the heart of the tracking system. However, the body is roboy_rqt which uses the heart for meaningful stuff. The idea was, that users could integrate this ROS package into their own tracking system.
 
+### ROS2 setup
+```
+# make sure to checkout correct branches
+cd $ROS2_WS/src
+git clone https://github.com/Roboy/roboy_communication.git -b dashing
+git clone https://github.com/Roboy/common_utilities.git -b eloquent
+git clone https://github.com/Roboy/robot_localization.git -b eloquent-devel
+git clone https://github.com/bpwilcox/xmlrpcpp.git
+git clone https://github.com/Roboy/roboy_darkroom.git -b ros2
+cd roboy_darkroom
+git submodule init
+git submodule update 
+cd $ROS2_WS
+colcon build
+source $ROS2_WS/install/setup.bash
+rqt
+```
+
 ### darkroom_arduino
 #### darkroom_esp8266
 In order to receive the decoded sensor signal wirelessly via UDP, you will need an esp8266 (Nodemcu or similar are fine aswell). The sensor data is sent to the esp via SPI. The esp then sends a UDP to the host. This folder contains the arduino sketch for doing the above. You will most likely need to adapt the ssid/password/hostIP to your local lan.
