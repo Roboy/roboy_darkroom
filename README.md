@@ -8,7 +8,7 @@
 This is a ROS package containing all the code necessary for triangulation and pose estimation of the sensors. It's the heart of the tracking system. However, the body is roboy_rqt which uses the heart for meaningful stuff. The idea was, that users could integrate this ROS package into their own tracking system.
 
 ### ROS2 setup
-```
+```console
 # make sure to checkout correct branches
 cd $ROS2_WS/src
 git clone https://github.com/Roboy/roboy_communication.git -b dashing
